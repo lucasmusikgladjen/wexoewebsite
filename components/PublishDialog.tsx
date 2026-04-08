@@ -10,10 +10,27 @@ interface Props {
 
 type PublishStatus = 'idle' | 'validating' | 'publishing' | 'success' | 'error';
 
+interface TokenUsage {
+  inputTokens: number;
+  outputTokens: number;
+  cacheWriteTokens: number;
+  cacheReadTokens: number;
+  totalTokens: number;
+  estimatedCostUsd: number;
+  toolCallBreakdown: {
+    landingPage: number;
+    tabs: number;
+    downloads: number;
+    other: number;
+    total: number;
+  };
+}
+
 interface PublishResult {
   recordId?: string;
   slug?: string;
   tabCount?: number;
+  tokenUsage?: TokenUsage;
   error?: string;
 }
 
@@ -50,6 +67,7 @@ export default function PublishDialog({ state, onClose }: Props) {
         recordId: data.recordId,
         slug: data.slug || state.slug,
         tabCount: data.tabCount || state.tabs.length,
+        tokenUsage: data.tokenUsage,
       });
       setStatus('success');
     } catch (err) {
@@ -119,19 +137,82 @@ export default function PublishDialog({ state, onClose }: Props) {
           )}
 
           {status === 'success' && (
-            <div className="text-center py-4">
-              <div className="w-12 h-12 rounded-full bg-green-100 flex items-center justify-center mx-auto mb-3">
-                <span className="text-green-600 text-xl">✓</span>
+            <div className="py-4">
+              <div className="flex flex-col items-center mb-4">
+                <div className="w-12 h-12 rounded-full bg-green-100 flex items-center justify-center mb-3">
+                  <span className="text-green-600 text-xl">✓</span>
+                </div>
+                <p className="text-sm font-medium text-lp-text mb-1">Sidan har publicerats!</p>
+                <p className="text-xs text-lp-text-light">
+                  Slug: <strong>{result.slug}</strong> — {result.tabCount} tabs skapade
+                </p>
+                <p className="text-xs text-lp-text-light mt-2">
+                  Sidan visas på wexoe.se inom 5 minuter (Airtable-cache).
+                </p>
+                {result.recordId && (
+                  <p className="text-xs text-gray-400 mt-1">Record ID: {result.recordId}</p>
+                )}
               </div>
-              <p className="text-sm font-medium text-lp-text mb-1">Sidan har publicerats!</p>
-              <p className="text-xs text-lp-text-light">
-                Slug: <strong>{result.slug}</strong> — {result.tabCount} tabs skapade
-              </p>
-              <p className="text-xs text-lp-text-light mt-2">
-                Sidan visas på wexoe.se inom 5 minuter (Airtable-cache).
-              </p>
-              {result.recordId && (
-                <p className="text-xs text-gray-400 mt-2">Record ID: {result.recordId}</p>
+
+              {result.tokenUsage && (
+                <div className="mt-3 border border-gray-200 rounded-lg overflow-hidden">
+                  <div className="bg-gray-50 px-3 py-2 border-b border-gray-200">
+                    <p className="text-xs font-semibold text-gray-600 uppercase tracking-wide">Token-användning</p>
+                  </div>
+                  <div className="px-3 py-2 space-y-1.5 text-xs text-gray-700">
+                    <div className="flex justify-between">
+                      <span className="text-gray-500">Input-tokens</span>
+                      <span className="font-mono">{result.tokenUsage.inputTokens.toLocaleString('sv')}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-500">Output-tokens</span>
+                      <span className="font-mono">{result.tokenUsage.outputTokens.toLocaleString('sv')}</span>
+                    </div>
+                    {result.tokenUsage.cacheReadTokens > 0 && (
+                      <div className="flex justify-between">
+                        <span className="text-gray-500">Cache-lästa tokens</span>
+                        <span className="font-mono">{result.tokenUsage.cacheReadTokens.toLocaleString('sv')}</span>
+                      </div>
+                    )}
+                    <div className="flex justify-between border-t border-gray-100 pt-1.5">
+                      <span className="font-medium text-gray-600">Totalt</span>
+                      <span className="font-mono font-medium">{result.tokenUsage.totalTokens.toLocaleString('sv')}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="font-medium text-gray-600">Uppskattad kostnad</span>
+                      <span className="font-mono font-semibold text-gray-800">
+                        ${result.tokenUsage.estimatedCostUsd.toFixed(4)}
+                      </span>
+                    </div>
+                  </div>
+                  <div className="bg-gray-50 px-3 py-2 border-t border-gray-200">
+                    <p className="text-xs font-semibold text-gray-600 uppercase tracking-wide mb-1.5">Airtable-anrop per steg</p>
+                    <div className="space-y-1 text-xs text-gray-700">
+                      <div className="flex justify-between">
+                        <span className="text-gray-500">Steg 1 — Landing page</span>
+                        <span className="font-mono">{result.tokenUsage.toolCallBreakdown.landingPage} anrop</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-gray-500">Steg 2 — Tabs</span>
+                        <span className="font-mono">{result.tokenUsage.toolCallBreakdown.tabs} anrop</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-gray-500">Steg 3 — Downloads</span>
+                        <span className="font-mono">{result.tokenUsage.toolCallBreakdown.downloads} anrop</span>
+                      </div>
+                      {result.tokenUsage.toolCallBreakdown.other > 0 && (
+                        <div className="flex justify-between">
+                          <span className="text-gray-500">Övrigt (schema etc.)</span>
+                          <span className="font-mono">{result.tokenUsage.toolCallBreakdown.other} anrop</span>
+                        </div>
+                      )}
+                      <div className="flex justify-between border-t border-gray-100 pt-1 font-medium">
+                        <span className="text-gray-600">Totalt antal anrop</span>
+                        <span className="font-mono">{result.tokenUsage.toolCallBreakdown.total}</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
               )}
             </div>
           )}
