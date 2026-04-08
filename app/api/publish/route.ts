@@ -215,9 +215,9 @@ Regler:
 - Använd exakta Airtable-fältnamn från schemat ovan
 - Utelämna fält med tomt värde (tomma strängar, null)
 - Inkludera ALLTID boolean-fält (Show Content, Show Sidebar, etc.)
-- Tabs: inkludera Name, Type, Order (1-baserat), Visa (alltid true), och typ-specifika fält
+- Tabs: inkludera Name, Tab Type, Order (1-baserat), Visa (alltid true), och typ-specifika fält
 - Tabs: inkludera INTE "Landing Page"-fältet — det läggs till av backend
-- Downloads: inkludera INTE "LP Tab"-fältet — det läggs till av backend
+- Downloads: inkludera INTE "Tab"-fältet — det läggs till av backend
 - Downloads: inkludera Visa (alltid true)
 - Applicera formateringsreglerna (benefits-splitting, FAQ-format, pipe-format, etc.)`,
             cache_control: { type: 'ephemeral' },
@@ -306,7 +306,7 @@ Regler:
       const dlPayloads = transformed.downloads.map((dl) => ({
         fields: {
           ...dl.fields,
-          'LP Tab': [tabRecords[dl.tabIndex]?.id].filter(Boolean),
+          'Tab': [tabRecords[dl.tabIndex]?.id].filter(Boolean),
         },
       }));
       const dlRecords = await createRecords(
