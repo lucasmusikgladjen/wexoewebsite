@@ -205,7 +205,67 @@ export async function POST(request: Request) {
 
     const data = await response.json();
 
-    // Extract record ID and counts from MCP tool results and text
+    // ── Token usage tracking ─────────────────────────────────────────
+    // claude-sonnet-4-20250514 pricing (USD per 1M tokens)
+    const INPUT_PRICE_PER_M  = 3.00;
+    const OUTPUT_PRICE_PER_M = 15.00;
+
+    const usage = data.usage ?? {};
+    const inputTokens  = usage.input_tokens  ?? 0;
+    const outputTokens = usage.output_tokens ?? 0;
+    const cacheWriteTokens = usage.cache_creation_input_tokens ?? 0;
+    const cacheReadTokens  = usage.cache_read_input_tokens     ?? 0;
+    const totalTokens  = inputTokens + outputTokens;
+    const estimatedCostUsd =
+      (inputTokens  / 1_000_000) * INPUT_PRICE_PER_M +
+      (outputTokens / 1_000_000) * OUTPUT_PRICE_PER_M;
+
+    // Count MCP tool calls per step to explain the cost
+    const toolCallCounts: Record<string, number> = {};
+    let landingPageCalls = 0;
+    let tabCalls = 0;
+    let downloadCalls = 0;
+    let otherCalls = 0;
+    let totalToolCalls = 0;
+
+    if (data.content && Array.isArray(data.content)) {
+      for (const block of data.content) {
+        if (block.type === 'tool_use' && block.name) {
+          const name: string = block.name;
+          toolCallCounts[name] = (toolCallCounts[name] ?? 0) + 1;
+          totalToolCalls++;
+
+          // Heuristic: classify by table ID found in tool input
+          const inputStr = JSON.stringify(block.input ?? '');
+          if (inputStr.includes('tbl8KDqGq0Ray1uqS')) landingPageCalls++;
+          else if (inputStr.includes('tblvecOh3rAGmw3mw')) tabCalls++;
+          else if (inputStr.includes('tblbLM827DzjWGjCR')) downloadCalls++;
+          else otherCalls++;
+        }
+      }
+    }
+
+    const tokenUsage = {
+      inputTokens,
+      outputTokens,
+      cacheWriteTokens,
+      cacheReadTokens,
+      totalTokens,
+      estimatedCostUsd: parseFloat(estimatedCostUsd.toFixed(4)),
+      toolCallBreakdown: {
+        landingPage: landingPageCalls,
+        tabs: tabCalls,
+        downloads: downloadCalls,
+        other: otherCalls,
+        total: totalToolCalls,
+      },
+      toolCallCounts,
+    };
+
+    // Log to server console for easy debugging
+    console.log('[publish] Token usage:', JSON.stringify(tokenUsage, null, 2));
+
+    // ── Extract record ID and counts from MCP tool results and text ──
     let recordId: string | null = null;
     let tabCount = 0;
     let summaryText = '';
@@ -248,6 +308,7 @@ export async function POST(request: Request) {
       slug: state.slug,
       tabCount: tabCount || state.tabs.length,
       summary: summaryText || undefined,
+      tokenUsage,
     });
   } catch (err) {
     const message = err instanceof Error ? err.message : 'Okänt fel';
