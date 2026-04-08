@@ -1,0 +1,127 @@
+export type SidebarType = '' | 'case' | 'calculator' | 'event' | 'leadmagnet';
+
+export type TabType =
+  | 'textimage'
+  | 'fullmedia'
+  | 'faq'
+  | 'calameo'
+  | 'downloads'
+  | 'compare'
+  | 'steps';
+
+export interface TabDownload {
+  id: string;
+  name: string;
+  description: string;
+  fileUrl: string;
+  fileType: string;
+}
+
+export interface Tab {
+  id: string;
+  name: string;
+  type: TabType;
+  // textimage
+  tiH2: string;
+  tiText: string;
+  tiBenefits: string;
+  tiImage: string;
+  tiInverted: boolean;
+  // fullmedia
+  fmUrl: string;
+  // faq
+  faqContent: string;
+  // calameo
+  calTitle1: string;
+  calUrl1: string;
+  calTitle2: string;
+  calUrl2: string;
+  calTitle3: string;
+  calUrl3: string;
+  // downloads
+  downloads: TabDownload[];
+  // compare
+  compareTitle: string;
+  compareColA: string;
+  compareColB: string;
+  compareRows: string;
+  // steps
+  stepsTitle: string;
+  stepsRows: string;
+}
+
+export interface PageState {
+  mode: 'create' | 'edit';
+  slug: string;
+  recordId: string | null;
+
+  // Hero
+  h1: string;
+  heroDescription: string;
+  heroImage: string;
+  heroCta1Text: string;
+  heroCta1Url: string;
+  heroCta2Text: string;
+  heroCta2Url: string;
+
+  // Content
+  contentH2: string;
+  contentText: string;
+  contentBenefits: string;
+
+  // Sidebar
+  sidebarType: SidebarType;
+  caseTitle: string;
+  caseDescription: string;
+  caseImage: string;
+  caseOutcomes: string;
+  caseCta: string;
+  caseCtaUrl: string;
+  eventType: string;
+  eventTitle: string;
+  eventDescription: string;
+  eventDate: string;
+  eventLocation: string;
+  eventWebhook: string;
+  magnetTitle: string;
+  magnetFormat: string;
+  magnetDescription: string;
+  magnetFileUrl: string;
+  magnetWebhook: string;
+  calcTitle: string;
+  calcHtml: string;
+
+  // Tabs
+  tabs: Tab[];
+
+  // Contact
+  contactName: string;
+  contactTitle: string;
+  contactEmail: string;
+  contactPhone: string;
+  contactImage: string;
+  contactQuote: string;
+
+  // Visibility
+  showContent: boolean;
+  showSidebar: boolean;
+  showTabs: boolean;
+  showContact: boolean;
+
+  // Colors
+  colorMain: string;
+  colorSecondary: string;
+}
+
+export type SectionId = 'hero' | 'content' | 'sidebar' | 'tabs' | 'contact';
+
+export type PageAction =
+  | { type: 'SET_FIELD'; field: keyof PageState; value: unknown }
+  | { type: 'SET_TAB_FIELD'; tabId: string; field: keyof Tab; value: unknown }
+  | { type: 'ADD_TAB' }
+  | { type: 'REMOVE_TAB'; tabId: string }
+  | { type: 'REORDER_TABS'; fromIndex: number; toIndex: number }
+  | { type: 'ADD_DOWNLOAD'; tabId: string }
+  | { type: 'REMOVE_DOWNLOAD'; tabId: string; downloadId: string }
+  | { type: 'SET_DOWNLOAD_FIELD'; tabId: string; downloadId: string; field: keyof TabDownload; value: string }
+  | { type: 'LOAD_STATE'; state: PageState };
