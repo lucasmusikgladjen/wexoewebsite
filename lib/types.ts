@@ -17,6 +17,25 @@ export interface TabDownload {
   fileType: string;
 }
 
+export interface FaqItem {
+  id: string;
+  question: string;
+  answer: string;
+}
+
+export interface CompareRow {
+  id: string;
+  label: string;
+  valueA: string;
+  valueB: string;
+}
+
+export interface StepItem {
+  id: string;
+  title: string;
+  description: string;
+}
+
 export interface Tab {
   id: string;
   name: string;
@@ -30,7 +49,7 @@ export interface Tab {
   // fullmedia
   fmUrl: string;
   // faq
-  faqContent: string;
+  faqItems: FaqItem[];
   // calameo
   calTitle1: string;
   calUrl1: string;
@@ -44,10 +63,10 @@ export interface Tab {
   compareTitle: string;
   compareColA: string;
   compareColB: string;
-  compareRows: string;
+  compareRows: CompareRow[];
   // steps
   stepsTitle: string;
-  stepsRows: string;
+  stepsItems: StepItem[];
 }
 
 export interface PageState {
@@ -124,4 +143,13 @@ export type PageAction =
   | { type: 'ADD_DOWNLOAD'; tabId: string }
   | { type: 'REMOVE_DOWNLOAD'; tabId: string; downloadId: string }
   | { type: 'SET_DOWNLOAD_FIELD'; tabId: string; downloadId: string; field: keyof TabDownload; value: string }
+  | { type: 'ADD_FAQ_ITEM'; tabId: string }
+  | { type: 'REMOVE_FAQ_ITEM'; tabId: string; itemId: string }
+  | { type: 'SET_FAQ_ITEM_FIELD'; tabId: string; itemId: string; field: 'question' | 'answer'; value: string }
+  | { type: 'ADD_COMPARE_ROW'; tabId: string }
+  | { type: 'REMOVE_COMPARE_ROW'; tabId: string; rowId: string }
+  | { type: 'SET_COMPARE_ROW_FIELD'; tabId: string; rowId: string; field: 'label' | 'valueA' | 'valueB'; value: string }
+  | { type: 'ADD_STEP_ITEM'; tabId: string }
+  | { type: 'REMOVE_STEP_ITEM'; tabId: string; itemId: string }
+  | { type: 'SET_STEP_ITEM_FIELD'; tabId: string; itemId: string; field: 'title' | 'description'; value: string }
   | { type: 'LOAD_STATE'; state: PageState };

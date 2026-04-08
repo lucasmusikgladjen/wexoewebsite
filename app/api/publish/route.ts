@@ -16,7 +16,12 @@ function buildPublishPrompt(state: PageState): string {
       tiInverted: tab.tiInverted,
     }),
     ...(tab.type === 'fullmedia' && { fmUrl: tab.fmUrl }),
-    ...(tab.type === 'faq' && { faqContent: tab.faqContent }),
+    ...(tab.type === 'faq' && {
+      faqContent: tab.faqItems
+        .filter(f => f.question || f.answer)
+        .map(f => `Q: ${f.question}\nA: ${f.answer}`)
+        .join('\n\n'),
+    }),
     ...(tab.type === 'calameo' && {
       calTitle1: tab.calTitle1, calUrl1: tab.calUrl1,
       calTitle2: tab.calTitle2, calUrl2: tab.calUrl2,
@@ -27,11 +32,17 @@ function buildPublishPrompt(state: PageState): string {
       compareTitle: tab.compareTitle,
       compareColA: tab.compareColA,
       compareColB: tab.compareColB,
-      compareRows: tab.compareRows,
+      compareRows: tab.compareRows
+        .filter(r => r.label || r.valueA || r.valueB)
+        .map(r => `${r.label} | ${r.valueA} | ${r.valueB}`)
+        .join('\n'),
     }),
     ...(tab.type === 'steps' && {
       stepsTitle: tab.stepsTitle,
-      stepsRows: tab.stepsRows,
+      stepsRows: tab.stepsItems
+        .filter(s => s.title || s.description)
+        .map(s => `${s.title} | ${s.description}`)
+        .join('\n'),
     }),
   }));
 

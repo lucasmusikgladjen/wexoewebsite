@@ -115,32 +115,16 @@ function FullMediaTab({ tab }: { tab: Tab }) {
 }
 
 function FaqTab({ tab, mainColor }: { tab: Tab; mainColor: string }) {
-  const pairs: { q: string; a: string }[] = [];
-  const lines = tab.faqContent.split('\n');
-  let currentQ = '';
-  let currentA = '';
-  for (const line of lines) {
-    const trimmed = line.trim();
-    if (trimmed.startsWith('Q:')) {
-      if (currentQ) pairs.push({ q: currentQ, a: currentA.trim() });
-      currentQ = trimmed.replace(/^Q:\s*/, '');
-      currentA = '';
-    } else if (trimmed.startsWith('A:')) {
-      currentA = trimmed.replace(/^A:\s*/, '');
-    } else if (currentA && trimmed) {
-      currentA += ' ' + trimmed;
-    }
-  }
-  if (currentQ) pairs.push({ q: currentQ, a: currentA.trim() });
+  const items = tab.faqItems.filter(f => f.question || f.answer);
 
-  if (pairs.length === 0) return <div className="text-sm text-gray-400 italic">Skriv FAQ i formatet Q: fråga / A: svar...</div>;
+  if (items.length === 0) return <div className="text-sm text-gray-400 italic">Lägg till frågor via editorn...</div>;
 
   return (
     <div className="space-y-3">
-      {pairs.map((p, i) => (
-        <div key={i} className="border border-gray-200 rounded-lg p-4">
-          <h4 className="font-semibold text-sm mb-1" style={{ color: mainColor }}>{p.q}</h4>
-          <p className="text-sm text-lp-text-light leading-relaxed">{p.a}</p>
+      {items.map((item) => (
+        <div key={item.id} className="border border-gray-200 rounded-lg p-4">
+          <h4 className="font-semibold text-sm mb-1" style={{ color: mainColor }}>{item.question || 'Fråga...'}</h4>
+          <p className="text-sm text-lp-text-light leading-relaxed">{item.answer || 'Svar...'}</p>
         </div>
       ))}
     </div>
@@ -196,10 +180,7 @@ function DownloadsTab({ tab, secondaryColor }: { tab: Tab; secondaryColor: strin
 }
 
 function CompareTab({ tab, mainColor }: { tab: Tab; mainColor: string }) {
-  const rows = tab.compareRows.split('\n').map(r => r.trim()).filter(Boolean).map(r => {
-    const parts = r.split('|').map(p => p.trim());
-    return { label: parts[0] || '', a: parts[1] || '', b: parts[2] || '' };
-  });
+  const rows = tab.compareRows.filter(r => r.label || r.valueA || r.valueB);
 
   return (
     <div>
@@ -215,26 +196,23 @@ function CompareTab({ tab, mainColor }: { tab: Tab; mainColor: string }) {
           </thead>
           <tbody>
             {rows.map((r, i) => (
-              <tr key={i} className={i % 2 === 0 ? 'bg-gray-50' : 'bg-white'}>
+              <tr key={r.id} className={i % 2 === 0 ? 'bg-gray-50' : 'bg-white'}>
                 <td className="px-3 py-2 font-medium">{r.label}</td>
-                <td className="px-3 py-2">{r.a}</td>
-                <td className="px-3 py-2">{r.b}</td>
+                <td className="px-3 py-2">{r.valueA}</td>
+                <td className="px-3 py-2">{r.valueB}</td>
               </tr>
             ))}
           </tbody>
         </table>
       ) : (
-        <div className="text-sm text-gray-400 italic">Lägg till rader: Label | Värde A | Värde B</div>
+        <div className="text-sm text-gray-400 italic">Lägg till rader via editorn...</div>
       )}
     </div>
   );
 }
 
 function StepsTab({ tab, mainColor, secondaryColor }: { tab: Tab; mainColor: string; secondaryColor: string }) {
-  const steps = tab.stepsRows.split('\n').map(r => r.trim()).filter(Boolean).map(r => {
-    const parts = r.split('|').map(p => p.trim());
-    return { title: parts[0] || '', desc: parts[1] || '' };
-  });
+  const steps = tab.stepsItems.filter(s => s.title || s.description);
 
   return (
     <div>
@@ -242,7 +220,7 @@ function StepsTab({ tab, mainColor, secondaryColor }: { tab: Tab; mainColor: str
       {steps.length > 0 ? (
         <div className="space-y-4">
           {steps.map((s, i) => (
-            <div key={i} className="flex gap-4 items-start">
+            <div key={s.id} className="flex gap-4 items-start">
               <div
                 className="w-8 h-8 rounded-full flex items-center justify-center text-white text-sm font-bold flex-shrink-0"
                 style={{ background: secondaryColor }}
@@ -251,13 +229,13 @@ function StepsTab({ tab, mainColor, secondaryColor }: { tab: Tab; mainColor: str
               </div>
               <div>
                 <h4 className="font-semibold text-sm" style={{ color: mainColor }}>{s.title}</h4>
-                {s.desc && <p className="text-sm text-lp-text-light mt-0.5">{s.desc}</p>}
+                {s.description && <p className="text-sm text-lp-text-light mt-0.5">{s.description}</p>}
               </div>
             </div>
           ))}
         </div>
       ) : (
-        <div className="text-sm text-gray-400 italic">Lägg till steg: Rubrik | Beskrivning</div>
+        <div className="text-sm text-gray-400 italic">Lägg till steg via editorn...</div>
       )}
     </div>
   );
