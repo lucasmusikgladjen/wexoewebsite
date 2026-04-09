@@ -47,7 +47,6 @@ export default function EditorPanel({ state, dispatch, activeSection, onSectionC
 
       const sectionIds: SectionId[] = ['hero', 'content', 'sidebar', 'tabs', 'contact'];
 
-      // When near bottom, activate the last section
       const nearBottom = container.scrollHeight - container.scrollTop - container.clientHeight < 80;
       if (nearBottom) {
         for (let i = sectionIds.length - 1; i >= 0; i--) {
@@ -95,17 +94,17 @@ export default function EditorPanel({ state, dispatch, activeSection, onSectionC
   ];
 
   return (
-    <div className="h-full flex flex-col bg-white border-l border-lp-border">
+    <div className="h-full flex flex-col bg-white border-l border-gray-100">
       {/* Section quick-nav */}
-      <div className="flex border-b border-lp-border px-2 py-1.5 gap-1 flex-shrink-0 overflow-x-auto">
+      <div className="flex px-3 py-2 gap-0.5 flex-shrink-0 overflow-x-auto border-b border-gray-100">
         {sections.map((s) => (
           <button
             key={s.id}
             onClick={() => onSectionClick(s.id)}
-            className={`px-3 py-1 rounded-full text-xs font-medium transition-colors whitespace-nowrap ${
+            className={`px-2.5 py-1 rounded-full text-xs transition-colors whitespace-nowrap ${
               activeSection === s.id
-                ? 'bg-lp-main text-white'
-                : 'text-lp-text-light hover:bg-gray-100'
+                ? 'bg-gray-100 text-gray-600'
+                : 'text-gray-400 hover:text-gray-500'
             }`}
           >
             {s.label}
@@ -117,7 +116,7 @@ export default function EditorPanel({ state, dispatch, activeSection, onSectionC
       <div ref={scrollContainerRef} className="flex-1 overflow-y-auto editor-panel p-4 space-y-6">
         <div
           ref={(el) => { sectionRefs.current.hero = el; }}
-          className={`p-3 rounded-lg cursor-pointer transition-colors ${activeSection === 'hero' ? 'bg-blue-50 ring-1 ring-lp-main/20' : 'hover:bg-gray-50'}`}
+          className="cursor-pointer"
           onClick={() => onSectionClick('hero')}
           onFocusCapture={() => onSectionFocus('hero')}
         >
@@ -126,7 +125,7 @@ export default function EditorPanel({ state, dispatch, activeSection, onSectionC
 
         <div
           ref={(el) => { sectionRefs.current.content = el; }}
-          className={`p-3 rounded-lg cursor-pointer transition-colors ${activeSection === 'content' ? 'bg-blue-50 ring-1 ring-lp-main/20' : 'hover:bg-gray-50'}`}
+          className="cursor-pointer"
           onClick={() => onSectionClick('content')}
           onFocusCapture={() => onSectionFocus('content')}
         >
@@ -135,7 +134,7 @@ export default function EditorPanel({ state, dispatch, activeSection, onSectionC
 
         <div
           ref={(el) => { sectionRefs.current.sidebar = el; }}
-          className={`p-3 rounded-lg cursor-pointer transition-colors ${activeSection === 'sidebar' ? 'bg-blue-50 ring-1 ring-lp-main/20' : 'hover:bg-gray-50'}`}
+          className="cursor-pointer"
           onClick={() => onSectionClick('sidebar')}
           onFocusCapture={() => onSectionFocus('sidebar')}
         >
@@ -144,7 +143,7 @@ export default function EditorPanel({ state, dispatch, activeSection, onSectionC
 
         <div
           ref={(el) => { sectionRefs.current.tabs = el; }}
-          className={`p-3 rounded-lg cursor-pointer transition-colors ${activeSection === 'tabs' ? 'bg-blue-50 ring-1 ring-lp-main/20' : 'hover:bg-gray-50'}`}
+          className="cursor-pointer"
           onClick={() => onSectionClick('tabs')}
           onFocusCapture={() => onSectionFocus('tabs')}
         >
@@ -153,7 +152,7 @@ export default function EditorPanel({ state, dispatch, activeSection, onSectionC
 
         <div
           ref={(el) => { sectionRefs.current.contact = el; }}
-          className={`p-3 rounded-lg cursor-pointer transition-colors ${activeSection === 'contact' ? 'bg-blue-50 ring-1 ring-lp-main/20' : 'hover:bg-gray-50'}`}
+          className="cursor-pointer"
           onClick={() => onSectionClick('contact')}
           onFocusCapture={() => onSectionFocus('contact')}
         >
