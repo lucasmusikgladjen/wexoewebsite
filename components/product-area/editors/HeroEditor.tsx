@@ -1,7 +1,7 @@
 'use client';
 
 import { ProductAreaState } from '@/lib/product-area-types';
-import { FieldInput, FieldTextarea, FieldColor } from '@/components/editors/FieldInput';
+import { FieldInput, FieldTextarea } from '@/components/editors/FieldInput';
 
 interface Props {
   state: ProductAreaState;
@@ -100,33 +100,6 @@ export default function HeroEditor({ state, setField }: Props) {
             onChange={(v) => setField('npiLink', v)}
             placeholder="/produkter/controllogix/"
           />
-        </div>
-      </div>
-
-      {/* ── Färger ──────────────────────────────────────────────────────── */}
-      <div className="pt-3">
-        <p className="text-[11px] text-gray-400 mb-1.5">Färger</p>
-        <div className="space-y-2">
-          <FieldColor
-            label="Topbanner"
-            value={state.topBg}
-            onChange={(v) => setField('topBg', v)}
-            defaultColor="#11325D"
-          />
-          <div className="grid grid-cols-2 gap-2">
-            <FieldColor
-              label="Bakgrund"
-              value={state.heroBg}
-              onChange={(v) => setField('heroBg', v)}
-              defaultColor="#FFFFFF"
-            />
-            <FieldColor
-              label="Accent"
-              value={state.heroAccent}
-              onChange={(v) => setField('heroAccent', v)}
-              defaultColor="#F28C28"
-            />
-          </div>
         </div>
       </div>
     </div>

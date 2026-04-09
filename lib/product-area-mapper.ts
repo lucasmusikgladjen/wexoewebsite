@@ -277,8 +277,13 @@ export function productAreaPatchFields(state: ProductAreaState): Fields {
   };
 }
 
-/** PATCH payload for a linked Product record. */
-export function productPatchFields(product: LinkedProduct): Fields {
+/** PATCH payload for a linked Product record.
+ *  `order` is always passed explicitly by the save route (derived from the
+ *  product's position in `state.products`) so UI reordering via ▲▼ arrows
+ *  and remove/add operations stay consistent with the PHP plugin, which
+ *  sorts linked products by their `Order` field. The `product.order` value
+ *  carried in state is treated as vestigial. */
+export function productPatchFields(product: LinkedProduct, order: number): Fields {
   return {
     Name: product.name,
     'Header side menu': product.headerSideMenu,
@@ -291,13 +296,14 @@ export function productPatchFields(product: LinkedProduct): Fields {
     'Button 2 Text': product.button2Text,
     'Button 2 URL': product.button2Url,
     Horizontal: product.horizontal,
-    Order: product.order,
+    Order: order,
     Visa: product.visa,
   };
 }
 
-/** PATCH payload for a linked Solution record. */
-export function solutionPatchFields(solution: LinkedSolution): Fields {
+/** PATCH payload for a linked Solution record. Same rationale for the
+ *  explicit `order` parameter as `productPatchFields`. */
+export function solutionPatchFields(solution: LinkedSolution, order: number): Fields {
   return {
     Name: solution.name,
     Image: solution.image,
@@ -305,7 +311,7 @@ export function solutionPatchFields(solution: LinkedSolution): Fields {
     Description: solution.description,
     Category: solution.category,
     'CTA Text': solution.ctaText,
-    Order: solution.order,
+    Order: order,
     Visa: solution.visa,
   };
 }
