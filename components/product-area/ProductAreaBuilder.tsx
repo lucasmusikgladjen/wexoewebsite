@@ -236,8 +236,9 @@ export default function ProductAreaBuilder({ initialState, divisions }: Props) {
         </div>
 
         <div className="flex-[35] min-w-[380px] max-w-[520px] h-full flex flex-col bg-white border-l border-gray-100">
-          {/* Quick-nav pills */}
-          <div className="flex px-3 py-2 gap-0.5 flex-shrink-0 overflow-x-auto border-b border-gray-100 hide-scrollbar">
+          {/* Quick-nav pills — wraps to a second row if the editor pane is
+              too narrow to fit all seven labels horizontally. */}
+          <div className="flex flex-wrap px-3 py-2 gap-x-0.5 gap-y-1 flex-shrink-0 border-b border-gray-100">
             {QUICK_NAV.map((s) => (
               <button
                 key={s.id}
