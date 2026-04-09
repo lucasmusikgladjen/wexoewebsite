@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { ProductAreaState, NormalSection } from '@/lib/product-area-types';
 import { FieldTextarea, FieldInput, FieldCheckbox, FieldColor } from '@/components/editors/FieldInput';
+import CollapsibleCard from './CollapsibleCard';
 
 interface Props {
   state: ProductAreaState;
@@ -10,7 +11,7 @@ interface Props {
 }
 
 /** True when a block has *any* content filled in — used to decide whether to
- *  auto-reveal it on mount. */
+ *  auto-reveal and default-expand it. */
 function hasContent(n: NormalSection): boolean {
   return !!(n.h2.trim() || n.text.trim() || n.bullets.trim() || n.image.trim());
 }
@@ -57,13 +58,60 @@ export default function ContentBlocksEditor({ state, setNormal }: Props) {
         const n = (i + 1) as 1 | 2 | 3 | 4;
         const section = sections[i];
         return (
-          <BlockCard
+          <CollapsibleCard
             key={n}
             index={i}
-            section={section}
-            onPatch={(patch) => setNormal(n, patch)}
-            onClear={() => clearBlock(i)}
-          />
+            title={section.h2}
+            onTitleChange={(v) => setNormal(n, { h2: v })}
+            titlePlaceholder="Rubrik på sektionen…"
+            onRemove={() => clearBlock(i)}
+            removeTitle="Ta bort sektion"
+            defaultOpen={!hasContent(section)}
+          >
+            <FieldTextarea
+              label="Brödtext"
+              value={section.text}
+              onChange={(v) => setNormal(n, { text: v })}
+              rows={3}
+              placeholder="Beskrivande text för sektionen…"
+            />
+
+            <FieldTextarea
+              label="Punkter"
+              value={section.bullets}
+              onChange={(v) => setNormal(n, { bullets: v })}
+              rows={3}
+              hint="en per rad"
+              placeholder={'Första punkten\nAndra punkten'}
+            />
+
+            <FieldInput
+              label="Bild"
+              value={section.image}
+              onChange={(v) => setNormal(n, { image: v })}
+              placeholder="https://..."
+            />
+
+            <div className="flex items-center gap-5 pt-0.5">
+              <FieldCheckbox
+                label="Bild till vänster"
+                checked={section.reversed}
+                onChange={(v) => setNormal(n, { reversed: v })}
+              />
+              <FieldCheckbox
+                label="Före produkter"
+                checked={section.upp}
+                onChange={(v) => setNormal(n, { upp: v })}
+              />
+            </div>
+
+            <FieldColor
+              label="Bakgrund"
+              value={section.bg}
+              onChange={(v) => setNormal(n, { bg: v })}
+              defaultColor={i % 2 === 1 ? '#F8F9FA' : '#FFFFFF'}
+            />
+          </CollapsibleCard>
         );
       })}
 
@@ -76,84 +124,6 @@ export default function ContentBlocksEditor({ state, setNormal }: Props) {
           + Lägg till sektion
         </button>
       )}
-    </div>
-  );
-}
-
-function BlockCard({
-  index,
-  section,
-  onPatch,
-  onClear,
-}: {
-  index: number;
-  section: NormalSection;
-  onPatch: (patch: Partial<NormalSection>) => void;
-  onClear: () => void;
-}) {
-  return (
-    <div className="bg-gray-50/70 rounded-lg p-3 space-y-3">
-      <div className="flex items-center gap-2">
-        <span className="text-[11px] text-gray-400 w-4 text-center">{index + 1}</span>
-        <input
-          value={section.h2}
-          onChange={(e) => onPatch({ h2: e.target.value })}
-          className="flex-1 text-sm bg-transparent outline-none text-gray-700 placeholder:text-gray-300"
-          placeholder="Rubrik på sektionen…"
-        />
-        <button
-          type="button"
-          onClick={onClear}
-          className="text-gray-300 hover:text-red-400 text-[11px] px-0.5"
-          title="Ta bort sektion"
-        >
-          ✕
-        </button>
-      </div>
-
-      <FieldTextarea
-        label="Brödtext"
-        value={section.text}
-        onChange={(v) => onPatch({ text: v })}
-        rows={3}
-        placeholder="Beskrivande text för sektionen…"
-      />
-
-      <FieldTextarea
-        label="Punkter"
-        value={section.bullets}
-        onChange={(v) => onPatch({ bullets: v })}
-        rows={3}
-        hint="en per rad"
-        placeholder={'Första punkten\nAndra punkten'}
-      />
-
-      <FieldInput
-        label="Bild"
-        value={section.image}
-        onChange={(v) => onPatch({ image: v })}
-        placeholder="https://..."
-      />
-
-      <div className="flex items-center gap-5 pt-0.5">
-        <FieldCheckbox
-          label="Bild till vänster"
-          checked={section.reversed}
-          onChange={(v) => onPatch({ reversed: v })}
-        />
-        <FieldCheckbox
-          label="Före produkter"
-          checked={section.upp}
-          onChange={(v) => onPatch({ upp: v })}
-        />
-      </div>
-
-      <FieldColor
-        label="Bakgrund"
-        value={section.bg}
-        onChange={(v) => onPatch({ bg: v })}
-        defaultColor={index % 2 === 1 ? '#F8F9FA' : '#FFFFFF'}
-      />
     </div>
   );
 }
