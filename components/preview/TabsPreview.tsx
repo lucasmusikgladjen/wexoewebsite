@@ -196,7 +196,7 @@ function CompareTab({ tab, mainColor }: { tab: Tab; mainColor: string }) {
           </thead>
           <tbody>
             {rows.map((r, i) => (
-              <tr key={r.id} className={i % 2 === 0 ? 'bg-gray-50' : 'bg-white'}>
+              <tr key={r.id} className={i < rows.length - 1 ? 'border-b border-gray-100' : ''}>
                 <td className="px-3 py-2 font-medium">{r.label}</td>
                 <td className="px-3 py-2">{r.valueA}</td>
                 <td className="px-3 py-2">{r.valueB}</td>
