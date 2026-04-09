@@ -20,13 +20,17 @@ interface Props {
  *
  *   1. Top banner
  *   2. Hero
- *   3. "Early" Normal sections — any with `upp === true` (only Normal 1 in the
- *      current schema, but we read the flag on any section for future-proofing)
+ *   3. "Early" Normal sections — any with `upp === true`
  *   4. Products (toggle OR side-menu mode)
  *   5. Solutions grid
  *   6. "Late" Normal sections — the remaining ones without `upp`
  *   7. Contact
  *   8. Docs
+ *
+ * Top banner, hero and contact always render (with ghost placeholders when
+ * empty) so the create flow shows a meaningful skeleton of the page. The
+ * remaining sections stay hidden until they have content, matching how the
+ * Landing Page preview behaves.
  */
 export default function ProductAreaPreviewPanel({ state, activeSection, onSectionClick }: Props) {
   const normals: Array<{ n: 1 | 2 | 3 | 4; section: NormalSection }> = [
@@ -38,40 +42,68 @@ export default function ProductAreaPreviewPanel({ state, activeSection, onSectio
   const early = normals.filter((x) => x.section.upp);
   const late = normals.filter((x) => !x.section.upp);
 
+  const isEmpty =
+    !state.h1.trim() &&
+    !state.heroH2.trim() &&
+    !state.heroText.trim() &&
+    state.products.length === 0 &&
+    state.solutions.length === 0 &&
+    !state.contactName.trim() &&
+    !normals.some((x) => x.section.h2.trim() || x.section.text.trim());
+
   return (
-    <div className="h-full overflow-y-auto bg-white editor-panel">
-      <div style={{ fontFamily: 'var(--font-dm-sans)', color: '#11325D' }}>
-        <TopBannerPreview state={state} active={activeSection} onSelect={onSectionClick} />
-        <HeroPreview state={state} active={activeSection} onSelect={onSectionClick} />
+    <div className="h-full overflow-y-auto bg-gray-100 hide-scrollbar">
+      <div className="max-w-[900px] mx-auto my-4 shadow-lg rounded-lg overflow-hidden bg-white">
+        {/* Browser chrome */}
+        <div className="bg-gray-50 border-b border-gray-200 px-4 py-1.5 flex items-center gap-2">
+          <div className="flex gap-1.5">
+            <div className="w-2.5 h-2.5 rounded-full bg-red-400" />
+            <div className="w-2.5 h-2.5 rounded-full bg-yellow-400" />
+            <div className="w-2.5 h-2.5 rounded-full bg-green-400" />
+          </div>
+          <span className="text-xs text-gray-400 ml-2">
+            wexoe.se/{state.slug || '...'}/ — Preview
+          </span>
+        </div>
 
-        {early.map(({ n, section }) => (
-          <NormalSectionPreview
-            key={`early-${n}`}
-            n={n}
-            section={section}
-            active={activeSection}
-            onSelect={onSectionClick}
-          />
-        ))}
+        <div style={{ fontFamily: 'var(--font-dm-sans)', color: '#11325D' }}>
+          <TopBannerPreview state={state} active={activeSection} onSelect={onSectionClick} />
+          <HeroPreview state={state} active={activeSection} onSelect={onSectionClick} />
 
-        <ProductsPreview state={state} active={activeSection} onSelect={onSectionClick} />
-        <SolutionsPreview state={state} active={activeSection} onSelect={onSectionClick} />
+          {early.map(({ n, section }) => (
+            <NormalSectionPreview
+              key={`early-${n}`}
+              n={n}
+              section={section}
+              active={activeSection}
+              onSelect={onSectionClick}
+            />
+          ))}
 
-        {late.map(({ n, section }) => (
-          <NormalSectionPreview
-            key={`late-${n}`}
-            n={n}
-            section={section}
-            active={activeSection}
-            onSelect={onSectionClick}
-          />
-        ))}
+          <ProductsPreview state={state} active={activeSection} onSelect={onSectionClick} />
+          <SolutionsPreview state={state} active={activeSection} onSelect={onSectionClick} />
 
-        <ContactPreview state={state} active={activeSection} onSelect={onSectionClick} />
-        <DocsPreview state={state} active={activeSection} onSelect={onSectionClick} />
+          {late.map(({ n, section }) => (
+            <NormalSectionPreview
+              key={`late-${n}`}
+              n={n}
+              section={section}
+              active={activeSection}
+              onSelect={onSectionClick}
+            />
+          ))}
 
-        {/* Spacer so the last section is comfortable to scroll to */}
-        <div style={{ height: 80 }} />
+          <ContactPreview state={state} active={activeSection} onSelect={onSectionClick} />
+          <DocsPreview state={state} active={activeSection} onSelect={onSectionClick} />
+        </div>
+
+        {/* Empty-state hint overlay when the whole state is pristine. */}
+        {isEmpty && (
+          <div className="px-8 py-10 text-center text-gray-400 border-t border-gray-100">
+            <p className="text-sm mb-1">Börja bygga din produktsida</p>
+            <p className="text-xs">Fyll i fälten till höger — förhandsvisningen uppdateras direkt.</p>
+          </div>
+        )}
       </div>
     </div>
   );
