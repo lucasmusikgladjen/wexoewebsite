@@ -100,8 +100,10 @@ export default function ProductsEditor({ state, setField }: Props) {
             placeholder="https://..."
           />
 
-          <div>
-            <p className="text-[11px] text-gray-400 mb-1.5">Primär knapp</p>
+          <fieldset className="relative border border-gray-200 rounded-lg px-3 pt-2 pb-3">
+            <legend className="mx-auto px-2 text-[10px] font-semibold tracking-wider text-gray-400">
+              KNAPP 1
+            </legend>
             <div className="grid grid-cols-2 gap-2">
               <FieldInput
                 label="Text"
@@ -116,10 +118,12 @@ export default function ProductsEditor({ state, setField }: Props) {
                 placeholder="/kontakt/"
               />
             </div>
-          </div>
+          </fieldset>
 
-          <div>
-            <p className="text-[11px] text-gray-400 mb-1.5">Sekundär knapp</p>
+          <fieldset className="relative border border-gray-200 rounded-lg px-3 pt-2 pb-3">
+            <legend className="mx-auto px-2 text-[10px] font-semibold tracking-wider text-gray-400">
+              KNAPP 2
+            </legend>
             <div className="grid grid-cols-2 gap-2">
               <FieldInput
                 label="Text"
@@ -134,7 +138,7 @@ export default function ProductsEditor({ state, setField }: Props) {
                 placeholder="/produkt/..."
               />
             </div>
-          </div>
+          </fieldset>
 
           <FieldInput
             label="Rubrik i sidomeny"
@@ -143,18 +147,11 @@ export default function ProductsEditor({ state, setField }: Props) {
             placeholder="Lämna tom för att använda produktnamnet"
           />
 
-          <div className="flex items-center gap-5 pt-0.5">
-            <FieldCheckbox
-              label="Visa"
-              checked={product.visa}
-              onChange={(v) => patchProduct(i, { visa: v })}
-            />
-            <FieldCheckbox
-              label="Horisontell layout"
-              checked={product.horizontal}
-              onChange={(v) => patchProduct(i, { horizontal: v })}
-            />
-          </div>
+          <FieldCheckbox
+            label="Visa"
+            checked={product.visa}
+            onChange={(v) => patchProduct(i, { visa: v })}
+          />
 
           {/* Read-only linked articles */}
           {product.articles.length > 0 && (

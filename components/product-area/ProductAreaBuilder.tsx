@@ -29,7 +29,7 @@ const QUICK_NAV: Array<{ id: ProductAreaSectionId; label: string }> = [
   { id: 'products', label: 'Produkter' },
   { id: 'solutions', label: 'Lösningar' },
   { id: 'contact', label: 'Kontakt' },
-  { id: 'docs', label: 'Dokumentation' },
+  { id: 'docs', label: 'Docs' },
   { id: 'settings', label: 'Inställningar' },
 ];
 
