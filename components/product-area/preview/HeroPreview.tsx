@@ -9,18 +9,17 @@ interface Props {
 }
 
 export default function HeroPreview({ state, active, onSelect }: Props) {
-  // Nothing to show?
-  const hasLeft = state.heroH2.trim() || state.heroText.trim();
-  const hasAnyRight =
-    state.npiTitle.trim() ||
-    state.heroBenefits.trim() ||
-    state.heroImage.trim();
-  if (!hasLeft && !hasAnyRight) return null;
-
   const bg = colorOr(state.heroBg, '#FFFFFF');
   const accent = colorOr(state.heroAccent, '#F28C28');
   const color = textOn(bg);
   const colorSecondary = secondaryTextOn(bg);
+
+  const hasH2 = !!state.heroH2.trim();
+  const hasText = !!state.heroText.trim();
+  const hasCta = !!state.heroCtaText.trim();
+  const hasNpi = !!state.npiTitle.trim();
+  const hasBenefits = !!state.heroBenefits.trim();
+  const hasImage = !!state.heroImage.trim();
 
   return (
     <PreviewSection
@@ -39,63 +38,69 @@ export default function HeroPreview({ state, active, onSelect }: Props) {
           margin: '0 auto',
         }}
       >
-        {/* Left column — text + CTA (3/5 width) */}
-        {hasLeft && (
-          <div style={{ flex: '3 1 0%', minWidth: 0 }}>
-            {state.heroH2.trim() && (
-              <h2
-                style={{
-                  fontSize: 36,
-                  fontWeight: 700,
-                  lineHeight: 1.2,
-                  margin: '0 0 20px 0',
-                  color,
-                }}
-              >
-                {state.heroH2}
-              </h2>
-            )}
-            {state.heroText.trim() && (
-              <div
-                style={{
-                  fontSize: 17,
-                  lineHeight: 1.7,
-                  margin: '0 0 28px 0',
-                  color: colorSecondary,
-                }}
-              >
-                <MarkdownText text={state.heroText} />
-              </div>
-            )}
-            {state.heroCtaText.trim() && state.heroCtaUrl.trim() && (
-              <span
-                style={{
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: 10,
-                  padding: '14px 32px',
-                  background: accent,
-                  color: '#FFFFFF',
-                  fontSize: 16,
-                  fontWeight: 600,
-                  borderRadius: 6,
-                }}
-              >
-                {state.heroCtaText}
-                <Arrow color="#FFFFFF" />
-              </span>
+        {/* Left column — always rendered */}
+        <div style={{ flex: '3 1 0%', minWidth: 0 }}>
+          <h2
+            style={{
+              fontSize: 36,
+              fontWeight: 700,
+              lineHeight: 1.2,
+              margin: '0 0 20px 0',
+              color,
+              opacity: hasH2 ? 1 : 0.35,
+            }}
+          >
+            {hasH2 ? state.heroH2 : 'Din rubrik här'}
+          </h2>
+
+          <div
+            style={{
+              fontSize: 17,
+              lineHeight: 1.7,
+              margin: '0 0 28px 0',
+              color: colorSecondary,
+              opacity: hasText ? 1 : 0.55,
+            }}
+          >
+            {hasText ? (
+              <MarkdownText text={state.heroText} />
+            ) : (
+              <p style={{ margin: 0 }}>
+                Beskrivande text som förklarar vad sidan handlar om. Två till tre meningar som fångar besökarens intresse och leder vidare mot din CTA.
+              </p>
             )}
           </div>
-        )}
 
-        {/* Right column — three-way conditional */}
-        {state.npiTitle.trim() ? (
+          <span
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 10,
+              padding: '14px 32px',
+              background: hasCta ? accent : 'transparent',
+              border: hasCta ? 'none' : `2px dashed ${colorSecondary}`,
+              color: hasCta ? '#FFFFFF' : colorSecondary,
+              fontSize: 16,
+              fontWeight: 600,
+              borderRadius: 6,
+              opacity: hasCta ? 1 : 0.55,
+            }}
+          >
+            {hasCta ? state.heroCtaText : 'Din CTA'}
+            <Arrow color={hasCta ? '#FFFFFF' : colorSecondary} />
+          </span>
+        </div>
+
+        {/* Right column — three-way conditional with ghost fallback */}
+        {hasNpi ? (
           <NpiCard state={state} />
-        ) : state.heroBenefits.trim() ? (
+        ) : hasBenefits ? (
           <HeroBenefits state={state} textColor={color} />
-        ) : state.heroImage.trim() ? (
+        ) : hasImage ? (
           <HeroImage state={state} />
-        ) : null}
+        ) : (
+          <GhostBenefits textColor={color} />
+        )}
       </div>
     </PreviewSection>
   );
@@ -241,6 +246,47 @@ function HeroImage({ state }: { state: ProductAreaState }) {
           objectFit: 'contain',
         }}
       />
+    </div>
+  );
+}
+
+/** Placeholder shown when no NPI card, benefits or image are set.
+ *  Mimics the benefits box shape so users see the structural split. */
+function GhostBenefits({ textColor }: { textColor: string }) {
+  const ghostItems = ['Punkt ett', 'Punkt två', 'Punkt tre'];
+  return (
+    <div
+      style={{
+        flex: '2 1 0%',
+        minWidth: 0,
+        background: '#F8F9FA',
+        border: '1px dashed #D1D5DB',
+        borderRadius: 10,
+        padding: '30px 28px',
+        alignSelf: 'flex-start',
+        opacity: 0.6,
+      }}
+    >
+      <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
+        {ghostItems.map((item, i) => (
+          <li
+            key={i}
+            style={{
+              fontSize: 15,
+              lineHeight: 1.6,
+              color: textColor,
+              padding: '8px 0',
+              display: 'flex',
+              alignItems: 'flex-start',
+              gap: 12,
+              borderTop: i > 0 ? '1px solid #E8E8E8' : 'none',
+            }}
+          >
+            <Check color="#C0C4CC" />
+            <span>{item}</span>
+          </li>
+        ))}
+      </ul>
     </div>
   );
 }

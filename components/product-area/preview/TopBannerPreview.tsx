@@ -9,9 +9,9 @@ interface Props {
 }
 
 export default function TopBannerPreview({ state, active, onSelect }: Props) {
-  if (!state.h1.trim()) return null;
   const bg = colorOr(state.topBg, '#11325D');
   const color = textOn(bg);
+  const hasH1 = !!state.h1.trim();
 
   return (
     <PreviewSection
@@ -38,9 +38,10 @@ export default function TopBannerPreview({ state, active, onSelect }: Props) {
             margin: 0,
             textAlign: 'center',
             color,
+            opacity: hasH1 ? 1 : 0.35,
           }}
         >
-          {state.h1}
+          {hasH1 ? state.h1 : 'Din rubrik här'}
         </h1>
       </div>
     </PreviewSection>

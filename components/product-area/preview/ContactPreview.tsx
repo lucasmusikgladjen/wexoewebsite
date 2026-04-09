@@ -9,12 +9,18 @@ interface Props {
 }
 
 export default function ContactPreview({ state, active, onSelect }: Props) {
-  if (!state.contactName.trim()) return null;
-
   const bg = colorOr(state.contactBg, '#11325D');
   const color = textOn(bg);
   const dark = isDark(bg);
   const borderColor = dark ? 'rgba(255,255,255,0.2)' : '#E8E8E8';
+  const avatarBg = dark ? 'rgba(255,255,255,0.08)' : '#F1F5F9';
+
+  const hasName = !!state.contactName.trim();
+  const hasTitle = !!state.contactTitle.trim();
+  const hasEmail = !!state.contactEmail.trim();
+  const hasPhone = !!state.contactPhone.trim();
+  const hasImage = !!state.contactImage.trim();
+  const hasQuote = !!state.contactText.trim();
 
   return (
     <PreviewSection
@@ -43,7 +49,7 @@ export default function ContactPreview({ state, active, onSelect }: Props) {
             flexShrink: 0,
           }}
         >
-          {state.contactImage.trim() && (
+          {hasImage ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img
               src={state.contactImage}
@@ -57,81 +63,117 @@ export default function ContactPreview({ state, active, onSelect }: Props) {
                 flexShrink: 0,
               }}
             />
-          )}
-          <div style={{ flexShrink: 0 }}>
-            <div style={{ fontSize: 19, fontWeight: 700, color, marginBottom: 2 }}>
-              {state.contactName}
+          ) : (
+            <div
+              aria-hidden
+              style={{
+                width: 110,
+                height: 110,
+                borderRadius: '50%',
+                border: `3px solid ${borderColor}`,
+                background: avatarBg,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                color,
+                opacity: 0.4,
+                flexShrink: 0,
+              }}
+            >
+              {/* Minimal person silhouette */}
+              <svg width="44" height="44" viewBox="0 0 44 44" fill="none">
+                <circle cx="22" cy="16" r="7" stroke="currentColor" strokeWidth="2" />
+                <path
+                  d="M8 36c0-7 6-12 14-12s14 5 14 12"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                />
+              </svg>
             </div>
-            {state.contactTitle.trim() && (
-              <div
-                style={{
-                  fontSize: 14,
-                  color,
-                  marginBottom: 10,
-                  opacity: 0.85,
-                }}
-              >
-                {state.contactTitle}
-              </div>
-            )}
-            {state.contactEmail.trim() && (
-              <div style={{ fontSize: 14, marginBottom: 3 }}>
-                <span
-                  style={{
-                    color,
-                    textDecoration: 'underline',
-                    textUnderlineOffset: 2,
-                    opacity: 0.85,
-                  }}
-                >
-                  {state.contactEmail}
-                </span>
-              </div>
-            )}
-            {state.contactPhone.trim() && (
-              <div style={{ fontSize: 14, marginBottom: 3 }}>
-                <span
-                  style={{
-                    color,
-                    textDecoration: 'underline',
-                    textUnderlineOffset: 2,
-                    opacity: 0.85,
-                  }}
-                >
-                  {state.contactPhone}
-                </span>
-              </div>
-            )}
+          )}
+
+          <div style={{ flexShrink: 0 }}>
+            <div
+              style={{
+                fontSize: 19,
+                fontWeight: 700,
+                color,
+                marginBottom: 2,
+                opacity: hasName ? 1 : 0.4,
+              }}
+            >
+              {hasName ? state.contactName : 'Kontaktperson'}
+            </div>
+            <div
+              style={{
+                fontSize: 14,
+                color,
+                marginBottom: 10,
+                opacity: hasTitle ? 0.85 : 0.4,
+              }}
+            >
+              {hasTitle ? state.contactTitle : 'Titel'}
+            </div>
+            <div
+              style={{
+                fontSize: 14,
+                marginBottom: 3,
+                color,
+                textDecoration: 'underline',
+                textUnderlineOffset: 2,
+                opacity: hasEmail ? 0.85 : 0.4,
+              }}
+            >
+              {hasEmail ? state.contactEmail : 'namn@wexoe.se'}
+            </div>
+            <div
+              style={{
+                fontSize: 14,
+                marginBottom: 3,
+                color,
+                textDecoration: 'underline',
+                textUnderlineOffset: 2,
+                opacity: hasPhone ? 0.85 : 0.4,
+              }}
+            >
+              {hasPhone ? state.contactPhone : '+46 00 000 00 00'}
+            </div>
           </div>
         </div>
 
         {/* Right: quote */}
-        {state.contactText.trim() && (
+        <div
+          style={{
+            flex: 1,
+            minWidth: 240,
+            position: 'relative',
+            paddingLeft: 20,
+            borderLeft: `2px solid ${borderColor}`,
+          }}
+        >
+          <QuoteMark open color={borderColor} />
           <div
             style={{
-              flex: 1,
-              minWidth: 240,
+              fontSize: 16,
+              lineHeight: 1.7,
+              color,
+              fontStyle: 'italic',
               position: 'relative',
-              paddingLeft: 20,
-              borderLeft: `2px solid ${borderColor}`,
+              zIndex: 1,
+              opacity: hasQuote ? 1 : 0.4,
             }}
           >
-            <QuoteMark open color={borderColor} />
-            <div
-              style={{
-                fontSize: 16,
-                lineHeight: 1.7,
-                color,
-                fontStyle: 'italic',
-                position: 'relative',
-                zIndex: 1,
-              }}
-            >
+            {hasQuote ? (
               <MarkdownText text={state.contactText} />
-            </div>
-            <QuoteMark color={borderColor} />
+            ) : (
+              <p style={{ margin: 0 }}>
+                Här kan du lägga en kort quote från kontaktpersonen som bygger förtroende för sidan.
+              </p>
+            )}
           </div>
-        )}
+          <QuoteMark color={borderColor} />
+        </div>
       </div>
     </PreviewSection>
   );
