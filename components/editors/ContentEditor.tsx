@@ -13,38 +13,16 @@ export default function ContentEditor({ state, dispatch }: Props) {
     dispatch({ type: 'SET_FIELD', field, value });
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-3">
       <div className="flex items-center justify-between">
-        <h3 className="text-sm font-medium text-lp-text">Innehåll</h3>
-        <FieldCheckbox
-          label="Visa"
-          checked={state.showContent}
-          onChange={(v) => set('showContent', v)}
-        />
+        <h3 className="text-[13px] text-gray-500">Innehåll</h3>
+        <FieldCheckbox label="Visa" checked={state.showContent} onChange={(v) => set('showContent', v)} />
       </div>
       {state.showContent && (
         <>
-          <FieldInput
-            label="H2 — Underrubrik"
-            value={state.contentH2}
-            onChange={(v) => set('contentH2', v)}
-            placeholder="T.ex. Vad är FTTO?"
-          />
-          <FieldTextarea
-            label="Brödtext"
-            value={state.contentText}
-            onChange={(v) => set('contentText', v)}
-            rows={5}
-            placeholder="Beskriv produkten/tjänsten..."
-          />
-          <FieldTextarea
-            label="Benefits"
-            value={state.contentBenefits}
-            onChange={(v) => set('contentBenefits', v)}
-            rows={4}
-            hint="en per rad"
-            placeholder={"Enkel installation\nLägre TCO\nFramtidssäker lösning"}
-          />
+          <FieldInput label="Underrubrik" value={state.contentH2} onChange={(v) => set('contentH2', v)} placeholder="T.ex. Vad är FTTO?" />
+          <FieldTextarea label="Brödtext" value={state.contentText} onChange={(v) => set('contentText', v)} rows={5} placeholder="Beskriv produkten/tjänsten..." />
+          <FieldTextarea label="Benefits" value={state.contentBenefits} onChange={(v) => set('contentBenefits', v)} rows={4} hint="en per rad" placeholder={"Enkel installation\nLägre TCO\nFramtidssäker lösning"} />
         </>
       )}
     </div>
