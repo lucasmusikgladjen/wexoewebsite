@@ -2,7 +2,22 @@ import { NextResponse } from 'next/server';
 import { readFileSync } from 'fs';
 import { join } from 'path';
 import { PageState } from '@/lib/types';
-import { createRecord, createRecords, TABLE_IDS } from '@/lib/airtable';
+import {
+  createRecord,
+  createRecords,
+  updateRecord,
+  updateRecords,
+  deleteRecords,
+  getRecord,
+  TABLE_IDS,
+  AirtableRecord,
+} from '@/lib/airtable';
+import {
+  landingPagePatchFields,
+  tabFields,
+  tabPatchFields,
+  downloadFields,
+} from '@/lib/page-mapper';
 
 const ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY;
 const AIRTABLE_API_KEY = process.env.AIRTABLE_API_KEY;
@@ -183,6 +198,12 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'H1 (rubrik) är obligatoriskt' }, { status: 400 });
     }
 
+    // ── Update path: deterministic diff against existing Airtable records ─
+    if (state.recordId) {
+      const result = await updateExistingPage(AIRTABLE_API_KEY, state);
+      return NextResponse.json(result);
+    }
+
     const dataPayload = buildDataPayload(state);
 
     // ── Step 1: Claude transforms data to Airtable-ready JSON ───────
@@ -341,4 +362,166 @@ Regler:
     console.error('[publish] Error:', message);
     return NextResponse.json({ error: message }, { status: 500 });
   }
+}
+
+// ─── Update flow: deterministic diff (no Claude) ───────────────────────────
+async function updateExistingPage(apiKey: string, state: PageState) {
+  if (!state.recordId) throw new Error('updateExistingPage called without recordId');
+
+  // 1. Read the current LP record so we can determine which tabs/downloads
+  //    currently exist (and need to be diffed against the incoming state).
+  const lp = await getRecord(apiKey, TABLE_IDS.landingPages, state.recordId);
+  const existingTabIds: string[] = (lp.fields['LP Tabs'] as string[] | undefined) ?? [];
+
+  // Fetch existing tab records to know their downloads
+  let existingTabs: AirtableRecord[] = [];
+  if (existingTabIds.length > 0) {
+    const formula = `OR(${existingTabIds.map((id) => `RECORD_ID()='${id}'`).join(',')})`;
+    const url = new URL(`https://api.airtable.com/v0/appXoUcK68dQwASjF/${TABLE_IDS.tabs}`);
+    url.searchParams.set('filterByFormula', formula);
+    url.searchParams.set('pageSize', '100');
+    const res = await fetch(url.toString(), {
+      headers: { Authorization: `Bearer ${apiKey}` },
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.error?.message || `Airtable error: ${res.status}`);
+    }
+    const data = await res.json();
+    existingTabs = data.records;
+  }
+
+  const existingTabsById = new Map(existingTabs.map((t) => [t.id, t]));
+
+  // 2. PATCH the Landing Page record itself.
+  await updateRecord(
+    apiKey,
+    TABLE_IDS.landingPages,
+    state.recordId,
+    landingPagePatchFields(state),
+  );
+
+  // 3. Diff tabs.
+  //    - Tabs in state with a recordId that matches existing → PATCH
+  //    - Tabs in state without recordId (or stale) → CREATE
+  //    - Existing tabs not referenced by state → DELETE (cascades to downloads)
+  const stateTabRecordIds = new Set(
+    state.tabs.map((t) => t.recordId).filter((id): id is string => !!id),
+  );
+
+  const tabsToPatch: Array<{ id: string; fields: Record<string, unknown>; index: number }> = [];
+  const tabsToCreate: Array<{ stateIndex: number; fields: Record<string, unknown> }> = [];
+
+  state.tabs.forEach((tab, i) => {
+    const order = i + 1;
+    if (tab.recordId && existingTabsById.has(tab.recordId)) {
+      tabsToPatch.push({
+        id: tab.recordId,
+        fields: tabPatchFields(tab, order),
+        index: i,
+      });
+    } else {
+      tabsToCreate.push({
+        stateIndex: i,
+        fields: { ...tabFields(tab, order), 'Landing Page': [state.recordId!] },
+      });
+    }
+  });
+
+  const tabIdsToDelete = existingTabIds.filter((id) => !stateTabRecordIds.has(id));
+
+  // Delete first to free up the link slots, then patch, then create.
+  // (Order doesn't actually matter for Airtable correctness — just stays clean.)
+  if (tabIdsToDelete.length > 0) {
+    await deleteRecords(apiKey, TABLE_IDS.tabs, tabIdsToDelete);
+  }
+
+  if (tabsToPatch.length > 0) {
+    await updateRecords(
+      apiKey,
+      TABLE_IDS.tabs,
+      tabsToPatch.map(({ id, fields }) => ({ id, fields })),
+    );
+  }
+
+  // Map state tab index → final Airtable record ID (existing or freshly created)
+  const tabRecordIdByStateIndex: Record<number, string> = {};
+  tabsToPatch.forEach(({ index, id }) => { tabRecordIdByStateIndex[index] = id; });
+
+  if (tabsToCreate.length > 0) {
+    const created = await createRecords(
+      apiKey,
+      TABLE_IDS.tabs,
+      tabsToCreate.map((t) => ({ fields: t.fields })),
+    );
+    tabsToCreate.forEach((t, i) => {
+      tabRecordIdByStateIndex[t.stateIndex] = created[i].id;
+    });
+  }
+
+  // 4. Diff downloads. Each tab has its own download set.
+  //    Need existing download record IDs per tab — those came back on the
+  //    existing tab records via the "LP Downloads" linked field.
+  let downloadsCreated = 0;
+  let downloadsUpdated = 0;
+  let downloadsDeleted = 0;
+
+  for (let i = 0; i < state.tabs.length; i++) {
+    const tab = state.tabs[i];
+    const tabRecordId = tabRecordIdByStateIndex[i];
+    if (!tabRecordId) continue;
+
+    // Existing download IDs for this tab (only if it's a previously-existing tab)
+    const existingTabRecord = tab.recordId ? existingTabsById.get(tab.recordId) : undefined;
+    const existingDlIds: string[] =
+      (existingTabRecord?.fields['LP Downloads'] as string[] | undefined) ?? [];
+
+    const stateDlRecordIds = new Set(
+      tab.downloads.map((d) => d.recordId).filter((id): id is string => !!id),
+    );
+
+    const dlToPatch: Array<{ id: string; fields: Record<string, unknown> }> = [];
+    const dlToCreate: Array<{ fields: Record<string, unknown> }> = [];
+
+    tab.downloads.forEach((dl, dlIndex) => {
+      const order = dlIndex + 1;
+      const fields = downloadFields(dl, order);
+      if (dl.recordId && existingDlIds.includes(dl.recordId)) {
+        dlToPatch.push({ id: dl.recordId, fields });
+      } else {
+        dlToCreate.push({
+          fields: { ...fields, Tab: [tabRecordId] },
+        });
+      }
+    });
+
+    const dlToDelete = existingDlIds.filter((id) => !stateDlRecordIds.has(id));
+
+    if (dlToDelete.length > 0) {
+      await deleteRecords(apiKey, TABLE_IDS.downloads, dlToDelete);
+      downloadsDeleted += dlToDelete.length;
+    }
+    if (dlToPatch.length > 0) {
+      await updateRecords(apiKey, TABLE_IDS.downloads, dlToPatch);
+      downloadsUpdated += dlToPatch.length;
+    }
+    if (dlToCreate.length > 0) {
+      await createRecords(apiKey, TABLE_IDS.downloads, dlToCreate);
+      downloadsCreated += dlToCreate.length;
+    }
+  }
+
+  return {
+    success: true,
+    mode: 'update' as const,
+    recordId: state.recordId,
+    slug: state.slug,
+    tabCount: state.tabs.length,
+    tabsCreated: tabsToCreate.length,
+    tabsUpdated: tabsToPatch.length,
+    tabsDeleted: tabIdsToDelete.length,
+    downloadsCreated,
+    downloadsUpdated,
+    downloadsDeleted,
+  };
 }
