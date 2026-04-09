@@ -108,24 +108,29 @@ async function createProductArea(apiKey: string, state: ProductAreaState) {
     );
   }
 
-  // 1. CREATE any new linked products first so we have their IDs.
+  // 1. CREATE any new linked products first so we have their IDs. The
+  //    `Order` field is derived from the index in state.products so the
+  //    PHP plugin (which sorts linked records by Order) sees the same
+  //    sequence the user built in the editor.
   const newProductIds: Record<string, string> = {};
-  for (const product of state.products) {
+  for (let i = 0; i < state.products.length; i++) {
+    const product = state.products[i];
     const created = await createRecord(
       apiKey,
       PA_TABLE_IDS.products,
-      productPatchFields(product),
+      productPatchFields(product, i + 1),
     );
     newProductIds[product.clientId] = created.id;
   }
 
-  // 2. CREATE any new linked solutions.
+  // 2. CREATE any new linked solutions — same index-driven Order rule.
   const newSolutionIds: Record<string, string> = {};
-  for (const solution of state.solutions) {
+  for (let i = 0; i < state.solutions.length; i++) {
+    const solution = state.solutions[i];
     const created = await createRecord(
       apiKey,
       PA_TABLE_IDS.solutions,
-      solutionPatchFields(solution),
+      solutionPatchFields(solution, i + 1),
     );
     newSolutionIds[solution.clientId] = created.id;
   }
@@ -162,26 +167,32 @@ async function createProductArea(apiKey: string, state: ProductAreaState) {
 // ─── Update flow: existing Product Area ───────────────────────────────────
 
 async function updateProductArea(apiKey: string, state: ProductAreaState) {
-  // 1. CREATE any new products (no recordId yet).
+  // 1. CREATE any new products (no recordId yet). We iterate with an
+  //    explicit index so the `Order` value passed to the mapper reflects
+  //    the product's position in state.products — the PHP plugin sorts
+  //    linked records by Order, so UI reordering via ▲▼ arrows only
+  //    takes effect on the live page if this field is kept in sync.
   const newProductIds: Record<string, string> = {};
-  for (const product of state.products) {
+  for (let i = 0; i < state.products.length; i++) {
+    const product = state.products[i];
     if (product.recordId) continue;
     const created = await createRecord(
       apiKey,
       PA_TABLE_IDS.products,
-      productPatchFields(product),
+      productPatchFields(product, i + 1),
     );
     newProductIds[product.clientId] = created.id;
   }
 
-  // 2. CREATE any new solutions.
+  // 2. CREATE any new solutions — same index-driven Order rule.
   const newSolutionIds: Record<string, string> = {};
-  for (const solution of state.solutions) {
+  for (let i = 0; i < state.solutions.length; i++) {
+    const solution = state.solutions[i];
     if (solution.recordId) continue;
     const created = await createRecord(
       apiKey,
       PA_TABLE_IDS.solutions,
-      solutionPatchFields(solution),
+      solutionPatchFields(solution, i + 1),
     );
     newSolutionIds[solution.clientId] = created.id;
   }
@@ -208,24 +219,30 @@ async function updateProductArea(apiKey: string, state: ProductAreaState) {
     },
   );
 
-  // 5. PATCH existing linked products.
-  const productUpdates = state.products
-    .filter((p) => p.recordId)
-    .map((p) => ({
+  // 5. PATCH existing linked products. We keep the index from the
+  //    unfiltered `state.products` array so Order always matches the
+  //    UI position, even after a remove+add shuffles the sequence.
+  const productUpdates: Array<{ id: string; fields: Record<string, unknown> }> = [];
+  state.products.forEach((p, i) => {
+    if (!p.recordId) return;
+    productUpdates.push({
       id: p.recordId,
-      fields: productPatchFields(p),
-    }));
+      fields: productPatchFields(p, i + 1),
+    });
+  });
   if (productUpdates.length > 0) {
     await updateRecords(apiKey, PA_TABLE_IDS.products, productUpdates);
   }
 
-  // 6. PATCH existing linked solutions.
-  const solutionUpdates = state.solutions
-    .filter((s) => s.recordId)
-    .map((s) => ({
+  // 6. PATCH existing linked solutions — same index-driven Order rule.
+  const solutionUpdates: Array<{ id: string; fields: Record<string, unknown> }> = [];
+  state.solutions.forEach((s, i) => {
+    if (!s.recordId) return;
+    solutionUpdates.push({
       id: s.recordId,
-      fields: solutionPatchFields(s),
-    }));
+      fields: solutionPatchFields(s, i + 1),
+    });
+  });
   if (solutionUpdates.length > 0) {
     await updateRecords(apiKey, PA_TABLE_IDS.solutions, solutionUpdates);
   }

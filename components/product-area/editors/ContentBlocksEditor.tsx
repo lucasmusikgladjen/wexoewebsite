@@ -73,7 +73,7 @@ export default function ContentBlocksEditor({ state, setNormal }: Props) {
           onClick={addBlock}
           className="w-full py-2 text-sm text-gray-300 hover:text-gray-500 transition-colors"
         >
-          + Lägg till textblock
+          + Lägg till sektion
         </button>
       )}
     </div>
@@ -99,13 +99,13 @@ function BlockCard({
           value={section.h2}
           onChange={(e) => onPatch({ h2: e.target.value })}
           className="flex-1 text-sm bg-transparent outline-none text-gray-700 placeholder:text-gray-300"
-          placeholder="Rubrik på textblocket…"
+          placeholder="Rubrik på sektionen…"
         />
         <button
           type="button"
           onClick={onClear}
           className="text-gray-300 hover:text-red-400 text-[11px] px-0.5"
-          title="Rensa block"
+          title="Ta bort sektion"
         >
           ✕
         </button>
@@ -116,7 +116,7 @@ function BlockCard({
         value={section.text}
         onChange={(v) => onPatch({ text: v })}
         rows={3}
-        placeholder="Beskrivande text för blocket…"
+        placeholder="Beskrivande text för sektionen…"
       />
 
       <FieldTextarea
