@@ -183,7 +183,7 @@ function CompareTab({ tab, mainColor }: { tab: Tab; mainColor: string }) {
   const rows = tab.compareRows.filter(r => r.label || r.valueA || r.valueB);
 
   return (
-    <div>
+    <div className="-mb-6">
       {tab.compareTitle && <h3 className="text-lg font-bold mb-4" style={{ color: mainColor }}>{tab.compareTitle}</h3>}
       {rows.length > 0 ? (
         <table className="w-full text-sm">
