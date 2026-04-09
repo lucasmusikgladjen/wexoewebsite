@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { PageState } from '@/lib/types';
 
 interface Props {
@@ -25,9 +26,12 @@ interface PublishResult {
   tabCount?: number;
   tokenUsage?: TokenUsage;
   error?: string;
+  mode?: 'create' | 'update';
 }
 
 export default function PublishDialog({ state, onClose }: Props) {
+  const router = useRouter();
+  const isEdit = state.mode === 'edit';
   const [status, setStatus] = useState<PublishStatus>('idle');
   const [step, setStep] = useState('');
   const [result, setResult] = useState<PublishResult>({});
@@ -39,10 +43,10 @@ export default function PublishDialog({ state, onClose }: Props) {
     if (hasErrors) return;
 
     setStatus('publishing');
-    setStep('Förbereder data...');
+    setStep(isEdit ? 'Sparar ändringar…' : 'Förbereder data...');
 
     try {
-      setStep('Transformerar och publicerar...');
+      if (!isEdit) setStep('Transformerar och publicerar...');
 
       const response = await fetch('/api/publish', {
         method: 'POST',
@@ -53,7 +57,7 @@ export default function PublishDialog({ state, onClose }: Props) {
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.error || 'Publicering misslyckades');
+        throw new Error(data.error || (isEdit ? 'Sparning misslyckades' : 'Publicering misslyckades'));
       }
 
       setResult({
@@ -61,6 +65,7 @@ export default function PublishDialog({ state, onClose }: Props) {
         slug: data.slug || state.slug,
         tabCount: data.tabCount || state.tabs.length,
         tokenUsage: data.tokenUsage,
+        mode: data.mode,
       });
       setStatus('success');
     } catch (err) {
@@ -69,8 +74,18 @@ export default function PublishDialog({ state, onClose }: Props) {
     }
   }
 
+  function handleClose() {
+    // After a successful save in edit mode, navigate back to the page manager.
+    if (status === 'success' && isEdit) {
+      router.push('/');
+      router.refresh();
+      return;
+    }
+    onClose();
+  }
+
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50" onClick={onClose}>
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50" onClick={handleClose}>
       <div
         className="bg-white rounded-xl shadow-2xl w-full max-w-lg mx-4 overflow-hidden"
         onClick={(e) => e.stopPropagation()}
@@ -78,9 +93,11 @@ export default function PublishDialog({ state, onClose }: Props) {
         {/* Header */}
         <div className="px-6 py-4 border-b border-lp-border flex items-center justify-between">
           <h2 className="text-lg font-bold text-lp-main">
-            {status === 'success' ? 'Publicerad!' : 'Publicera sida'}
+            {status === 'success'
+              ? isEdit ? 'Sparat!' : 'Publicerad!'
+              : isEdit ? 'Spara ändringar' : 'Publicera sida'}
           </h2>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-600 text-xl leading-none">&times;</button>
+          <button onClick={handleClose} className="text-gray-400 hover:text-gray-600 text-xl leading-none">&times;</button>
         </div>
 
         {/* Body */}
@@ -125,7 +142,9 @@ export default function PublishDialog({ state, onClose }: Props) {
             <div className="text-center py-6">
               <div className="inline-block w-8 h-8 border-3 border-lp-main border-t-transparent rounded-full animate-spin mb-3" />
               <p className="text-sm text-lp-text">{step}</p>
-              <p className="text-xs text-lp-text-light mt-1">Detta kan ta 10-20 sekunder...</p>
+              <p className="text-xs text-lp-text-light mt-1">
+                {isEdit ? 'Det här går snabbt.' : 'Detta kan ta 10-20 sekunder...'}
+              </p>
             </div>
           )}
 
@@ -135,19 +154,21 @@ export default function PublishDialog({ state, onClose }: Props) {
                 <div className="w-12 h-12 rounded-full bg-green-100 flex items-center justify-center mb-3">
                   <span className="text-green-600 text-xl">✓</span>
                 </div>
-                <p className="text-sm font-medium text-lp-text mb-1">Sidan har publicerats!</p>
+                <p className="text-sm font-medium text-lp-text mb-1">
+                  {isEdit ? 'Ändringarna har sparats!' : 'Sidan har publicerats!'}
+                </p>
                 <p className="text-xs text-lp-text-light">
-                  Slug: <strong>{result.slug}</strong> — {result.tabCount} tabs skapade
+                  Slug: <strong>{result.slug}</strong> — {result.tabCount} tabs
                 </p>
                 <p className="text-xs text-lp-text-light mt-2">
-                  Sidan visas på wexoe.se inom 5 minuter (Airtable-cache).
+                  Sidan uppdateras på wexoe.se inom 5 minuter (Airtable-cache).
                 </p>
                 {result.recordId && (
                   <p className="text-xs text-gray-400 mt-1">Record ID: {result.recordId}</p>
                 )}
               </div>
 
-              {result.tokenUsage && (
+              {result.tokenUsage && !isEdit && (
                 <div className="mt-3 border border-gray-200 rounded-lg overflow-hidden">
                   <div className="bg-gray-50 px-3 py-2 border-b border-gray-200">
                     <p className="text-xs font-semibold text-gray-600 uppercase tracking-wide">Token-användning</p>
@@ -188,7 +209,9 @@ export default function PublishDialog({ state, onClose }: Props) {
               <div className="w-12 h-12 rounded-full bg-red-100 flex items-center justify-center mx-auto mb-3">
                 <span className="text-red-600 text-xl">!</span>
               </div>
-              <p className="text-sm font-medium text-red-800 mb-1">Publicering misslyckades</p>
+              <p className="text-sm font-medium text-red-800 mb-1">
+                {isEdit ? 'Sparning misslyckades' : 'Publicering misslyckades'}
+              </p>
               <p className="text-xs text-red-600">{result.error}</p>
             </div>
           )}
@@ -198,7 +221,7 @@ export default function PublishDialog({ state, onClose }: Props) {
         <div className="px-6 py-3 border-t border-lp-border flex justify-end gap-3">
           {status === 'idle' && (
             <>
-              <button onClick={onClose} className="px-4 py-2 text-sm text-lp-text-light hover:text-lp-text">
+              <button onClick={handleClose} className="px-4 py-2 text-sm text-lp-text-light hover:text-lp-text">
                 Avbryt
               </button>
               <button
@@ -207,17 +230,17 @@ export default function PublishDialog({ state, onClose }: Props) {
                 className="px-5 py-2 rounded-lg text-sm font-semibold text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 style={{ background: hasErrors ? '#9ca3af' : '#11325D' }}
               >
-                Publicera →
+                {isEdit ? 'Spara' : 'Publicera →'}
               </button>
             </>
           )}
           {(status === 'success' || status === 'error') && (
             <button
-              onClick={onClose}
+              onClick={handleClose}
               className="px-5 py-2 rounded-lg text-sm font-semibold text-white"
               style={{ background: '#11325D' }}
             >
-              Stäng
+              {status === 'success' && isEdit ? 'Tillbaka till sidor' : 'Stäng'}
             </button>
           )}
         </div>

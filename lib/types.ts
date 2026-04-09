@@ -11,6 +11,8 @@ export type TabType =
 
 export interface TabDownload {
   id: string;
+  /** Airtable record ID — present when loaded from Airtable, missing for new downloads */
+  recordId?: string;
   name: string;
   description: string;
   fileUrl: string;
@@ -38,6 +40,8 @@ export interface StepItem {
 
 export interface Tab {
   id: string;
+  /** Airtable record ID — present when loaded from Airtable, missing for new tabs */
+  recordId?: string;
   name: string;
   type: TabType;
   // textimage
