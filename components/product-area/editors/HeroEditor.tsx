@@ -78,8 +78,10 @@ export default function HeroEditor({ state, setField }: Props) {
         placeholder="Kort beskrivning av vad sidan handlar om…"
       />
 
-      <div className="pt-1">
-        <p className="text-[11px] text-gray-400 mb-1.5">Primär knapp</p>
+      <fieldset className="relative border border-gray-200 rounded-lg px-3 pt-2 pb-3">
+        <legend className="mx-auto px-2 text-[10px] font-semibold tracking-wider text-gray-400">
+          KNAPP
+        </legend>
         <div className="grid grid-cols-2 gap-2">
           <FieldInput
             label="Text"
@@ -94,7 +96,7 @@ export default function HeroEditor({ state, setField }: Props) {
             placeholder="/kontakt/"
           />
         </div>
-      </div>
+      </fieldset>
 
       {/* ── Höger kolumn: either/or NPI / benefits / bild ──────────────── */}
       <div className="pt-2">

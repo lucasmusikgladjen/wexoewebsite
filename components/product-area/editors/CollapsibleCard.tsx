@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, ReactNode } from 'react';
+import { useState, useEffect, useRef, ReactNode } from 'react';
 
 interface Props {
   /** 1-based index shown on the left of the header row. */
@@ -25,6 +25,9 @@ interface Props {
  * SolutionsEditor. The header row (index + inline title input + reorder +
  * remove + chevron) stays visible when collapsed so users can still rename,
  * reorder and delete items without expanding the body.
+ *
+ * The card auto-closes when the user clicks anywhere outside it — matching
+ * the "one card open at a time" feel without needing parent coordination.
  */
 export default function CollapsibleCard({
   index,
@@ -41,20 +44,35 @@ export default function CollapsibleCard({
   children,
 }: Props) {
   const [open, setOpen] = useState(defaultOpen);
+  const rootRef = useRef<HTMLDivElement>(null);
+
+  // Auto-close on outside mousedown. Only active while open so idle cards
+  // don't churn through global listeners.
+  useEffect(() => {
+    if (!open) return;
+    const handler = (e: MouseEvent) => {
+      if (!rootRef.current) return;
+      if (rootRef.current.contains(e.target as Node)) return;
+      setOpen(false);
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, [open]);
 
   return (
-    <div className="bg-gray-50/70 rounded-lg">
-      {/* Header row — always visible */}
-      <div className="flex items-center gap-2 px-3 py-2">
+    <div ref={rootRef} className="bg-gray-50/70 rounded-lg">
+      {/* Header row — always visible. The chevron + number form a single
+          larger click target to toggle the body. */}
+      <div className="flex items-center gap-1 px-2 py-1.5">
         <button
           type="button"
           onClick={() => setOpen((v) => !v)}
           aria-label={open ? 'Kollapsa' : 'Expandera'}
-          className="text-gray-300 hover:text-gray-500 flex-shrink-0"
+          className="flex items-center gap-1.5 px-1.5 py-1.5 rounded text-gray-400 hover:text-gray-700 hover:bg-gray-100 transition-colors flex-shrink-0"
         >
           <svg
-            width="12"
-            height="12"
+            width="14"
+            height="14"
             viewBox="0 0 24 24"
             fill="none"
             stroke="currentColor"
@@ -65,18 +83,14 @@ export default function CollapsibleCard({
           >
             <path d="M9 6l6 6-6 6" />
           </svg>
+          <span className="text-[11px] tabular-nums">{index + 1}</span>
         </button>
-
-        <span className="text-[11px] text-gray-400 w-4 text-center flex-shrink-0">
-          {index + 1}
-        </span>
 
         <input
           value={title}
           onChange={(e) => onTitleChange(e.target.value)}
-          className="flex-1 min-w-0 text-sm bg-transparent outline-none text-gray-700 placeholder:text-gray-300"
+          className="flex-1 min-w-0 text-sm bg-transparent outline-none text-gray-700 placeholder:text-gray-300 px-1"
           placeholder={titlePlaceholder}
-          onClick={(e) => e.stopPropagation()}
         />
 
         {(onMoveUp || onMoveDown) && (
