@@ -1,0 +1,67 @@
+'use client';
+
+import { ProductAreaState } from '@/lib/product-area-types';
+import { FieldInput, FieldTextarea, FieldColor } from '@/components/editors/FieldInput';
+
+interface Props {
+  state: ProductAreaState;
+  setField: <K extends keyof ProductAreaState>(key: K, value: ProductAreaState[K]) => void;
+}
+
+export default function ContactEditor({ state, setField }: Props) {
+  return (
+    <div className="space-y-3">
+      <h3 className="text-xl font-bold text-gray-900">Kontaktperson</h3>
+
+      <FieldInput
+        label="Namn"
+        value={state.contactName}
+        onChange={(v) => setField('contactName', v)}
+        placeholder="Anna Andersson"
+      />
+      <FieldInput
+        label="Titel"
+        value={state.contactTitle}
+        onChange={(v) => setField('contactTitle', v)}
+        placeholder="Säljare, Industriell Automation"
+      />
+      <div className="grid grid-cols-2 gap-2">
+        <FieldInput
+          label="E-post"
+          value={state.contactEmail}
+          onChange={(v) => setField('contactEmail', v)}
+          placeholder="anna@wexoe.se"
+        />
+        <FieldInput
+          label="Telefon"
+          value={state.contactPhone}
+          onChange={(v) => setField('contactPhone', v)}
+          placeholder="+46 70 123 45 67"
+        />
+      </div>
+      <FieldInput
+        label="Bild"
+        value={state.contactImage}
+        onChange={(v) => setField('contactImage', v)}
+        placeholder="https://wexoe.se/wp-content/uploads/..."
+      />
+      <FieldTextarea
+        label="Citat"
+        value={state.contactText}
+        onChange={(v) => setField('contactText', v)}
+        rows={3}
+        placeholder="Jag hjälper dig gärna att hitta rätt lösning."
+      />
+
+      <div className="pt-1">
+        <p className="text-[11px] text-gray-400 mb-1.5">Färger</p>
+        <FieldColor
+          label="Bakgrund"
+          value={state.contactBg}
+          onChange={(v) => setField('contactBg', v)}
+          defaultColor="#11325D"
+        />
+      </div>
+    </div>
+  );
+}

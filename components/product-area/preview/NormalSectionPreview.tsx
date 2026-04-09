@@ -18,11 +18,9 @@ export default function NormalSectionPreview({ section, n, active, onSelect }: P
   const color = textOn(bg);
   const colorSecondary = secondaryTextOn(bg);
 
-  const sectionId = (`normal${n}` as ProductAreaSectionId);
-
   return (
     <PreviewSection
-      id={sectionId}
+      id="content"
       active={active}
       onClick={onSelect}
       style={{ background: bg, color }}

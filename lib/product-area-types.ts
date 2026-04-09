@@ -143,11 +143,7 @@ export interface Division {
 
 export type ProductAreaSectionId =
   | 'hero'
-  | 'npi'
-  | 'normal1'
-  | 'normal2'
-  | 'normal3'
-  | 'normal4'
+  | 'content'
   | 'products'
   | 'solutions'
   | 'contact'
