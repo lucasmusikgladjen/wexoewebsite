@@ -9,20 +9,48 @@ interface PageRow {
   name: string;
   slug: string;
   h1: string;
+  type: PageType;
 }
 
 type PageType = 'landing' | 'product' | 'contact';
 
-const PAGE_TYPES: Array<{
+interface TypeDef {
   id: PageType;
   label: string;
   available: boolean;
   description: string;
-}> = [
-  { id: 'landing', label: 'Landing page', available: true, description: 'Kampanj- och konverteringssida' },
-  { id: 'product', label: 'Produktsida', available: false, description: 'Kommer snart' },
-  { id: 'contact', label: 'Kontaktsida', available: false, description: 'Kommer snart' },
+  editPath: (id: string) => string;
+}
+
+const PAGE_TYPES: TypeDef[] = [
+  {
+    id: 'landing',
+    label: 'Landing page',
+    available: true,
+    description: 'Kampanj- och konverteringssida',
+    editPath: (id) => `/editor/${id}`,
+  },
+  {
+    id: 'product',
+    label: 'Produktsida',
+    available: true,
+    description: 'Produktområdesida med produkter och lösningar',
+    editPath: (id) => `/editor/product-area/${id}`,
+  },
+  {
+    id: 'contact',
+    label: 'Kontaktsida',
+    available: false,
+    description: 'Kommer snart',
+    editPath: () => '#',
+  },
 ];
+
+const TYPE_LABEL: Record<PageType, string> = {
+  landing: 'Landing',
+  product: 'Produkt',
+  contact: 'Kontakt',
+};
 
 export default function PageManager() {
   const router = useRouter();
@@ -34,44 +62,67 @@ export default function PageManager() {
 
   useEffect(() => {
     let cancelled = false;
-    fetch('/api/read?action=list')
-      .then((r) => r.json())
-      .then((data) => {
+
+    // Fetch both page types in parallel. A failure in one doesn't break the other.
+    Promise.all([
+      fetch('/api/read?action=list')
+        .then((r) => r.json())
+        .then((data) => {
+          if (data.error) throw new Error(data.error);
+          return (data.pages ?? []).map((p: Omit<PageRow, 'type'>) => ({ ...p, type: 'landing' as const }));
+        })
+        .catch((err) => {
+          console.error('[page-manager] LP fetch failed:', err);
+          return [] as PageRow[];
+        }),
+      fetch('/api/product-area?action=list')
+        .then((r) => r.json())
+        .then((data) => {
+          if (data.error) throw new Error(data.error);
+          return (data.pages ?? []).map((p: Omit<PageRow, 'type'>) => ({ ...p, type: 'product' as const }));
+        })
+        .catch((err) => {
+          console.error('[page-manager] PA fetch failed:', err);
+          return [] as PageRow[];
+        }),
+    ])
+      .then(([lps, pas]) => {
         if (cancelled) return;
-        if (data.error) {
-          setError(data.error);
-          setPages([]);
-        } else {
-          setPages(data.pages ?? []);
-        }
+        const merged = [...lps, ...pas].sort((a, b) => a.name.localeCompare(b.name, 'sv'));
+        setPages(merged);
       })
       .catch((err) => {
         if (cancelled) return;
         setError(err instanceof Error ? err.message : 'Kunde inte hämta sidor');
         setPages([]);
       });
+
     return () => { cancelled = true; };
   }, []);
 
   const filteredPages = useMemo(() => {
     if (!pages) return [];
-    if (activeType !== 'all' && activeType !== 'landing') return [];
     const q = query.trim().toLowerCase();
-    if (!q) return pages;
-    return pages.filter(
-      (p) =>
+    return pages.filter((p) => {
+      if (activeType !== 'all' && p.type !== activeType) return false;
+      if (!q) return true;
+      return (
         p.name.toLowerCase().includes(q) ||
         p.slug.toLowerCase().includes(q) ||
-        p.h1.toLowerCase().includes(q),
-    );
+        p.h1.toLowerCase().includes(q)
+      );
+    });
   }, [pages, query, activeType]);
 
   const counts = {
     all: pages?.length ?? 0,
-    landing: pages?.length ?? 0,
-    product: 0,
+    landing: pages?.filter((p) => p.type === 'landing').length ?? 0,
+    product: pages?.filter((p) => p.type === 'product').length ?? 0,
     contact: 0,
   };
+
+  const editPathFor = (page: PageRow) =>
+    PAGE_TYPES.find((t) => t.id === page.type)?.editPath(page.id) ?? '#';
 
   return (
     <div className="min-h-screen bg-white" style={{ fontFamily: 'var(--font-dm-sans)' }}>
@@ -81,7 +132,7 @@ export default function PageManager() {
           <div>
             <h1 className="text-3xl font-medium tracking-tight text-gray-900">Sidor</h1>
             <p className="text-sm text-gray-400 mt-1">
-              {pages === null ? 'Laddar…' : `${counts.landing} ${counts.landing === 1 ? 'sida' : 'sidor'}`}
+              {pages === null ? 'Laddar…' : `${counts.all} ${counts.all === 1 ? 'sida' : 'sidor'}`}
             </p>
           </div>
           <button
@@ -126,10 +177,7 @@ export default function PageManager() {
               }`}
               title={t.available ? '' : 'Kommer snart'}
             >
-              {t.label}{' '}
-              <span className={t.available ? 'text-gray-300 ml-1' : 'text-gray-300 ml-1'}>
-                {counts[t.id]}
-              </span>
+              {t.label} <span className="text-gray-300 ml-1">{counts[t.id]}</span>
             </button>
           ))}
         </div>
@@ -163,9 +211,9 @@ export default function PageManager() {
         {pages && filteredPages.length > 0 && (
           <ul className="space-y-px">
             {filteredPages.map((page) => (
-              <li key={page.id}>
+              <li key={`${page.type}-${page.id}`}>
                 <Link
-                  href={`/editor/${page.id}`}
+                  href={editPathFor(page)}
                   className="block py-5 border-b border-gray-100 group transition-colors hover:bg-gray-50/50 -mx-4 px-4 rounded"
                 >
                   <div className="flex items-baseline justify-between gap-6">
@@ -177,9 +225,12 @@ export default function PageManager() {
                         <p className="text-sm text-gray-400 mt-0.5 truncate">{page.h1}</p>
                       )}
                     </div>
-                    <span className="text-xs text-gray-300 font-mono whitespace-nowrap">
-                      /{page.slug}
-                    </span>
+                    <div className="flex items-baseline gap-3 whitespace-nowrap">
+                      <span className="text-[10px] uppercase tracking-wider text-gray-300">
+                        {TYPE_LABEL[page.type]}
+                      </span>
+                      <span className="text-xs text-gray-300 font-mono">/{page.slug}</span>
+                    </div>
                   </div>
                 </Link>
               </li>
@@ -195,6 +246,7 @@ export default function PageManager() {
             if (type === 'landing') {
               router.push('/editor');
             }
+            // Product pages can't be created in v1 — the button is disabled below.
           }}
         />
       )}
@@ -209,6 +261,14 @@ function AddPageDialog({
   onClose: () => void;
   onSelect: (type: PageType) => void;
 }) {
+  // "Create new" is LP-only in v1; PA and Contact are deliberately not enabled here
+  // even though PA has an editor.
+  const creatableTypes: Array<{ id: PageType; label: string; description: string; enabled: boolean }> = [
+    { id: 'landing', label: 'Landing page', description: 'Kampanj- och konverteringssida', enabled: true },
+    { id: 'product', label: 'Produktsida', description: 'Går bara att redigera befintliga i v1', enabled: false },
+    { id: 'contact', label: 'Kontaktsida', description: 'Kommer snart', enabled: false },
+  ];
+
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 backdrop-blur-sm"
@@ -223,17 +283,17 @@ function AddPageDialog({
           <p className="text-sm text-gray-400 mt-0.5">Välj vilken typ du vill skapa</p>
         </div>
         <div className="px-3 py-3">
-          {PAGE_TYPES.map((t) => (
+          {creatableTypes.map((t) => (
             <button
               key={t.id}
-              disabled={!t.available}
+              disabled={!t.enabled}
               onClick={() => {
-                if (!t.available) return;
+                if (!t.enabled) return;
                 onSelect(t.id);
                 onClose();
               }}
               className={`w-full text-left px-3 py-3 rounded-md transition-colors ${
-                t.available
+                t.enabled
                   ? 'hover:bg-gray-50 cursor-pointer'
                   : 'cursor-not-allowed opacity-50'
               }`}
@@ -243,7 +303,7 @@ function AddPageDialog({
                   <p className="text-sm font-medium text-gray-900">{t.label}</p>
                   <p className="text-xs text-gray-400 mt-0.5">{t.description}</p>
                 </div>
-                {!t.available && (
+                {!t.enabled && (
                   <span className="text-[10px] uppercase tracking-wider text-gray-300">
                     Snart
                   </span>
