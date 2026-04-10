@@ -53,15 +53,12 @@ export default function ContactEditor({ state, setField }: Props) {
         placeholder="Jag hjälper dig gärna att hitta rätt lösning."
       />
 
-      <div className="pt-1">
-        <p className="text-[11px] text-gray-400 mb-1.5">Färger</p>
-        <FieldColor
-          label="Bakgrund"
-          value={state.contactBg}
-          onChange={(v) => setField('contactBg', v)}
-          defaultColor="#11325D"
-        />
-      </div>
+      <FieldColor
+        label="Bakgrundsfärg"
+        value={state.contactBg}
+        onChange={(v) => setField('contactBg', v)}
+        defaultColor="#11325D"
+      />
     </div>
   );
 }

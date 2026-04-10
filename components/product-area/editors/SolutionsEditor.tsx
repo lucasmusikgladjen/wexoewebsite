@@ -128,23 +128,19 @@ export default function SolutionsEditor({ state, setField }: Props) {
         + Lägg till lösning
       </button>
 
-      {/* ── Färger för lösningsgriden ─────────────────────────────────── */}
-      <div className="pt-3">
-        <p className="text-[11px] text-gray-400 mb-1.5">Färger</p>
-        <div className="grid grid-cols-2 gap-2">
-          <FieldColor
-            label="Bakgrund"
-            value={state.solutionsBg}
-            onChange={(v) => setField('solutionsBg', v)}
-            defaultColor="#FFFFFF"
-          />
-          <FieldColor
-            label="Kortbakgrund"
-            value={state.solutionsCardBg}
-            onChange={(v) => setField('solutionsCardBg', v)}
-            defaultColor="#FFFFFF"
-          />
-        </div>
+      <div className="grid grid-cols-2 gap-2">
+        <FieldColor
+          label="Bakgrundsfärg"
+          value={state.solutionsBg}
+          onChange={(v) => setField('solutionsBg', v)}
+          defaultColor="#FFFFFF"
+        />
+        <FieldColor
+          label="Kortbakgrundsfärg"
+          value={state.solutionsCardBg}
+          onChange={(v) => setField('solutionsCardBg', v)}
+          defaultColor="#FFFFFF"
+        />
       </div>
     </div>
   );

@@ -3,6 +3,7 @@
 import { ProductAreaState, LinkedProduct, emptyLinkedProduct } from '@/lib/product-area-types';
 import { FieldInput, FieldTextarea, FieldCheckbox, FieldColor } from '@/components/editors/FieldInput';
 import CollapsibleCard from './CollapsibleCard';
+import ButtonFieldset from './ButtonFieldset';
 
 interface Props {
   state: ProductAreaState;
@@ -100,45 +101,43 @@ export default function ProductsEditor({ state, setField }: Props) {
             placeholder="https://..."
           />
 
-          <fieldset className="relative border border-gray-200 rounded-lg px-3 pt-2 pb-3">
-            <legend className="mx-auto px-2 text-[10px] font-semibold tracking-wider text-gray-400">
-              KNAPP 1
-            </legend>
-            <div className="grid grid-cols-2 gap-2">
-              <FieldInput
-                label="Text"
-                value={product.button2Text}
-                onChange={(v) => patchProduct(i, { button2Text: v })}
-                placeholder="Kontakta oss"
-              />
-              <FieldInput
-                label="URL"
-                value={product.button2Url}
-                onChange={(v) => patchProduct(i, { button2Url: v })}
-                placeholder="/kontakt/"
-              />
-            </div>
-          </fieldset>
+          <ButtonFieldset
+            label="KNAPP 1"
+            labelBg="bg-gray-50"
+            segments={[
+              {
+                label: 'Text',
+                value: product.button2Text,
+                onChange: (v) => patchProduct(i, { button2Text: v }),
+                placeholder: 'Kontakta oss',
+              },
+              {
+                label: 'URL',
+                value: product.button2Url,
+                onChange: (v) => patchProduct(i, { button2Url: v }),
+                placeholder: '/kontakt/',
+              },
+            ]}
+          />
 
-          <fieldset className="relative border border-gray-200 rounded-lg px-3 pt-2 pb-3">
-            <legend className="mx-auto px-2 text-[10px] font-semibold tracking-wider text-gray-400">
-              KNAPP 2
-            </legend>
-            <div className="grid grid-cols-2 gap-2">
-              <FieldInput
-                label="Text"
-                value={product.button1Text}
-                onChange={(v) => patchProduct(i, { button1Text: v })}
-                placeholder="Läs mer"
-              />
-              <FieldInput
-                label="URL"
-                value={product.button1Url}
-                onChange={(v) => patchProduct(i, { button1Url: v })}
-                placeholder="/produkt/..."
-              />
-            </div>
-          </fieldset>
+          <ButtonFieldset
+            label="KNAPP 2"
+            labelBg="bg-gray-50"
+            segments={[
+              {
+                label: 'Text',
+                value: product.button1Text,
+                onChange: (v) => patchProduct(i, { button1Text: v }),
+                placeholder: 'Läs mer',
+              },
+              {
+                label: 'URL',
+                value: product.button1Url,
+                onChange: (v) => patchProduct(i, { button1Url: v }),
+                placeholder: '/produkt/...',
+              },
+            ]}
+          />
 
           <FieldInput
             label="Rubrik i sidomeny"
@@ -180,31 +179,25 @@ export default function ProductsEditor({ state, setField }: Props) {
         + Lägg till produkt
       </button>
 
-      {/* ── Färger för produkt-sektionen ─────────────────────────────── */}
-      <div className="pt-3">
-        <p className="text-[11px] text-gray-400 mb-1.5">Färger</p>
-        <div className="space-y-2">
-          <FieldColor
-            label="Bakgrund"
-            value={state.toggleBg}
-            onChange={(v) => setField('toggleBg', v)}
-            defaultColor="#11325D"
-          />
-          <div className="grid grid-cols-2 gap-2">
-            <FieldColor
-              label="Kortbakgrund"
-              value={state.toggleHeaderBg}
-              onChange={(v) => setField('toggleHeaderBg', v)}
-              defaultColor="#FFFFFF"
-            />
-            <FieldColor
-              label="Accent"
-              value={state.toggleAccent}
-              onChange={(v) => setField('toggleAccent', v)}
-              defaultColor="#F28C28"
-            />
-          </div>
-        </div>
+      <FieldColor
+        label="Bakgrundsfärg"
+        value={state.toggleBg}
+        onChange={(v) => setField('toggleBg', v)}
+        defaultColor="#11325D"
+      />
+      <div className="grid grid-cols-2 gap-2">
+        <FieldColor
+          label="Kortbakgrundsfärg"
+          value={state.toggleHeaderBg}
+          onChange={(v) => setField('toggleHeaderBg', v)}
+          defaultColor="#FFFFFF"
+        />
+        <FieldColor
+          label="Accentfärg"
+          value={state.toggleAccent}
+          onChange={(v) => setField('toggleAccent', v)}
+          defaultColor="#F28C28"
+        />
       </div>
     </div>
   );

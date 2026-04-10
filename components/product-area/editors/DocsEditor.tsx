@@ -26,15 +26,12 @@ export default function DocsEditor({ state, setField }: Props) {
         placeholder="https://..."
       />
 
-      <div className="pt-1">
-        <p className="text-[11px] text-gray-400 mb-1.5">Färger</p>
-        <FieldColor
-          label="Bakgrund"
-          value={state.docsBg}
-          onChange={(v) => setField('docsBg', v)}
-          defaultColor="#FFFFFF"
-        />
-      </div>
+      <FieldColor
+        label="Bakgrundsfärg"
+        value={state.docsBg}
+        onChange={(v) => setField('docsBg', v)}
+        defaultColor="#FFFFFF"
+      />
     </div>
   );
 }
