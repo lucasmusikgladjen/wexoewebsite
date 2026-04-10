@@ -102,39 +102,33 @@ export default function ProductsEditor({ state, setField }: Props) {
           />
 
           <ButtonFieldset
-            label="KNAPP 1"
-            labelBg="bg-gray-50"
+            label="Knapp 1"
             segments={[
               {
-                label: 'Text',
                 value: product.button2Text,
                 onChange: (v) => patchProduct(i, { button2Text: v }),
-                placeholder: 'Kontakta oss',
+                placeholder: 'Text',
               },
               {
-                label: 'URL',
                 value: product.button2Url,
                 onChange: (v) => patchProduct(i, { button2Url: v }),
-                placeholder: '/kontakt/',
+                placeholder: 'URL',
               },
             ]}
           />
 
           <ButtonFieldset
-            label="KNAPP 2"
-            labelBg="bg-gray-50"
+            label="Knapp 2"
             segments={[
               {
-                label: 'Text',
                 value: product.button1Text,
                 onChange: (v) => patchProduct(i, { button1Text: v }),
-                placeholder: 'Läs mer',
+                placeholder: 'Text',
               },
               {
-                label: 'URL',
                 value: product.button1Url,
                 onChange: (v) => patchProduct(i, { button1Url: v }),
-                placeholder: '/produkt/...',
+                placeholder: 'URL',
               },
             ]}
           />
@@ -181,13 +175,13 @@ export default function ProductsEditor({ state, setField }: Props) {
         + Lägg till produkt
       </button>
 
-      <FieldColor
-        label="Bakgrundsfärg"
-        value={state.toggleBg}
-        onChange={(v) => setField('toggleBg', v)}
-        defaultColor="#11325D"
-      />
-      <div className="grid grid-cols-2 gap-2">
+      <div className="grid grid-cols-3 gap-2">
+        <FieldColor
+          label="Bakgrundsfärg"
+          value={state.toggleBg}
+          onChange={(v) => setField('toggleBg', v)}
+          defaultColor="#11325D"
+        />
         <FieldColor
           label="Kortbakgrundsfärg"
           value={state.toggleHeaderBg}

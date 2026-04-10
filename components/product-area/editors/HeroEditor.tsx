@@ -80,19 +80,17 @@ export default function HeroEditor({ state, setField }: Props) {
       />
 
       <ButtonFieldset
-        label="KNAPP"
+        label="Knapp"
         segments={[
           {
-            label: 'Text',
             value: state.heroCtaText,
             onChange: (v) => setField('heroCtaText', v),
-            placeholder: 'Kontakta oss',
+            placeholder: 'Text',
           },
           {
-            label: 'URL',
             value: state.heroCtaUrl,
             onChange: (v) => setField('heroCtaUrl', v),
-            placeholder: '/kontakt/',
+            placeholder: 'URL',
           },
         ]}
       />
