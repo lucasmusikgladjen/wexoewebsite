@@ -221,9 +221,6 @@ export default function PageManager() {
                       <p className="text-base text-gray-900 truncate group-hover:text-lp-main transition-colors">
                         {page.name || page.slug || 'Ingen titel'}
                       </p>
-                      {page.h1 && page.h1 !== page.name && (
-                        <p className="text-sm text-gray-400 mt-0.5 truncate">{page.h1}</p>
-                      )}
                     </div>
                     <div className="flex items-baseline gap-3 whitespace-nowrap">
                       <span className="text-[10px] uppercase tracking-wider text-gray-300">

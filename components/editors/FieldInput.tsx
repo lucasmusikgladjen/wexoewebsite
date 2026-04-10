@@ -1,5 +1,8 @@
 'use client';
 
+import { useEffect, useRef, useState } from 'react';
+import { HexColorPicker, HexColorInput } from 'react-colorful';
+
 interface InputProps {
   label: string;
   value: string;
@@ -80,40 +83,57 @@ interface ColorProps {
   defaultColor?: string;
 }
 
-/** Compact colour picker: swatch + native picker + hex text + clear.
- *  Empty string means "no override" — the swatch shows a checker pattern and
- *  the hex input shows a `default` placeholder. */
+/** Compact colour field: swatch + HEX text input + clear button, with a
+ *  popover HEX-only picker (no RGB/HSL tabs — react-colorful's
+ *  HexColorPicker is pure HEX). Empty string means "no override"; the
+ *  swatch shows a checker pattern and the hex input shows a `default`
+ *  placeholder. */
 export function FieldColor({ label, value, onChange, defaultColor }: ColorProps) {
   const isSet = !!value.trim();
-  const swatchColor = isSet ? value : (defaultColor || '#11325D');
+  const [open, setOpen] = useState(false);
+  const rootRef = useRef<HTMLDivElement>(null);
+
+  // Close the popover on outside click.
+  useEffect(() => {
+    if (!open) return;
+    const handler = (e: MouseEvent) => {
+      if (!rootRef.current) return;
+      if (rootRef.current.contains(e.target as Node)) return;
+      setOpen(false);
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, [open]);
+
+  // The picker needs a valid 6-digit hex to render meaningfully. Fall back
+  // to the plugin default so the picker opens on the effective colour.
+  const pickerValue = isSet && /^#[0-9a-fA-F]{6}$/.test(value.trim())
+    ? value.trim()
+    : (defaultColor || '#11325D');
 
   return (
     <label className="block">
       <span className="text-[11px] text-gray-400">{label}</span>
-      <div className="mt-0.5 flex items-center gap-2">
-        <div className="relative w-8 h-8 flex-shrink-0">
-          <input
-            type="color"
-            value={swatchColor}
-            onChange={(e) => onChange(e.target.value)}
-            className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-            aria-label={`${label} picker`}
-          />
-          <div
-            className="w-8 h-8 rounded border border-gray-200 pointer-events-none"
-            style={
-              isSet
-                ? { background: value }
-                : {
-                    backgroundColor: '#f9fafb',
-                    backgroundImage:
-                      'linear-gradient(45deg, #e5e7eb 25%, transparent 25%), linear-gradient(-45deg, #e5e7eb 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #e5e7eb 75%), linear-gradient(-45deg, transparent 75%, #e5e7eb 75%)',
-                    backgroundSize: '8px 8px',
-                    backgroundPosition: '0 0, 0 4px, 4px -4px, -4px 0',
-                  }
-            }
-          />
-        </div>
+      <div ref={rootRef} className="relative mt-0.5 flex items-center gap-2">
+        {/* Swatch — click toggles the HEX popover picker */}
+        <button
+          type="button"
+          onClick={() => setOpen((v) => !v)}
+          className="w-8 h-8 rounded border border-gray-200 flex-shrink-0 cursor-pointer"
+          aria-label={`${label} picker`}
+          style={
+            isSet
+              ? { background: value }
+              : {
+                  backgroundColor: '#f9fafb',
+                  backgroundImage:
+                    'linear-gradient(45deg, #e5e7eb 25%, transparent 25%), linear-gradient(-45deg, #e5e7eb 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #e5e7eb 75%), linear-gradient(-45deg, transparent 75%, #e5e7eb 75%)',
+                  backgroundSize: '8px 8px',
+                  backgroundPosition: '0 0, 0 4px, 4px -4px, -4px 0',
+                }
+          }
+        />
+
         <input
           type="text"
           value={value}
@@ -121,6 +141,7 @@ export function FieldColor({ label, value, onChange, defaultColor }: ColorProps)
           placeholder="default"
           className="flex-1 min-w-0 px-2 py-1.5 text-xs font-mono bg-gray-100/80 rounded text-gray-700 placeholder:text-gray-300 focus:bg-white focus:ring-1 focus:ring-gray-200 focus:outline-none"
         />
+
         {isSet && (
           <button
             type="button"
@@ -130,6 +151,26 @@ export function FieldColor({ label, value, onChange, defaultColor }: ColorProps)
           >
             ×
           </button>
+        )}
+
+        {/* Popover: HEX-only picker + HEX input */}
+        {open && (
+          <div className="absolute top-full left-0 z-30 mt-2 p-3 bg-white rounded-lg shadow-xl border border-gray-200 w-[220px]">
+            <HexColorPicker
+              color={pickerValue}
+              onChange={(next) => onChange(next)}
+              style={{ width: '100%', height: 160 }}
+            />
+            <div className="mt-3 flex items-center gap-2">
+              <span className="text-[10px] uppercase tracking-wider text-gray-400">Hex</span>
+              <HexColorInput
+                color={pickerValue}
+                onChange={(next) => onChange(next)}
+                prefixed
+                className="flex-1 px-2 py-1 text-xs font-mono bg-gray-100/80 rounded text-gray-700 focus:bg-white focus:ring-1 focus:ring-gray-200 focus:outline-none uppercase"
+              />
+            </div>
+          </div>
         )}
       </div>
     </label>

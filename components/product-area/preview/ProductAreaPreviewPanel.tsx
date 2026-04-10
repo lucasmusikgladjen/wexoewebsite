@@ -1,5 +1,6 @@
 'use client';
 
+import { useEffect, useRef } from 'react';
 import { ProductAreaState, ProductAreaSectionId, NormalSection } from '@/lib/product-area-types';
 import TopBannerPreview from './TopBannerPreview';
 import HeroPreview from './HeroPreview';
@@ -7,12 +8,15 @@ import NormalSectionPreview from './NormalSectionPreview';
 import ProductsPreview from './ProductsPreview';
 import SolutionsPreview from './SolutionsPreview';
 import ContactPreview from './ContactPreview';
-import DocsPreview from './DocsPreview';
 
 interface Props {
   state: ProductAreaState;
   activeSection: ProductAreaSectionId | null;
   onSectionClick: (id: ProductAreaSectionId) => void;
+  /** Increments whenever the user focuses an editor field — triggers the
+   *  preview to scroll so the active section lands in the centre of the
+   *  visible area. Mirrors the Landing Page editor's behaviour. */
+  scrollTrigger: number;
 }
 
 /**
@@ -25,14 +29,30 @@ interface Props {
  *   5. Solutions grid
  *   6. "Late" Normal sections — the remaining ones without `upp`
  *   7. Contact
- *   8. Docs
  *
  * Top banner, hero and contact always render (with ghost placeholders when
- * empty) so the create flow shows a meaningful skeleton of the page. The
- * remaining sections stay hidden until they have content, matching how the
- * Landing Page preview behaves.
+ * empty) so the create flow shows a meaningful skeleton of the page.
  */
-export default function ProductAreaPreviewPanel({ state, activeSection, onSectionClick }: Props) {
+export default function ProductAreaPreviewPanel({
+  state,
+  activeSection,
+  onSectionClick,
+  scrollTrigger,
+}: Props) {
+  const pageRef = useRef<HTMLDivElement>(null);
+
+  // Scroll the active section into the centre of the preview pane whenever
+  // the active section or scrollTrigger changes. Uses the `data-section`
+  // attribute already applied by PreviewSection, so we don't need to thread
+  // refs through every sub-component.
+  useEffect(() => {
+    if (!activeSection || !pageRef.current) return;
+    const el = pageRef.current.querySelector(`[data-section="${activeSection}"]`);
+    if (el) {
+      (el as HTMLElement).scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+  }, [activeSection, scrollTrigger]);
+
   const normals: Array<{ n: 1 | 2 | 3 | 4; section: NormalSection }> = [
     { n: 1, section: state.normal1 },
     { n: 2, section: state.normal2 },
@@ -53,7 +73,10 @@ export default function ProductAreaPreviewPanel({ state, activeSection, onSectio
 
   return (
     <div className="h-full overflow-y-auto bg-gray-100 hide-scrollbar">
-      <div className="max-w-[900px] mx-auto my-4 shadow-lg rounded-lg overflow-hidden bg-white">
+      <div
+        ref={pageRef}
+        className="max-w-[900px] mx-auto my-4 shadow-lg rounded-lg overflow-hidden bg-white"
+      >
         {/* Browser chrome */}
         <div className="bg-gray-50 border-b border-gray-200 px-4 py-1.5 flex items-center gap-2">
           <div className="flex gap-1.5">
@@ -94,7 +117,6 @@ export default function ProductAreaPreviewPanel({ state, activeSection, onSectio
           ))}
 
           <ContactPreview state={state} active={activeSection} onSelect={onSectionClick} />
-          <DocsPreview state={state} active={activeSection} onSelect={onSectionClick} />
         </div>
 
         {/* Empty-state hint overlay when the whole state is pristine. */}

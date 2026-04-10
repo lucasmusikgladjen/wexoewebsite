@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { ProductAreaState } from '@/lib/product-area-types';
 import { FieldInput, FieldTextarea, FieldSelect } from '@/components/editors/FieldInput';
+import ButtonFieldset from './ButtonFieldset';
 
 interface Props {
   state: ProductAreaState;
@@ -57,14 +58,14 @@ export default function HeroEditor({ state, setField }: Props) {
       <h3 className="text-xl font-bold text-gray-900">Hero</h3>
 
       <FieldInput
-        label="Rubrik"
+        label="H1"
         value={state.h1}
         onChange={(v) => setField('h1', v)}
         placeholder="T.ex. Rockwell Automation PLC"
       />
 
       <FieldInput
-        label="Underrubrik"
+        label="H2"
         value={state.heroH2}
         onChange={(v) => setField('heroH2', v)}
         placeholder="Allen-Bradley PLC för små och stora applikationer"
@@ -78,25 +79,23 @@ export default function HeroEditor({ state, setField }: Props) {
         placeholder="Kort beskrivning av vad sidan handlar om…"
       />
 
-      <fieldset className="relative border border-gray-200 rounded-lg px-3 pt-2 pb-3">
-        <legend className="mx-auto px-2 text-[10px] font-semibold tracking-wider text-gray-400">
-          KNAPP
-        </legend>
-        <div className="grid grid-cols-2 gap-2">
-          <FieldInput
-            label="Text"
-            value={state.heroCtaText}
-            onChange={(v) => setField('heroCtaText', v)}
-            placeholder="Kontakta oss"
-          />
-          <FieldInput
-            label="URL"
-            value={state.heroCtaUrl}
-            onChange={(v) => setField('heroCtaUrl', v)}
-            placeholder="/kontakt/"
-          />
-        </div>
-      </fieldset>
+      <ButtonFieldset
+        label="KNAPP"
+        segments={[
+          {
+            label: 'Text',
+            value: state.heroCtaText,
+            onChange: (v) => setField('heroCtaText', v),
+            placeholder: 'Kontakta oss',
+          },
+          {
+            label: 'URL',
+            value: state.heroCtaUrl,
+            onChange: (v) => setField('heroCtaUrl', v),
+            placeholder: '/kontakt/',
+          },
+        ]}
+      />
 
       {/* ── Höger kolumn: either/or NPI / benefits / bild ──────────────── */}
       <div className="pt-2">

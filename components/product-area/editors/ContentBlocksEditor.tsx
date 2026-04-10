@@ -106,7 +106,7 @@ export default function ContentBlocksEditor({ state, setNormal }: Props) {
             </div>
 
             <FieldColor
-              label="Bakgrund"
+              label="Bakgrundsfärg"
               value={section.bg}
               onChange={(v) => setNormal(n, { bg: v })}
               defaultColor={i % 2 === 1 ? '#F8F9FA' : '#FFFFFF'}

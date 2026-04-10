@@ -15,7 +15,6 @@ import ContentBlocksEditor from './editors/ContentBlocksEditor';
 import ProductsEditor from './editors/ProductsEditor';
 import SolutionsEditor from './editors/SolutionsEditor';
 import ContactEditor from './editors/ContactEditor';
-import DocsEditor from './editors/DocsEditor';
 import SettingsEditor from './editors/SettingsEditor';
 
 interface Props {
@@ -29,7 +28,6 @@ const QUICK_NAV: Array<{ id: ProductAreaSectionId; label: string }> = [
   { id: 'products', label: 'Produkter' },
   { id: 'solutions', label: 'Lösningar' },
   { id: 'contact', label: 'Kontakt' },
-  { id: 'docs', label: 'Docs' },
   { id: 'settings', label: 'Inställningar' },
 ];
 
@@ -37,6 +35,7 @@ export default function ProductAreaBuilder({ initialState, divisions }: Props) {
   const router = useRouter();
   const [state, setState] = useState<ProductAreaState>(initialState);
   const [activeSection, setActiveSection] = useState<ProductAreaSectionId | null>('hero');
+  const [scrollTrigger, setScrollTrigger] = useState(0);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [justSaved, setJustSaved] = useState(false);
@@ -137,6 +136,15 @@ export default function ProductAreaBuilder({ initialState, divisions }: Props) {
 
   const handleSectionClick = useCallback((id: ProductAreaSectionId) => {
     setActiveSection(id);
+    setScrollTrigger((prev) => prev + 1);
+  }, []);
+
+  // Fired when an editor field inside a section receives focus — mirrors the
+  // LP EditorPanel's focus-driven sync so typing into any field centres the
+  // corresponding preview section.
+  const handleSectionFocus = useCallback((id: ProductAreaSectionId) => {
+    setActiveSection(id);
+    setScrollTrigger((prev) => prev + 1);
   }, []);
 
   // ── Save ─────────────────────────────────────────────────────────
@@ -232,6 +240,7 @@ export default function ProductAreaBuilder({ initialState, divisions }: Props) {
             state={state}
             activeSection={activeSection}
             onSectionClick={handleSectionClick}
+            scrollTrigger={scrollTrigger}
           />
         </div>
 
@@ -265,6 +274,7 @@ export default function ProductAreaBuilder({ initialState, divisions }: Props) {
               }}
               className="cursor-pointer"
               onClick={() => handleSectionClick('hero')}
+              onFocusCapture={() => handleSectionFocus('hero')}
             >
               <HeroEditor state={state} setField={setField} />
             </div>
@@ -275,6 +285,7 @@ export default function ProductAreaBuilder({ initialState, divisions }: Props) {
               }}
               className="cursor-pointer"
               onClick={() => handleSectionClick('content')}
+              onFocusCapture={() => handleSectionFocus('content')}
             >
               <ContentBlocksEditor state={state} setNormal={setNormal} />
             </div>
@@ -285,6 +296,7 @@ export default function ProductAreaBuilder({ initialState, divisions }: Props) {
               }}
               className="cursor-pointer"
               onClick={() => handleSectionClick('products')}
+              onFocusCapture={() => handleSectionFocus('products')}
             >
               <ProductsEditor state={state} setField={setField} />
             </div>
@@ -295,6 +307,7 @@ export default function ProductAreaBuilder({ initialState, divisions }: Props) {
               }}
               className="cursor-pointer"
               onClick={() => handleSectionClick('solutions')}
+              onFocusCapture={() => handleSectionFocus('solutions')}
             >
               <SolutionsEditor state={state} setField={setField} />
             </div>
@@ -305,18 +318,9 @@ export default function ProductAreaBuilder({ initialState, divisions }: Props) {
               }}
               className="cursor-pointer"
               onClick={() => handleSectionClick('contact')}
+              onFocusCapture={() => handleSectionFocus('contact')}
             >
               <ContactEditor state={state} setField={setField} />
-            </div>
-
-            <div
-              ref={(el) => {
-                sectionRefs.current.docs = el;
-              }}
-              className="cursor-pointer"
-              onClick={() => handleSectionClick('docs')}
-            >
-              <DocsEditor state={state} setField={setField} />
             </div>
 
             <div
@@ -325,6 +329,7 @@ export default function ProductAreaBuilder({ initialState, divisions }: Props) {
               }}
               className="cursor-pointer"
               onClick={() => handleSectionClick('settings')}
+              onFocusCapture={() => handleSectionFocus('settings')}
             >
               <SettingsEditor state={state} divisions={divisions} setField={setField} />
             </div>
