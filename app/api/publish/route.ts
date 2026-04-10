@@ -173,6 +173,11 @@ interface TransformResult {
   }>;
 }
 
+interface DownloadValidationFailure {
+  index: number;
+  tabIndex: unknown;
+}
+
 // ── Main publish handler ────────────────────────────────────────────────
 export async function POST(request: Request) {
   if (!ANTHROPIC_API_KEY) {
@@ -324,12 +329,71 @@ Regler:
     // ── Step 4: Create Downloads (linked to Tabs) ───────────────────
     let downloadCount = 0;
     if (transformed.downloads && transformed.downloads.length > 0) {
-      const dlPayloads = transformed.downloads.map((dl) => ({
+      const maxTabIndex = tabRecords.length - 1;
+      const invalidDownloads: DownloadValidationFailure[] = transformed.downloads
+        .map((dl, index) => ({
+          index,
+          tabIndex: dl.tabIndex,
+          isValid:
+            Number.isInteger(dl.tabIndex) &&
+            dl.tabIndex >= 0 &&
+            dl.tabIndex <= maxTabIndex,
+        }))
+        .filter((item) => !item.isValid)
+        .map(({ index, tabIndex }) => ({ index, tabIndex }));
+
+      if (invalidDownloads.length > 0) {
+        console.error(
+          '[publish] Download validation failed: invalid tabIndex reference',
+          JSON.stringify({
+            recordId: lpRecord.id,
+            tabCount: tabRecords.length,
+            downloadCount: transformed.downloads.length,
+            invalidDownloads,
+          }),
+        );
+        return NextResponse.json(
+          {
+            error: 'Ogiltig download-referens: tabIndex måste vara ett heltal inom giltigt tab-intervall.',
+            validation: {
+              recordId: lpRecord.id,
+              tabCount: tabRecords.length,
+              validTabIndexRange: `0..${maxTabIndex}`,
+              invalidDownloads,
+            },
+          },
+          { status: 400 },
+        );
+      }
+
+      const dlPayloads = transformed.downloads.map((dl, index) => {
+        const linkedTabIds = [tabRecords[dl.tabIndex]?.id].filter(
+          (id): id is string => Boolean(id),
+        );
+
+        if (linkedTabIds.length !== 1) {
+          console.error(
+            '[publish] Download invariant violated: Tab linked field must contain exactly one record ID',
+            JSON.stringify({
+              recordId: lpRecord.id,
+              downloadIndex: index,
+              tabIndex: dl.tabIndex,
+              tabCount: tabRecords.length,
+              linkedTabIdsCount: linkedTabIds.length,
+            }),
+          );
+          throw new Error(
+            `Invariant violation for download index ${index}: expected exactly one Tab link, got ${linkedTabIds.length}`,
+          );
+        }
+
+        return {
         fields: {
           ...dl.fields,
-          'Tab': [tabRecords[dl.tabIndex]?.id].filter(Boolean),
+          'Tab': linkedTabIds,
         },
-      }));
+        };
+      });
       const dlRecords = await createRecords(
         AIRTABLE_API_KEY,
         TABLE_IDS.downloads,
