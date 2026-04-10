@@ -139,12 +139,14 @@ export default function ProductsEditor({ state, setField }: Props) {
             ]}
           />
 
-          <FieldInput
-            label="Rubrik i sidomeny"
-            value={product.headerSideMenu}
-            onChange={(v) => patchProduct(i, { headerSideMenu: v })}
-            placeholder="Lämna tom för att använda produktnamnet"
-          />
+          {state.sideMenu && (
+            <FieldInput
+              label="Rubrik i sidomeny"
+              value={product.headerSideMenu}
+              onChange={(v) => patchProduct(i, { headerSideMenu: v })}
+              placeholder="Lämna tom för att använda produktnamnet"
+            />
+          )}
 
           <FieldCheckbox
             label="Visa"

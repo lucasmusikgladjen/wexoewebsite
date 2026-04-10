@@ -58,14 +58,14 @@ export default function HeroEditor({ state, setField }: Props) {
       <h3 className="text-xl font-bold text-gray-900">Hero</h3>
 
       <FieldInput
-        label="Rubrik"
+        label="H1"
         value={state.h1}
         onChange={(v) => setField('h1', v)}
         placeholder="T.ex. Rockwell Automation PLC"
       />
 
       <FieldInput
-        label="Underrubrik"
+        label="H2"
         value={state.heroH2}
         onChange={(v) => setField('heroH2', v)}
         placeholder="Allen-Bradley PLC för små och stora applikationer"

@@ -21,11 +21,6 @@ export default function SettingsEditor({ state, divisions, setField }: Props) {
           onChange={(v) => setField('sideMenu', v)}
         />
         <FieldCheckbox
-          label="Prisförfrågan-formulär"
-          checked={state.request}
-          onChange={(v) => setField('request', v)}
-        />
-        <FieldCheckbox
           label="Första produkten öppen som default"
           checked={state.defaultOpen}
           onChange={(v) => setField('defaultOpen', v)}
