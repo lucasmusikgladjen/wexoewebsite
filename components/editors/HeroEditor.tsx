@@ -2,6 +2,7 @@
 
 import { PageState, PageAction } from '@/lib/types';
 import { FieldInput, FieldTextarea } from './FieldInput';
+import ButtonFieldset from './ButtonFieldset';
 
 interface Props {
   state: PageState;
@@ -18,20 +19,38 @@ export default function HeroEditor({ state, dispatch }: Props) {
       <FieldInput label="Rubrik" value={state.h1} onChange={(v) => set('h1', v)} placeholder="T.ex. Framtidens nätverkslösning" />
       <FieldTextarea label="Beskrivning" value={state.heroDescription} onChange={(v) => set('heroDescription', v)} rows={3} placeholder="Kort beskrivning under rubriken..." />
       <FieldInput label="Bakgrundsbild" value={state.heroImage} onChange={(v) => set('heroImage', v)} placeholder="https://wexoe.se/wp-content/uploads/..." />
-      <div className="pt-1">
-        <p className="text-[11px] text-gray-400 mb-1.5">Primär knapp</p>
-        <div className="grid grid-cols-2 gap-2">
-          <FieldInput label="Text" value={state.heroCta1Text} onChange={(v) => set('heroCta1Text', v)} placeholder="Kontakta oss" />
-          <FieldInput label="URL" value={state.heroCta1Url} onChange={(v) => set('heroCta1Url', v)} placeholder="/kontakt/" />
-        </div>
-      </div>
-      <div className="pt-1">
-        <p className="text-[11px] text-gray-400 mb-1.5">Sekundär knapp</p>
-        <div className="grid grid-cols-2 gap-2">
-          <FieldInput label="Text" value={state.heroCta2Text} onChange={(v) => set('heroCta2Text', v)} placeholder="Läs mer" />
-          <FieldInput label="URL" value={state.heroCta2Url} onChange={(v) => set('heroCta2Url', v)} placeholder="/produkt/" />
-        </div>
-      </div>
+
+      <ButtonFieldset
+        label="Knapp 1"
+        segments={[
+          {
+            value: state.heroCta1Text,
+            onChange: (v) => set('heroCta1Text', v),
+            placeholder: 'Text',
+          },
+          {
+            value: state.heroCta1Url,
+            onChange: (v) => set('heroCta1Url', v),
+            placeholder: 'URL',
+          },
+        ]}
+      />
+
+      <ButtonFieldset
+        label="Knapp 2"
+        segments={[
+          {
+            value: state.heroCta2Text,
+            onChange: (v) => set('heroCta2Text', v),
+            placeholder: 'Text',
+          },
+          {
+            value: state.heroCta2Url,
+            onChange: (v) => set('heroCta2Url', v),
+            placeholder: 'URL',
+          },
+        ]}
+      />
     </div>
   );
 }

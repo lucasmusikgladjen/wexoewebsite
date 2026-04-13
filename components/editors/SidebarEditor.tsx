@@ -2,6 +2,7 @@
 
 import { PageState, PageAction, SidebarType } from '@/lib/types';
 import { FieldInput, FieldTextarea, FieldSelect, FieldCheckbox } from './FieldInput';
+import ButtonFieldset from './ButtonFieldset';
 
 interface Props {
   state: PageState;
@@ -56,10 +57,21 @@ function CaseFields({ state, set }: { state: PageState; set: (f: keyof PageState
       <FieldTextarea label="Beskrivning" value={state.caseDescription} onChange={(v) => set('caseDescription', v)} rows={3} placeholder="Kort beskrivning av caset..." />
       <FieldInput label="Bild" value={state.caseImage} onChange={(v) => set('caseImage', v)} placeholder="https://..." />
       <FieldTextarea label="Resultat" value={state.caseOutcomes} onChange={(v) => set('caseOutcomes', v)} rows={3} hint="en per rad" placeholder={"40% snabbare installation\n60% lägre driftkostnad"} />
-      <div className="grid grid-cols-2 gap-2">
-        <FieldInput label="Knapptext" value={state.caseCta} onChange={(v) => set('caseCta', v)} placeholder="Läs hela caset" />
-        <FieldInput label="Knapplänk" value={state.caseCtaUrl} onChange={(v) => set('caseCtaUrl', v)} placeholder="/kundcase/..." />
-      </div>
+      <ButtonFieldset
+        label="Knapp"
+        segments={[
+          {
+            value: state.caseCta,
+            onChange: (v) => set('caseCta', v),
+            placeholder: 'Text',
+          },
+          {
+            value: state.caseCtaUrl,
+            onChange: (v) => set('caseCtaUrl', v),
+            placeholder: 'URL',
+          },
+        ]}
+      />
     </div>
   );
 }

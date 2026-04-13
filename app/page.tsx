@@ -219,34 +219,40 @@ export default function PageManager() {
                   href={editPathFor(page)}
                   className="block py-5 border-b border-gray-100 transition-colors hover:bg-gray-50/50 -mx-4 px-4 rounded"
                 >
-                  <div className="flex items-baseline justify-between gap-6">
-                    <div className="min-w-0 flex-1">
-                      <p className="text-base text-gray-900 truncate group-hover:text-lp-main transition-colors">
-                        {page.name || page.slug || 'Ingen titel'}
-                      </p>
-                    </div>
-                    <div className="flex items-baseline gap-3 whitespace-nowrap pr-20">
-                      <span className="text-[10px] uppercase tracking-wider text-gray-300">
-                        {TYPE_LABEL[page.type]}
-                      </span>
-                      <span className="text-xs text-gray-300 font-mono">/{page.slug}</span>
-                    </div>
+                  <div className="flex items-baseline gap-3">
+                    {/* Title + slug grouped together on the left */}
+                    <p className="text-base text-gray-900 truncate group-hover:text-lp-main transition-colors">
+                      {page.name || page.slug || 'Ingen titel'}
+                    </p>
+                    <span className="text-xs text-gray-300 font-mono whitespace-nowrap">
+                      /{page.slug}
+                    </span>
+
+                    {/* Spacer pushes the rest to the right */}
+                    <div className="flex-1" />
+
+                    {/* Kopiera button fades in on row hover — sits inside the
+                        Link so the layout stays stable whether or not it's
+                        visible. Click handler stops propagation so activating
+                        the button doesn't navigate to the edit page. */}
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        setCopyTarget(page);
+                      }}
+                      className="px-2.5 py-0.5 text-xs text-gray-400 hover:text-gray-600 border border-gray-200 rounded-md opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto focus-visible:opacity-100 focus-visible:pointer-events-auto transition-opacity"
+                      title="Kopiera sidan"
+                    >
+                      Kopiera
+                    </button>
+
+                    <span className="text-[10px] uppercase tracking-wider text-gray-300 whitespace-nowrap">
+                      {TYPE_LABEL[page.type]}
+                    </span>
                   </div>
                 </Link>
-                {/* Hover-only Kopiera button — sits on top of the link so it
-                    intercepts the click without navigating away. */}
-                <button
-                  type="button"
-                  onClick={(e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    setCopyTarget(page);
-                  }}
-                  className="absolute right-0 top-1/2 -translate-y-1/2 px-3 py-1 text-xs text-gray-400 hover:text-gray-900 hover:bg-white border border-gray-200 rounded-md opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto focus-visible:opacity-100 focus-visible:pointer-events-auto transition-opacity"
-                  title="Kopiera sidan"
-                >
-                  Kopiera
-                </button>
               </li>
             ))}
           </ul>

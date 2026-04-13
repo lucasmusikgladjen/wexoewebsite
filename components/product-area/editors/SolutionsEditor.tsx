@@ -56,10 +56,6 @@ export default function SolutionsEditor({ state, setField }: Props) {
         placeholder="Lösningar & koncept"
       />
 
-      {state.solutions.length === 0 && (
-        <p className="text-xs text-gray-300 italic">Inga lösningar ännu.</p>
-      )}
-
       {state.solutions.map((sol, i) => (
         <CollapsibleCard
           key={sol.clientId}

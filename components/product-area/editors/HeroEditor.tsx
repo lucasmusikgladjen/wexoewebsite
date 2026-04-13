@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { ProductAreaState } from '@/lib/product-area-types';
 import { FieldInput, FieldTextarea, FieldSelect } from '@/components/editors/FieldInput';
-import ButtonFieldset from './ButtonFieldset';
+import ButtonFieldset from '@/components/editors/ButtonFieldset';
 
 interface Props {
   state: ProductAreaState;
