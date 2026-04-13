@@ -3,7 +3,7 @@
 import { ProductAreaState, LinkedProduct, emptyLinkedProduct } from '@/lib/product-area-types';
 import { FieldInput, FieldTextarea, FieldCheckbox, FieldColor } from '@/components/editors/FieldInput';
 import CollapsibleCard from './CollapsibleCard';
-import ButtonFieldset from './ButtonFieldset';
+import ButtonFieldset from '@/components/editors/ButtonFieldset';
 
 interface Props {
   state: ProductAreaState;
@@ -50,10 +50,6 @@ export default function ProductsEditor({ state, setField }: Props) {
   return (
     <div className="space-y-3">
       <h3 className="text-xl font-bold text-gray-900">Produkter</h3>
-
-      {state.products.length === 0 && (
-        <p className="text-xs text-gray-300 italic">Inga produkter ännu.</p>
-      )}
 
       {state.products.map((product, i) => (
         <CollapsibleCard
