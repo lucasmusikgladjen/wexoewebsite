@@ -242,7 +242,7 @@ export default function PageManager() {
                     e.stopPropagation();
                     setCopyTarget(page);
                   }}
-                  className="absolute right-0 top-1/2 -translate-y-1/2 px-3 py-1 text-xs text-gray-400 hover:text-gray-900 hover:bg-white border border-gray-200 rounded-md opacity-0 group-hover:opacity-100 focus:opacity-100 transition-opacity"
+                  className="absolute right-0 top-1/2 -translate-y-1/2 px-3 py-1 text-xs text-gray-400 hover:text-gray-900 hover:bg-white border border-gray-200 rounded-md opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto focus-visible:opacity-100 focus-visible:pointer-events-auto transition-opacity"
                   title="Kopiera sidan"
                 >
                   Kopiera
