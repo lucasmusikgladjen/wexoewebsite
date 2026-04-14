@@ -97,23 +97,78 @@ async function createNewPage(
     });
   }
 
-  // 4. CREATE downloads linked to the new tabs via _tabClientIndex
+  // 4. CREATE downloads linked to the new tabs via _tabClientIndex.
+  //
+  //    Before any download is created we validate that each entry's
+  //    _tabClientIndex references a tab we actually just created —
+  //    otherwise Claude's output is malformed and silently dropping
+  //    downloads would leave dangling UI state with nothing in
+  //    Airtable. Refuse and report instead (ported from the earlier
+  //    tabIndex validation on commit 4604d94, now keyed on the new
+  //    _tabClientIndex metadata).
   let downloadCount = 0;
-  const sortedDownloads = [...transformed.downloads].sort((a, b) => {
-    if (a._tabClientIndex !== b._tabClientIndex) {
-      return a._tabClientIndex - b._tabClientIndex;
+  if (transformed.downloads.length > 0) {
+    const invalidDownloads = transformed.downloads
+      .map((dl, index) => ({
+        index,
+        tabClientIndex: dl._tabClientIndex,
+        isValid:
+          Number.isInteger(dl._tabClientIndex) &&
+          Object.prototype.hasOwnProperty.call(
+            tabIdByClientIndex,
+            dl._tabClientIndex,
+          ),
+      }))
+      .filter((item) => !item.isValid)
+      .map(({ index, tabClientIndex }) => ({ index, tabClientIndex }));
+
+    if (invalidDownloads.length > 0) {
+      console.error(
+        '[publish] Download validation failed: invalid _tabClientIndex reference',
+        JSON.stringify({
+          recordId: lp.id,
+          tabCount: sortedTabs.length,
+          downloadCount: transformed.downloads.length,
+          invalidDownloads,
+        }),
+      );
+      return NextResponse.json(
+        {
+          error:
+            'Ogiltig download-referens: _tabClientIndex måste peka på en existerande tab.',
+          validation: {
+            recordId: lp.id,
+            tabCount: sortedTabs.length,
+            validTabClientIndexes: Object.keys(tabIdByClientIndex).map(Number),
+            invalidDownloads,
+          },
+        },
+        { status: 400 },
+      );
     }
-    return (a._clientIndex ?? 0) - (b._clientIndex ?? 0);
-  });
-  if (sortedDownloads.length > 0) {
+
+    const sortedDownloads = [...transformed.downloads].sort((a, b) => {
+      if (a._tabClientIndex !== b._tabClientIndex) {
+        return a._tabClientIndex - b._tabClientIndex;
+      }
+      return (a._clientIndex ?? 0) - (b._clientIndex ?? 0);
+    });
+
     const dlPayloads: Array<{ fields: Record<string, unknown> }> = [];
     for (const dl of sortedDownloads) {
       const tabId = tabIdByClientIndex[dl._tabClientIndex];
-      if (!tabId) continue;
+      // Already validated above, but keep the explicit guard: we never
+      // want to emit a Download record without exactly one Tab link.
+      if (!tabId) {
+        throw new Error(
+          `Invariant violation for download ${dl._clientIndex} on tab ${dl._tabClientIndex}: no Tab link available`,
+        );
+      }
       dlPayloads.push({
         fields: { ...dl.fields, Tab: [tabId] },
       });
     }
+
     if (dlPayloads.length > 0) {
       const createdDownloads = await createRecords(
         airtableKey,
@@ -247,11 +302,53 @@ async function updateExistingPage(
   }
 
   // 5. Diff downloads. Each download carries _tabClientIndex so we know
-  //    which tab it belongs to. Use the existing tab record (via state's
-  //    recordId) to know which downloads currently live under that tab.
+  //    which tab it belongs to. Validate every download's reference
+  //    against the final tab ID map first — a malformed reference means
+  //    Claude's output is inconsistent and we'd otherwise silently drop
+  //    the download when grouping by parent.
   let downloadsCreated = 0;
   let downloadsUpdated = 0;
   let downloadsDeleted = 0;
+
+  if (transformed.downloads.length > 0) {
+    const invalidDownloads = transformed.downloads
+      .map((dl, index) => ({
+        index,
+        tabClientIndex: dl._tabClientIndex,
+        isValid:
+          Number.isInteger(dl._tabClientIndex) &&
+          Object.prototype.hasOwnProperty.call(
+            tabIdByClientIndex,
+            dl._tabClientIndex,
+          ),
+      }))
+      .filter((item) => !item.isValid)
+      .map(({ index, tabClientIndex }) => ({ index, tabClientIndex }));
+
+    if (invalidDownloads.length > 0) {
+      console.error(
+        '[publish] Download validation failed: invalid _tabClientIndex reference in update',
+        JSON.stringify({
+          recordId: state.recordId,
+          tabCount: Object.keys(tabIdByClientIndex).length,
+          downloadCount: transformed.downloads.length,
+          invalidDownloads,
+        }),
+      );
+      return NextResponse.json(
+        {
+          error:
+            'Ogiltig download-referens: _tabClientIndex måste peka på en existerande tab.',
+          validation: {
+            recordId: state.recordId,
+            validTabClientIndexes: Object.keys(tabIdByClientIndex).map(Number),
+            invalidDownloads,
+          },
+        },
+        { status: 400 },
+      );
+    }
+  }
 
   // Group Claude's download output by parent tab clientIndex
   const downloadsByTabIndex = new Map<number, LpTransformDownload[]>();

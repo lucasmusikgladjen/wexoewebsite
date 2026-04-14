@@ -118,9 +118,14 @@ async function createProductArea(
   const transformed = await transformProductArea(anthropicKey, state, 'create');
 
   // 3. CREATE any new linked products first so we have their IDs to link.
-  //    Sort by _clientIndex defensively in case Claude reordered.
+  //    Sort by _clientIndex defensively in case Claude reordered. Track
+  //    new IDs by both client position (for the link-array ordering
+  //    below) and by clientId (returned to the client so the editor can
+  //    promote empty `recordId: ''` rows in its local state and avoid
+  //    duplicate creation on the next save).
   const sortedProducts = sortByClientIndex(transformed.products);
   const productIdByClientIndex: Record<number, string> = {};
+  const newProductIds: Record<string, string> = {};
   for (const product of sortedProducts) {
     const created = await createRecord(
       airtableKey,
@@ -128,11 +133,14 @@ async function createProductArea(
       product.fields,
     );
     productIdByClientIndex[product._clientIndex] = created.id;
+    const clientId = state.products[product._clientIndex]?.clientId;
+    if (clientId) newProductIds[clientId] = created.id;
   }
 
-  // 4. CREATE any new linked solutions
+  // 4. CREATE any new linked solutions — same tracking as products.
   const sortedSolutions = sortByClientIndex(transformed.solutions);
   const solutionIdByClientIndex: Record<number, string> = {};
+  const newSolutionIds: Record<string, string> = {};
   for (const solution of sortedSolutions) {
     const created = await createRecord(
       airtableKey,
@@ -140,6 +148,8 @@ async function createProductArea(
       solution.fields,
     );
     solutionIdByClientIndex[solution._clientIndex] = created.id;
+    const clientId = state.solutions[solution._clientIndex]?.clientId;
+    if (clientId) newSolutionIds[clientId] = created.id;
   }
 
   // 5. CREATE the Product Area record with direct fields + linked record
@@ -175,6 +185,8 @@ async function createProductArea(
     slug: state.slug,
     productsCreated: sortedProducts.length,
     solutionsCreated: sortedSolutions.length,
+    newProductIds,
+    newSolutionIds,
   });
 }
 
@@ -206,7 +218,13 @@ async function updateProductArea(
   //    from state UN-LINKS it from this PA (by leaving it out of the PA's
   //    `Products` array patch below) but never DELETES the underlying
   //    product record. Only CREATE new + PATCH existing here.
+  //
+  //    We also track freshly-created IDs keyed by the client-side
+  //    `clientId` so the editor can promote its empty `recordId: ''`
+  //    rows after a successful save and avoid creating the same rows
+  //    again on the next save.
   const productIdByClientIndex: Record<number, string> = {};
+  const newProductIds: Record<string, string> = {};
 
   // Create new products (no _recordId, or stale _recordId not in existing).
   // Must happen first so we can include their IDs in the PA's Products
@@ -221,6 +239,8 @@ async function updateProductArea(
       product.fields,
     );
     productIdByClientIndex[product._clientIndex] = created.id;
+    const clientId = state.products[product._clientIndex]?.clientId;
+    if (clientId) newProductIds[clientId] = created.id;
   }
 
   // Patch existing products that are still referenced in state.
@@ -237,6 +257,7 @@ async function updateProductArea(
   // 4. Same diff for solutions — also shared, also never deleted, only
   //    unlinked via the PA patch below.
   const solutionIdByClientIndex: Record<number, string> = {};
+  const newSolutionIds: Record<string, string> = {};
 
   const newSolutionEntries = transformed.solutions
     .filter((s) => !s._recordId || !existingSolutionIds.has(s._recordId))
@@ -248,6 +269,8 @@ async function updateProductArea(
       solution.fields,
     );
     solutionIdByClientIndex[solution._clientIndex] = created.id;
+    const clientId = state.solutions[solution._clientIndex]?.clientId;
+    if (clientId) newSolutionIds[clientId] = created.id;
   }
 
   const solutionPatchBatch: Array<{ id: string; fields: Record<string, unknown> }> = [];
@@ -287,6 +310,8 @@ async function updateProductArea(
     productsUpdated: productPatchBatch.length,
     solutionsCreated: newSolutionEntries.length,
     solutionsUpdated: solutionPatchBatch.length,
+    newProductIds,
+    newSolutionIds,
   });
 }
 

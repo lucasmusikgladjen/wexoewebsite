@@ -369,8 +369,24 @@ export async function transformLandingPage(
   if (!parsed.landingPage || typeof parsed.landingPage !== 'object') {
     throw new Error('Claude utelämnade landingPage-objektet.');
   }
-  if (!Array.isArray(parsed.tabs)) parsed.tabs = [];
-  if (!Array.isArray(parsed.downloads)) parsed.downloads = [];
+
+  // `tabs` and `downloads` must be arrays. In UPDATE mode a missing or
+  // non-array value would silently translate to "delete everything" when
+  // the route diffs against existing records — refuse to proceed in that
+  // case. In CREATE mode defaulting to [] is safe: no existing children
+  // exist, so the result is just a bare LP with no linked rows.
+  if (!Array.isArray(parsed.tabs)) {
+    if (mode === 'update') {
+      throw new Error('Claude utelämnade tabs-arrayen i update-läget.');
+    }
+    parsed.tabs = [];
+  }
+  if (!Array.isArray(parsed.downloads)) {
+    if (mode === 'update') {
+      throw new Error('Claude utelämnade downloads-arrayen i update-läget.');
+    }
+    parsed.downloads = [];
+  }
 
   return parsed;
 }
@@ -532,8 +548,25 @@ export async function transformProductArea(
   if (!parsed.productArea || typeof parsed.productArea !== 'object') {
     throw new Error('Claude utelämnade productArea-objektet.');
   }
-  if (!Array.isArray(parsed.products)) parsed.products = [];
-  if (!Array.isArray(parsed.solutions)) parsed.solutions = [];
+
+  // In UPDATE mode the PA route rebuilds the `Products` / `Solutions`
+  // link arrays from the transformed output and PATCHes them onto the PA
+  // record, so a silently-coerced `[]` would unlink every product and
+  // solution from the page in a single save. Refuse that destructive
+  // default. CREATE mode is tolerant — no existing children, nothing to
+  // lose.
+  if (!Array.isArray(parsed.products)) {
+    if (mode === 'update') {
+      throw new Error('Claude utelämnade products-arrayen i update-läget.');
+    }
+    parsed.products = [];
+  }
+  if (!Array.isArray(parsed.solutions)) {
+    if (mode === 'update') {
+      throw new Error('Claude utelämnade solutions-arrayen i update-läget.');
+    }
+    parsed.solutions = [];
+  }
 
   return parsed;
 }
