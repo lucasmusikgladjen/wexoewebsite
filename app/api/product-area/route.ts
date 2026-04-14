@@ -1,19 +1,17 @@
 import { NextResponse } from 'next/server';
 import {
   listRecords,
+  getRecord,
   createRecord,
   updateRecord,
   updateRecords,
 } from '@/lib/airtable';
-import {
-  PA_TABLE_IDS,
-  productAreaPatchFields,
-  productPatchFields,
-  solutionPatchFields,
-} from '@/lib/product-area-mapper';
+import { PA_TABLE_IDS } from '@/lib/product-area-mapper';
 import { loadProductAreaState, loadDivisions } from '@/lib/product-area-loader';
 import { ProductAreaState } from '@/lib/product-area-types';
+import { transformProductArea } from '@/lib/claude-transform';
 
+const ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY;
 const AIRTABLE_API_KEY = process.env.AIRTABLE_API_KEY;
 
 // ─── GET: list / get / list-divisions ─────────────────────────────────────
@@ -65,11 +63,14 @@ export async function GET(request: Request) {
   }
 }
 
-// ─── POST: save — branches on presence of recordId ────────────────────────
+// ─── POST: save (create + update paths both go via Claude) ────────────────
 
 export async function POST(request: Request) {
   if (!AIRTABLE_API_KEY) {
     return NextResponse.json({ error: 'AIRTABLE_API_KEY not configured' }, { status: 500 });
+  }
+  if (!ANTHROPIC_API_KEY) {
+    return NextResponse.json({ error: 'ANTHROPIC_API_KEY not configured' }, { status: 500 });
   }
 
   try {
@@ -83,9 +84,9 @@ export async function POST(request: Request) {
     }
 
     if (!state.recordId) {
-      return await createProductArea(AIRTABLE_API_KEY, state);
+      return await createProductArea(AIRTABLE_API_KEY, ANTHROPIC_API_KEY, state);
     }
-    return await updateProductArea(AIRTABLE_API_KEY, state);
+    return await updateProductArea(AIRTABLE_API_KEY, ANTHROPIC_API_KEY, state);
   } catch (err) {
     const message = err instanceof Error ? err.message : 'Okänt fel';
     console.error('[product-area:save] Error:', message);
@@ -95,9 +96,14 @@ export async function POST(request: Request) {
 
 // ─── Create flow: brand-new Product Area ──────────────────────────────────
 
-async function createProductArea(apiKey: string, state: ProductAreaState) {
-  // Defensive: reject duplicate slugs up-front with a clear error.
-  const existing = await listRecords(apiKey, PA_TABLE_IDS.productAreas, {
+async function createProductArea(
+  airtableKey: string,
+  anthropicKey: string,
+  state: ProductAreaState,
+) {
+  // 1. Reject duplicate slugs up-front so the user gets a clean error
+  //    rather than Airtable's generic 422.
+  const existing = await listRecords(airtableKey, PA_TABLE_IDS.productAreas, {
     fields: ['Slug'],
     filterByFormula: `{Slug} = "${state.slug.replace(/"/g, '\\"')}"`,
   });
@@ -108,155 +114,198 @@ async function createProductArea(apiKey: string, state: ProductAreaState) {
     );
   }
 
-  // 1. CREATE any new linked products first so we have their IDs. The
-  //    `Order` field is derived from the index in state.products so the
-  //    PHP plugin (which sorts linked records by Order) sees the same
-  //    sequence the user built in the editor.
-  const newProductIds: Record<string, string> = {};
-  for (let i = 0; i < state.products.length; i++) {
-    const product = state.products[i];
+  // 2. Claude transforms state → Airtable-ready fields
+  const transformed = await transformProductArea(anthropicKey, state, 'create');
+
+  // 3. CREATE any new linked products first so we have their IDs to link.
+  //    Sort by _clientIndex defensively in case Claude reordered.
+  const sortedProducts = sortByClientIndex(transformed.products);
+  const productIdByClientIndex: Record<number, string> = {};
+  for (const product of sortedProducts) {
     const created = await createRecord(
-      apiKey,
+      airtableKey,
       PA_TABLE_IDS.products,
-      productPatchFields(product, i + 1),
+      product.fields,
     );
-    newProductIds[product.clientId] = created.id;
+    productIdByClientIndex[product._clientIndex] = created.id;
   }
 
-  // 2. CREATE any new linked solutions — same index-driven Order rule.
-  const newSolutionIds: Record<string, string> = {};
-  for (let i = 0; i < state.solutions.length; i++) {
-    const solution = state.solutions[i];
+  // 4. CREATE any new linked solutions
+  const sortedSolutions = sortByClientIndex(transformed.solutions);
+  const solutionIdByClientIndex: Record<number, string> = {};
+  for (const solution of sortedSolutions) {
     const created = await createRecord(
-      apiKey,
+      airtableKey,
       PA_TABLE_IDS.solutions,
-      solutionPatchFields(solution, i + 1),
+      solution.fields,
     );
-    newSolutionIds[solution.clientId] = created.id;
+    solutionIdByClientIndex[solution._clientIndex] = created.id;
   }
 
-  // 3. CREATE the Product Area record itself with all direct fields plus
-  //    the freshly minted linked-record arrays. `Name` mirrors the slug
-  //    (same convention the existing records in the base use).
+  // 5. CREATE the Product Area record with direct fields + linked record
+  //    arrays in the right order. `Name` mirrors the slug (base convention).
+  //    Division, Products, Solutions are backend-managed per schema.
   const productIdOrder = state.products.map(
-    (p) => p.recordId || newProductIds[p.clientId],
-  );
+    (_, i) => productIdByClientIndex[i],
+  ).filter((id): id is string => !!id);
   const solutionIdOrder = state.solutions.map(
-    (s) => s.recordId || newSolutionIds[s.clientId],
-  );
+    (_, i) => solutionIdByClientIndex[i],
+  ).filter((id): id is string => !!id);
 
-  const created = await createRecord(apiKey, PA_TABLE_IDS.productAreas, {
+  const paFields: Record<string, unknown> = {
     Name: state.slug,
-    ...productAreaPatchFields(state),
+    ...transformed.productArea,
     Products: productIdOrder,
     Solutions: solutionIdOrder,
-  });
+  };
+  if (state.division.length > 0) {
+    paFields.Division = state.division;
+  }
+
+  const createdPa = await createRecord(
+    airtableKey,
+    PA_TABLE_IDS.productAreas,
+    paFields,
+  );
 
   return NextResponse.json({
     success: true,
     mode: 'create' as const,
-    recordId: created.id,
+    recordId: createdPa.id,
     slug: state.slug,
-    productsCreated: Object.keys(newProductIds).length,
-    solutionsCreated: Object.keys(newSolutionIds).length,
-    newProductIds,
-    newSolutionIds,
+    productsCreated: sortedProducts.length,
+    solutionsCreated: sortedSolutions.length,
   });
 }
 
 // ─── Update flow: existing Product Area ───────────────────────────────────
 
-async function updateProductArea(apiKey: string, state: ProductAreaState) {
-  // 1. CREATE any new products (no recordId yet). We iterate with an
-  //    explicit index so the `Order` value passed to the mapper reflects
-  //    the product's position in state.products — the PHP plugin sorts
-  //    linked records by Order, so UI reordering via ▲▼ arrows only
-  //    takes effect on the live page if this field is kept in sync.
-  const newProductIds: Record<string, string> = {};
-  for (let i = 0; i < state.products.length; i++) {
-    const product = state.products[i];
-    if (product.recordId) continue;
+async function updateProductArea(
+  airtableKey: string,
+  anthropicKey: string,
+  state: ProductAreaState,
+) {
+  if (!state.recordId) throw new Error('updateProductArea called without recordId');
+
+  // 1. Fetch existing PA so we know which linked products and solutions
+  //    currently live under it — needed for the diff (PATCH vs CREATE vs
+  //    DELETE). Only the linked-record IDs matter; field values come from
+  //    Claude's transformation of current state.
+  const existingPa = await loadExistingPa(airtableKey, state.recordId);
+  const existingProductIds = new Set(existingPa.productIds);
+  const existingSolutionIds = new Set(existingPa.solutionIds);
+
+  // 2. Claude transforms state → Airtable-ready fields
+  const transformed = await transformProductArea(anthropicKey, state, 'update');
+
+  // 3. Diff + apply products. Claude echoes _clientIndex / _recordId.
+  //
+  //    IMPORTANT: products (and solutions) are *shared* linked records in
+  //    Airtable — the same product row might be linked to multiple Product
+  //    Areas. The builder's v1 update contract is that removing a product
+  //    from state UN-LINKS it from this PA (by leaving it out of the PA's
+  //    `Products` array patch below) but never DELETES the underlying
+  //    product record. Only CREATE new + PATCH existing here.
+  const productIdByClientIndex: Record<number, string> = {};
+
+  // Create new products (no _recordId, or stale _recordId not in existing).
+  // Must happen first so we can include their IDs in the PA's Products
+  // link array below.
+  const newProductEntries = transformed.products
+    .filter((p) => !p._recordId || !existingProductIds.has(p._recordId))
+    .sort((a, b) => a._clientIndex - b._clientIndex);
+  for (const product of newProductEntries) {
     const created = await createRecord(
-      apiKey,
+      airtableKey,
       PA_TABLE_IDS.products,
-      productPatchFields(product, i + 1),
+      product.fields,
     );
-    newProductIds[product.clientId] = created.id;
+    productIdByClientIndex[product._clientIndex] = created.id;
   }
 
-  // 2. CREATE any new solutions — same index-driven Order rule.
-  const newSolutionIds: Record<string, string> = {};
-  for (let i = 0; i < state.solutions.length; i++) {
-    const solution = state.solutions[i];
-    if (solution.recordId) continue;
+  // Patch existing products that are still referenced in state.
+  const productPatchBatch: Array<{ id: string; fields: Record<string, unknown> }> = [];
+  for (const product of transformed.products) {
+    if (!product._recordId || !existingProductIds.has(product._recordId)) continue;
+    productPatchBatch.push({ id: product._recordId, fields: product.fields });
+    productIdByClientIndex[product._clientIndex] = product._recordId;
+  }
+  if (productPatchBatch.length > 0) {
+    await updateRecords(airtableKey, PA_TABLE_IDS.products, productPatchBatch);
+  }
+
+  // 4. Same diff for solutions — also shared, also never deleted, only
+  //    unlinked via the PA patch below.
+  const solutionIdByClientIndex: Record<number, string> = {};
+
+  const newSolutionEntries = transformed.solutions
+    .filter((s) => !s._recordId || !existingSolutionIds.has(s._recordId))
+    .sort((a, b) => a._clientIndex - b._clientIndex);
+  for (const solution of newSolutionEntries) {
     const created = await createRecord(
-      apiKey,
+      airtableKey,
       PA_TABLE_IDS.solutions,
-      solutionPatchFields(solution, i + 1),
+      solution.fields,
     );
-    newSolutionIds[solution.clientId] = created.id;
+    solutionIdByClientIndex[solution._clientIndex] = created.id;
   }
 
-  // 3. Build full ordered ID arrays (existing + newly created).
-  const productIdOrder = state.products.map(
-    (p) => p.recordId || newProductIds[p.clientId],
-  );
-  const solutionIdOrder = state.solutions.map(
-    (s) => s.recordId || newSolutionIds[s.clientId],
-  );
+  const solutionPatchBatch: Array<{ id: string; fields: Record<string, unknown> }> = [];
+  for (const solution of transformed.solutions) {
+    if (!solution._recordId || !existingSolutionIds.has(solution._recordId)) continue;
+    solutionPatchBatch.push({ id: solution._recordId, fields: solution.fields });
+    solutionIdByClientIndex[solution._clientIndex] = solution._recordId;
+  }
+  if (solutionPatchBatch.length > 0) {
+    await updateRecords(airtableKey, PA_TABLE_IDS.solutions, solutionPatchBatch);
+  }
 
-  // 4. PATCH the Product Area record itself — including updated
-  //    Products / Solutions link arrays in case the ordering changed
-  //    or new records were added.
-  await updateRecord(
-    apiKey,
-    PA_TABLE_IDS.productAreas,
-    state.recordId,
-    {
-      ...productAreaPatchFields(state),
-      Products: productIdOrder,
-      Solutions: solutionIdOrder,
-    },
-  );
+  // 5. PATCH the Product Area record itself with Claude's transformed fields
+  //    plus the fresh linked-record arrays (using state order). Removed
+  //    products/solutions drop out of these arrays here — that's how the
+  //    "unlink from PA, don't delete the row" rule is enforced.
+  const productIdOrder = state.products
+    .map((_, i) => productIdByClientIndex[i])
+    .filter((id): id is string => !!id);
+  const solutionIdOrder = state.solutions
+    .map((_, i) => solutionIdByClientIndex[i])
+    .filter((id): id is string => !!id);
 
-  // 5. PATCH existing linked products. We keep the index from the
-  //    unfiltered `state.products` array so Order always matches the
-  //    UI position, even after a remove+add shuffles the sequence.
-  const productUpdates: Array<{ id: string; fields: Record<string, unknown> }> = [];
-  state.products.forEach((p, i) => {
-    if (!p.recordId) return;
-    productUpdates.push({
-      id: p.recordId,
-      fields: productPatchFields(p, i + 1),
-    });
+  await updateRecord(airtableKey, PA_TABLE_IDS.productAreas, state.recordId, {
+    ...transformed.productArea,
+    Products: productIdOrder,
+    Solutions: solutionIdOrder,
+    Division: state.division,
   });
-  if (productUpdates.length > 0) {
-    await updateRecords(apiKey, PA_TABLE_IDS.products, productUpdates);
-  }
-
-  // 6. PATCH existing linked solutions — same index-driven Order rule.
-  const solutionUpdates: Array<{ id: string; fields: Record<string, unknown> }> = [];
-  state.solutions.forEach((s, i) => {
-    if (!s.recordId) return;
-    solutionUpdates.push({
-      id: s.recordId,
-      fields: solutionPatchFields(s, i + 1),
-    });
-  });
-  if (solutionUpdates.length > 0) {
-    await updateRecords(apiKey, PA_TABLE_IDS.solutions, solutionUpdates);
-  }
 
   return NextResponse.json({
     success: true,
     mode: 'update' as const,
     recordId: state.recordId,
     slug: state.slug,
-    productsCreated: Object.keys(newProductIds).length,
-    productsUpdated: productUpdates.length,
-    solutionsCreated: Object.keys(newSolutionIds).length,
-    solutionsUpdated: solutionUpdates.length,
-    newProductIds,
-    newSolutionIds,
+    productsCreated: newProductEntries.length,
+    productsUpdated: productPatchBatch.length,
+    solutionsCreated: newSolutionEntries.length,
+    solutionsUpdated: solutionPatchBatch.length,
   });
+}
+
+// ─── Helpers ───────────────────────────────────────────────────────────────
+
+function sortByClientIndex<T extends { _clientIndex: number }>(arr: T[]): T[] {
+  return [...arr].sort((a, b) => a._clientIndex - b._clientIndex);
+}
+
+/** Read the existing PA record and return the linked product/solution IDs
+ *  so the update path can diff against them. Full records aren't needed
+ *  here — the transformation comes from Claude, not the stored data. */
+async function loadExistingPa(
+  apiKey: string,
+  recordId: string,
+): Promise<{ productIds: string[]; solutionIds: string[] }> {
+  const record = await getRecord(apiKey, PA_TABLE_IDS.productAreas, recordId);
+  return {
+    productIds: (record.fields['Products'] as string[] | undefined) ?? [],
+    solutionIds: (record.fields['Solutions'] as string[] | undefined) ?? [],
+  };
 }

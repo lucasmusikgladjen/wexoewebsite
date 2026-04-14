@@ -1,13 +1,10 @@
 /**
- * Bidirectional mapping between Airtable records and ProductAreaState.
+ * Reverse mapping from Airtable records → ProductAreaState, used by the
+ * loader to hydrate the builder when editing an existing Product Area.
  *
- * Reverse: pageStateFromProductAreaRecords — builds a ProductAreaState from
- * an LP record + linked products + each product's linked articles + linked
- * solutions.
- *
- * Forward: productAreaPatchFields / productPatchFields / solutionPatchFields
- * build Airtable-ready field maps for PATCH requests. Fields are cleared
- * explicitly rather than omitted so the schema matches state exactly.
+ * Forward mapping (state → Airtable fields) now lives entirely in Claude
+ * via `lib/claude-transform.ts` — there are no deterministic forward
+ * mappers in this file anymore.
  */
 
 import {
@@ -205,113 +202,5 @@ export function productAreaStateFromRecords(args: {
     solutions: orderedSolutions,
 
     division: ((f['Division'] as string[] | undefined) ?? []).slice(),
-  };
-}
-
-// ─── Forward: state → Airtable fields (PATCH) ──────────────────────────────
-
-function normalPatchFields(section: NormalSection, n: 1 | 2 | 3 | 4): Fields {
-  const fields: Fields = {
-    [`Normal ${n} H2`]: section.h2,
-    [`Normal ${n} Text`]: section.text,
-    [`Normal ${n} Bullets`]: section.bullets,
-    [`Normal ${n} Image`]: section.image,
-    [`Normal ${n} Reversed`]: section.reversed,
-    [`Normal ${n} BG`]: section.bg,
-  };
-  if (n === 1) fields['Normal 1 upp'] = section.upp;
-  return fields;
-}
-
-/** Build the PATCH payload for the Product Areas record itself. */
-export function productAreaPatchFields(state: ProductAreaState): Fields {
-  return {
-    Slug: state.slug,
-    H1: state.h1,
-    'Top BG': state.topBg,
-
-    'Hero H2': state.heroH2,
-    'Hero Text': state.heroText,
-    'Hero CTA Text': state.heroCtaText,
-    'Hero CTA URL': state.heroCtaUrl,
-    'Hero Benefits': state.heroBenefits,
-    'Hero Image': state.heroImage,
-    'Hero BG': state.heroBg,
-    'Hero Accent': state.heroAccent,
-
-    'NPI Title': state.npiTitle,
-    'NPI Description': state.npiDescription,
-    'NPI Image': state.npiImage,
-    'NPI Link': state.npiLink,
-
-    'Toggle BG': state.toggleBg,
-    'Toggle Header BG': state.toggleHeaderBg,
-    'Toggle Accent': state.toggleAccent,
-
-    'Solutions Title': state.solutionsTitle,
-    'Solutions BG': state.solutionsBg,
-    'Solutions Card BG': state.solutionsCardBg,
-
-    ...normalPatchFields(state.normal1, 1),
-    ...normalPatchFields(state.normal2, 2),
-    ...normalPatchFields(state.normal3, 3),
-    ...normalPatchFields(state.normal4, 4),
-
-    'Contact Name': state.contactName,
-    'Contact Title': state.contactTitle,
-    'Contact Email': state.contactEmail,
-    'Contact Phone': state.contactPhone,
-    'Contact Image': state.contactImage,
-    'Contact Text': state.contactText,
-    'Contact BG': state.contactBg,
-
-    'Docs Title': state.docsTitle,
-    'Docs Iframe': state.docsIframe,
-    'Docs BG': state.docsBg,
-
-    'Side menu': state.sideMenu,
-    Request: state.request,
-    'Default open': state.defaultOpen,
-
-    Division: state.division,
-  };
-}
-
-/** PATCH payload for a linked Product record.
- *  `order` is always passed explicitly by the save route (derived from the
- *  product's position in `state.products`) so UI reordering via ▲▼ arrows
- *  and remove/add operations stay consistent with the PHP plugin, which
- *  sorts linked products by their `Order` field. The `product.order` value
- *  carried in state is treated as vestigial. */
-export function productPatchFields(product: LinkedProduct, order: number): Fields {
-  return {
-    Name: product.name,
-    'Header side menu': product.headerSideMenu,
-    Description: product.description,
-    'Ecosystem Description': product.ecosystemDescription,
-    Bullets: product.bullets,
-    Image: product.image,
-    'Button 1 Text': product.button1Text,
-    'Button 1 URL': product.button1Url,
-    'Button 2 Text': product.button2Text,
-    'Button 2 URL': product.button2Url,
-    Horizontal: product.horizontal,
-    Order: order,
-    Visa: product.visa,
-  };
-}
-
-/** PATCH payload for a linked Solution record. Same rationale for the
- *  explicit `order` parameter as `productPatchFields`. */
-export function solutionPatchFields(solution: LinkedSolution, order: number): Fields {
-  return {
-    Name: solution.name,
-    Image: solution.image,
-    URL: solution.url,
-    Description: solution.description,
-    Category: solution.category,
-    'CTA Text': solution.ctaText,
-    Order: order,
-    Visa: solution.visa,
   };
 }
