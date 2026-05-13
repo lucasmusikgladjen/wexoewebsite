@@ -45,12 +45,11 @@ class Core {
     }
 
     /**
-     * Get a write repository for a table. Use for creating and updating records
-     * (form submissions, lead magnets, event signups, etc.).
+     * Get a write repository for a table using raw Airtable field names.
      *
-     * Pass the raw Airtable table ID (tblXXXXXXXXXXXXXX). Field names in all
-     * write calls must also be the actual Airtable field names — no schema
-     * translation is applied. Sanitize all values before passing them here.
+     * Use when you want direct, schema-free access to any table. Field names
+     * must be the actual Airtable column names. Sanitize all values before
+     * passing them here.
      *
      * @param string      $table_id  Airtable table ID (tblXXXXXXXXXXXXXX)
      * @param string|null $base_id   Optional base ID override (uses plugin config if null)
@@ -58,6 +57,39 @@ class Core {
      */
     public static function writer($table_id, $base_id = null) {
         return new WriteRepository($table_id, $base_id);
+    }
+
+    /**
+     * Get a write repository backed by a named write-entity schema.
+     *
+     * Write-entity schemas live in write-entities/*.php in the wexoe-core plugin
+     * directory. They map domain field names to Airtable field names and store
+     * the table ID, so plugins don't hardcode table IDs or Airtable column names.
+     *
+     * Use create_mapped() on the returned repository to write with domain keys.
+     *
+     *   $result = Core::submission('user_submissions')->create_mapped([
+     *       'email'           => sanitize_email($email),
+     *       'submission_type' => 'leadmagnet',
+     *       'newsletter_consent' => true,
+     *       'extra'           => ['custom_key' => 'value'],
+     *   ]);
+     *
+     * Returns null if the write-entity schema is not found or invalid. Callers
+     * should null-check before use.
+     *
+     * @param string $entity_name  Write-entity name (e.g. 'user_submissions')
+     * @return WriteRepository|null
+     */
+    public static function submission($entity_name) {
+        $config = WriteRegistry::get_config($entity_name);
+        if ($config === null) {
+            Logger::error('Core::submission() — write-entity not found', [
+                'entity' => $entity_name,
+            ]);
+            return null;
+        }
+        return new WriteRepository($config['table_id'], null, $config['fields']);
     }
 
     /**

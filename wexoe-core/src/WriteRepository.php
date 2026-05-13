@@ -15,14 +15,21 @@ if (!defined('ABSPATH')) {
  * aliases. The caller is responsible for sanitizing all values before passing
  * them here; wexoe-core does not alter field values.
  *
- * Usage:
+ * Usage (raw field names):
  *   $result = Core::writer('tblXXX')->create([
  *       'Email'   => sanitize_email($email),
  *       'Namn'    => sanitize_text_field($name),
- *       'Meddelande' => sanitize_textarea_field($message),
+ *   ]);
+ *
+ * Usage (domain names via write-entity schema):
+ *   $result = Core::submission('user_submissions')->create_mapped([
+ *       'email'           => sanitize_email($email),
+ *       'submission_type' => 'leadmagnet',
+ *       'newsletter_consent' => true,
+ *       'extra'           => ['custom_field' => 'value'],  // auto JSON-encoded
  *   ]);
  *   if (!$result['success']) {
- *       Core::log('error', 'Kunde inte spara lead', ['error' => $result['error']]);
+ *       Core::log('error', 'Kunde inte spara submission', ['error' => $result['error']]);
  *   }
  */
 class WriteRepository {
@@ -34,12 +41,23 @@ class WriteRepository {
     private $base_id;
 
     /**
-     * @param string      $table_id  Airtable table ID (tblXXXXXXXXXXXXXX)
-     * @param string|null $base_id   Optional override; uses plugin config if null
+     * Optional domain_key => Airtable field name map.
+     * Set by WriteRegistry when accessed via Core::submission().
+     * Empty when accessed via Core::writer() (raw mode).
+     *
+     * @var array<string, string>
      */
-    public function __construct($table_id, $base_id = null) {
-        $this->table_id = $table_id;
-        $this->base_id  = $base_id ?: null;
+    private $field_map;
+
+    /**
+     * @param string      $table_id   Airtable table ID (tblXXXXXXXXXXXXXX)
+     * @param string|null $base_id    Optional override; uses plugin config if null
+     * @param array       $field_map  domain_key => Airtable field name (optional)
+     */
+    public function __construct($table_id, $base_id = null, $field_map = []) {
+        $this->table_id  = $table_id;
+        $this->base_id   = $base_id ?: null;
+        $this->field_map = is_array($field_map) ? $field_map : [];
     }
 
     /**
@@ -86,6 +104,82 @@ class WriteRepository {
             return $this->config_error('Inga fält att uppdatera.');
         }
         return AirtableClient::update_record($this->table_id, $record_id, $fields, $this->base_id);
+    }
+
+    /**
+     * Create a record using domain field names mapped through the write-entity schema.
+     *
+     * Domain keys not present in the field map are silently ignored (logged as warning).
+     * Null values are skipped — omitting a key is equivalent to passing null.
+     * Array values for 'extra' (or any multilineText field) are JSON-encoded automatically.
+     *
+     * @param  array $domain_fields  domain_key => value (already sanitized)
+     * @return array Same shape as create()
+     */
+    public function create_mapped(array $domain_fields) {
+        if (empty($this->field_map)) {
+            Logger::warning('WriteRepository::create_mapped called without a field map — falling back to raw create()', [
+                'table' => $this->table_id,
+            ]);
+            return $this->create($domain_fields);
+        }
+
+        $airtable_fields = [];
+        foreach ($domain_fields as $domain_key => $value) {
+            if ($value === null) {
+                continue;
+            }
+            if (!isset($this->field_map[$domain_key])) {
+                Logger::warning('WriteRepository::create_mapped: unknown domain key, skipping', [
+                    'key'   => $domain_key,
+                    'table' => $this->table_id,
+                ]);
+                continue;
+            }
+            $airtable_name = $this->field_map[$domain_key];
+            // Auto-encode arrays as JSON (intended for 'extra' and calculator_data overflow)
+            if (is_array($value)) {
+                $value = wp_json_encode($value, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+            }
+            $airtable_fields[$airtable_name] = $value;
+        }
+
+        if (empty($airtable_fields)) {
+            return $this->config_error('Inga mappade fält att skriva efter filtrering.');
+        }
+
+        return $this->create($airtable_fields);
+    }
+
+    /**
+     * Update using domain field names.
+     *
+     * @param  string $record_id    Airtable record ID (recXXXXXXXXXXXXXX)
+     * @param  array  $domain_fields
+     * @return array Same shape as update()
+     */
+    public function update_mapped($record_id, array $domain_fields) {
+        if (empty($this->field_map)) {
+            return $this->update($record_id, $domain_fields);
+        }
+
+        $airtable_fields = [];
+        foreach ($domain_fields as $domain_key => $value) {
+            if ($value === null || !isset($this->field_map[$domain_key])) {
+                continue;
+            }
+            $airtable_name = $this->field_map[$domain_key];
+            if (is_array($value)) {
+                $value = wp_json_encode($value, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+            }
+            $airtable_fields[$airtable_name] = $value;
+        }
+
+        if (empty($airtable_fields)) {
+            return $this->config_error('Inga mappade fält att uppdatera efter filtrering.');
+        }
+
+        return $this->update($record_id, $airtable_fields);
     }
 
     /* --------------------------------------------------------
