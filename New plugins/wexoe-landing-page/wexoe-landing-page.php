@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Wexoe Landing Page
  * Description: Modular, high-converting landing pages driven by Wexoe Core data. Use [wexoe_landing slug="fjarraccess"] to render.
- * Version: 2.0.1
+ * Version: 2.1.0
  * Author: Wexoe
  * Text Domain: wexoe-landing-page
  */
@@ -265,7 +265,7 @@ function wexoe_lp_test_render_sidebar_event($data, $id) {
 
     $html .= '<hr class="wexoe-lp-sb-divider"/>';
     $html .= '<div class="wexoe-lp-sb-form" data-type="event" data-webhook="'.esc_attr($webhook).'">';
-    $html .= '<input type="email" class="wexoe-lp-sb-input" placeholder="Din e-postadress" required/>';
+    $html .= '<input type="email" name="email" class="wexoe-lp-sb-input" placeholder="Din e-postadress" required/>';
     $html .= '<button type="button" class="wexoe-lp-sb-submit wexoe-lp-sb-submit-orange">Anmäl mig &rarr;</button>';
     $html .= '<div class="wexoe-lp-sb-msg"></div>';
     $html .= '</div>';
@@ -289,8 +289,8 @@ function wexoe_lp_test_render_sidebar_leadmagnet($data, $id) {
     if ($desc) $html .= '<div class="wexoe-lp-sb-desc">'.wexoe_lp_test_md($desc).'</div>';
 
     $html .= '<div class="wexoe-lp-sb-form" data-type="leadmagnet" data-webhook="'.esc_attr($webhook).'" data-file="'.esc_attr($file_url).'">';
-    $html .= '<input type="email" class="wexoe-lp-sb-input" placeholder="Din e-postadress" required/>';
-    $html .= '<label class="wexoe-lp-sb-consent"><input type="checkbox" class="wexoe-lp-sb-checkbox"/><span>Jag godkänner att Wexoe skickar mig relevanta nyheter och erbjudanden via e-post.</span></label>';
+    $html .= '<input type="email" name="email" class="wexoe-lp-sb-input" placeholder="Din e-postadress" required/>';
+    $html .= '<label class="wexoe-lp-sb-consent"><input type="checkbox" name="newsletter_consent" class="wexoe-lp-sb-checkbox"/><span>Jag godkänner att Wexoe skickar mig relevanta nyheter och erbjudanden via e-post.</span></label>';
     $html .= '<button type="button" class="wexoe-lp-sb-submit wexoe-lp-sb-submit-orange">Ladda ner &rarr;</button>';
     $html .= '<div class="wexoe-lp-sb-msg"></div>';
     $html .= '</div>';
@@ -770,12 +770,18 @@ function wexoe_lp_test_render_css($id, $main_color, $secondary_color) {
    JAVASCRIPT
    ============================================================ */
 
-function wexoe_lp_test_render_js($id) {
+function wexoe_lp_test_render_js($id, $page_slug = '') {
+    $endpoint = esc_url(rest_url('wexoe-lp/v1/submit'));
+    $slug     = esc_js($page_slug);
+
     return '
     <script>
     (function() {
         var wrap = document.getElementById("'.$id.'");
         if (!wrap) return;
+
+        var submitEndpoint = "' . $endpoint . '";
+        var pageSlug       = "' . $slug . '";
 
         /* Tab switching */
         wrap.querySelectorAll(".wexoe-lp-tab-btn").forEach(function(btn) {
@@ -795,69 +801,70 @@ function wexoe_lp_test_render_js($id) {
             });
         });
 
-        /* Sidebar form submissions */
+        /* Sidebar form submissions — posts to WordPress REST endpoint */
         wrap.querySelectorAll(".wexoe-lp-sb-form").forEach(function(form) {
             var btn = form.querySelector(".wexoe-lp-sb-submit");
             if (!btn) return;
             btn.addEventListener("click", function() {
-                var email = form.querySelector(".wexoe-lp-sb-input");
-                var msg = form.querySelector(".wexoe-lp-sb-msg");
-                var webhook = form.getAttribute("data-webhook");
-                var type = form.getAttribute("data-type");
-                var checkbox = form.querySelector(".wexoe-lp-sb-checkbox");
+                var type    = form.getAttribute("data-type");
+                var emailEl = form.querySelector("[name=email]");
+                var consent = form.querySelector("[name=newsletter_consent]");
+                var msg     = form.querySelector(".wexoe-lp-sb-msg");
 
-                if (!email || !email.value || !email.value.includes("@")) {
+                if (!emailEl || !emailEl.value || emailEl.value.indexOf("@") < 0) {
                     if (msg) { msg.style.color = "#EF4444"; msg.textContent = "Ange en giltig e-postadress."; }
                     return;
                 }
-                if (type === "leadmagnet" && checkbox && !checkbox.checked) {
-                    if (msg) { msg.style.color = "#EF4444"; msg.textContent = "Du m\u00e5ste godk\u00e4nna f\u00f6r att ladda ner."; }
+                if (type === "leadmagnet" && consent && !consent.checked) {
+                    if (msg) { msg.style.color = "#EF4444"; msg.textContent = "Du måste godkänna för att ladda ner."; }
                     return;
                 }
 
-                btn.disabled = true;
-                btn.textContent = "Skickar...";
+                btn.disabled    = true;
+                btn.textContent = "Skickar…";
 
+                /* Collect all named inputs */
                 var payload = {
-                    email: email.value,
-                    type: type,
-                    page_url: window.location.href,
-                    submitted_at: new Date().toISOString()
+                    submission_type: type,
+                    page_slug:       pageSlug,
+                    page_url:        window.location.href
                 };
-
-                if (webhook) {
-                    fetch(webhook, {
-                        method: "POST",
-                        headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify(payload)
-                    }).then(function() {
-                        if (type === "event") {
-                            if (msg) { msg.style.color = "#10B981"; msg.textContent = "\u2713 Du \u00e4r anm\u00e4ld!"; }
-                        } else {
-                            var fileUrl = form.getAttribute("data-file");
-                            if (fileUrl) window.open(fileUrl, "_blank");
-                            if (msg) { msg.style.color = "#10B981"; msg.textContent = "\u2713 Tack! Nedladdningen startar."; }
-                        }
-                        btn.textContent = "\u2713 Klart";
-                    }).catch(function() {
-                        if (msg) { msg.style.color = "#EF4444"; msg.textContent = "N\u00e5got gick fel. F\u00f6rs\u00f6k igen."; }
-                        btn.disabled = false;
-                        btn.textContent = type === "event" ? "Anm\u00e4l mig \u2192" : "Ladda ner \u2192";
-                    });
-                } else {
-                    /* No webhook — direct file access for lead magnet */
-                    if (type === "leadmagnet") {
-                        var fileUrl = form.getAttribute("data-file");
-                        if (fileUrl) window.open(fileUrl, "_blank");
+                form.querySelectorAll("[name]").forEach(function(el) {
+                    if (el.type === "checkbox") {
+                        payload[el.name] = el.checked;
+                    } else if (el.value !== "") {
+                        payload[el.name] = el.value;
                     }
-                    if (msg) { msg.style.color = "#10B981"; msg.textContent = "\u2713 Tack!"; }
-                    btn.textContent = "\u2713 Klart";
-                }
+                });
+
+                fetch(submitEndpoint, {
+                    method:  "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body:    JSON.stringify(payload)
+                })
+                .then(function(res) { return res.json(); })
+                .then(function(data) {
+                    if (!data.success) { throw new Error(data.message || "Server error"); }
+                    if (type === "leadmagnet") {
+                        var fileUrl = data.file_url || form.getAttribute("data-file");
+                        if (fileUrl) window.open(fileUrl, "_blank");
+                        if (msg) { msg.style.color = "#10B981"; msg.textContent = "✓ Tack! Nedladdningen startar."; }
+                    } else {
+                        if (msg) { msg.style.color = "#10B981"; msg.textContent = "✓ Du är anmäld!"; }
+                    }
+                    btn.textContent = "✓ Klart";
+                })
+                .catch(function(err) {
+                    if (msg) { msg.style.color = "#EF4444"; msg.textContent = err.message || "Något gick fel. Försök igen."; }
+                    btn.disabled    = false;
+                    btn.textContent = type === "event" ? "Anmäl mig →" : "Ladda ner →";
+                });
             });
         });
     })();
     </script>';
 }
+
 
 /* ============================================================
    SHORTCODE
@@ -969,9 +976,175 @@ function wexoe_landing_page_test_shortcode($atts) {
     $html .= '</div>';
 
     // JavaScript
-    $html .= wexoe_lp_test_render_js($id);
+    $html .= wexoe_lp_test_render_js($id, $slug);
 
     return $html;
 }
 
 add_shortcode('wexoe_landing', 'wexoe_landing_page_test_shortcode');
+
+/* ============================================================
+   REST API — FORM SUBMISSION ENDPOINT
+   POST /wp-json/wexoe-lp/v1/submit
+   ============================================================ */
+
+add_action('rest_api_init', 'wexoe_lp_register_submit_route');
+
+function wexoe_lp_register_submit_route() {
+    register_rest_route('wexoe-lp/v1', '/submit', [
+        'methods'             => 'POST',
+        'callback'            => 'wexoe_lp_handle_submit',
+        'permission_callback' => '__return_true',
+        'args'                => [
+            'email'              => ['required' => true,  'sanitize_callback' => 'sanitize_email'],
+            'submission_type'    => ['required' => true,  'sanitize_callback' => 'sanitize_text_field'],
+            'page_slug'          => ['required' => true,  'sanitize_callback' => 'sanitize_text_field'],
+            'page_url'           => ['required' => false, 'sanitize_callback' => 'esc_url_raw'],
+            'name'               => ['required' => false, 'sanitize_callback' => 'sanitize_text_field'],
+            'company'            => ['required' => false, 'sanitize_callback' => 'sanitize_text_field'],
+            'phone'              => ['required' => false, 'sanitize_callback' => 'sanitize_text_field'],
+            'message'            => ['required' => false, 'sanitize_callback' => 'sanitize_textarea_field'],
+            'newsletter_consent' => ['required' => false],
+            'extra'              => ['required' => false],
+        ],
+    ]);
+}
+
+function wexoe_lp_handle_submit(WP_REST_Request $request) {
+    // 1. Rate limiting — max 10 submissions per IP per hour
+    $ip           = wexoe_lp_get_client_ip();
+    $rate_key     = 'wexoe_lp_rl_' . md5($ip);
+    $rate_count   = (int) get_transient($rate_key);
+    if ($rate_count >= 10) {
+        return new WP_REST_Response([
+            'success' => false,
+            'message' => 'För många försök. Vänta lite och försök igen.',
+        ], 429);
+    }
+    set_transient($rate_key, $rate_count + 1, HOUR_IN_SECONDS);
+
+    if (!wexoe_lp_test_core_ready()) {
+        return new WP_REST_Response(['success' => false, 'message' => 'Server error.'], 500);
+    }
+
+    // 2. Validate email
+    $email = $request->get_param('email');
+    if (empty($email) || !is_email($email)) {
+        return new WP_REST_Response(['success' => false, 'message' => 'Ogiltig e-postadress.'], 400);
+    }
+
+    $submission_type = $request->get_param('submission_type');
+    $page_slug       = $request->get_param('page_slug');
+
+    // 3. Look up landing page to get type-specific data (webhook, magnet/event title, file url)
+    $page_data   = null;
+    $webhook_url = null;
+    $file_url    = null;
+    $magnet_name = null;
+    $event_title = null;
+
+    $pages_repo = \Wexoe\Core\Core::entity('landing_pages');
+    if ($pages_repo && !empty($page_slug)) {
+        $page_data = $pages_repo->find($page_slug);
+        if ($page_data) {
+            if ($submission_type === 'leadmagnet') {
+                $webhook_url = wexoe_lp_test_field($page_data, 'magnet_webhook', '');
+                $file_url    = wexoe_lp_test_field($page_data, 'magnet_file_url', '');
+                $magnet_name = wexoe_lp_test_field($page_data, 'magnet_title', '');
+            } elseif ($submission_type === 'event') {
+                $webhook_url = wexoe_lp_test_field($page_data, 'event_webhook', '');
+                $event_title = wexoe_lp_test_field($page_data, 'event_title', '');
+            }
+        }
+    }
+
+    // 4. Build extra payload
+    $extra_raw = $request->get_param('extra');
+    $extra     = null;
+    if (!empty($extra_raw)) {
+        if (is_array($extra_raw)) {
+            // Sanitize each value
+            $extra = array_map('sanitize_text_field', $extra_raw);
+        } elseif (is_string($extra_raw)) {
+            $decoded = json_decode(stripslashes($extra_raw), true);
+            $extra   = is_array($decoded) ? array_map('sanitize_text_field', $decoded) : null;
+        }
+    }
+
+    // 5. Write to Airtable via wexoe-core
+    $repo = \Wexoe\Core\Core::submission('user_submissions');
+    if ($repo) {
+        $consent = $request->get_param('newsletter_consent');
+        $result  = $repo->create_mapped(array_filter([
+            'submission_id'      => wp_generate_uuid4(),
+            'email'              => $email,
+            'name'               => $request->get_param('name') ?: null,
+            'company'            => $request->get_param('company') ?: null,
+            'phone'              => $request->get_param('phone') ?: null,
+            'message'            => $request->get_param('message') ?: null,
+            'submission_type'    => $submission_type,
+            'submitted_at'       => gmdate('Y-m-d\TH:i:s\Z'),
+            'page_slug'          => $page_slug,
+            'page_url'           => $request->get_param('page_url') ?: null,
+            'newsletter_consent' => !empty($consent) && $consent !== 'false' ? true : false,
+            'magnet_name'        => $magnet_name ?: null,
+            'event_title'        => $event_title ?: null,
+            'source_plugin'      => 'wexoe-landing-page',
+            'extra'              => $extra,
+        ], function($v) { return $v !== null; }));
+
+        if (!$result['success']) {
+            \Wexoe\Core\Core::log('error', 'wexoe-lp: Airtable write failed', [
+                'error'      => $result['error'],
+                'error_type' => $result['error_type'],
+                'slug'       => $page_slug,
+                'type'       => $submission_type,
+            ]);
+            // Non-fatal — we still try the webhook below and return success to the user
+            // to avoid confusing UX when Airtable is temporarily unavailable.
+        }
+    }
+
+    // 6. Forward to external webhook (Make.com etc.) if configured
+    if (!empty($webhook_url)) {
+        $webhook_payload = [
+            'email'        => $email,
+            'type'         => $submission_type,
+            'page_url'     => $request->get_param('page_url') ?: '',
+            'submitted_at' => gmdate('c'),
+        ];
+        if ($magnet_name) $webhook_payload['magnet_name'] = $magnet_name;
+        if ($event_title) $webhook_payload['event_title']  = $event_title;
+
+        wp_remote_post($webhook_url, [
+            'headers'     => ['Content-Type' => 'application/json'],
+            'body'        => wp_json_encode($webhook_payload),
+            'timeout'     => 8,
+            'blocking'    => false, // fire-and-forget
+        ]);
+    }
+
+    // 7. Respond
+    $response = ['success' => true];
+    if ($submission_type === 'leadmagnet' && !empty($file_url)) {
+        $response['file_url'] = $file_url;
+    }
+    return new WP_REST_Response($response, 200);
+}
+
+/**
+ * Get real client IP, respecting common proxy headers.
+ * Falls back to REMOTE_ADDR.
+ */
+function wexoe_lp_get_client_ip() {
+    $headers = ['HTTP_CF_CONNECTING_IP', 'HTTP_X_FORWARDED_FOR', 'HTTP_X_REAL_IP', 'REMOTE_ADDR'];
+    foreach ($headers as $header) {
+        if (!empty($_SERVER[$header])) {
+            $ip = trim(explode(',', $_SERVER[$header])[0]);
+            if (filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE)) {
+                return $ip;
+            }
+        }
+    }
+    return isset($_SERVER['REMOTE_ADDR']) ? $_SERVER['REMOTE_ADDR'] : '0.0.0.0';
+}
