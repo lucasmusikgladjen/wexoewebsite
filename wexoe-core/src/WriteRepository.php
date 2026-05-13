@@ -107,6 +107,16 @@ class WriteRepository {
     }
 
     /**
+     * Delete a single record.
+     */
+    public function delete($record_id) {
+        if (empty($record_id)) {
+            return $this->config_error('Record-ID saknas.');
+        }
+        return AirtableClient::delete_record($this->table_id, $record_id, $this->base_id);
+    }
+
+    /**
      * Create a record using domain field names mapped through the write-entity schema.
      *
      * Domain keys not present in the field map are silently ignored (logged as warning).

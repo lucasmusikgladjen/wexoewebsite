@@ -1,0 +1,14 @@
+<?php
+if (!defined('ABSPATH')) exit;
+return [
+    'table_id' => 'tblLsYRMZz6JA6GBK',
+    'base_id'  => \Wexoe\Core\Plugin::SSOT_BASE_ID,
+    'fields' => [
+        'name' => 'Name',
+        'slug' => 'Slug',
+        'description' => 'Description',
+        'icon' => 'Icon',
+        'order' => 'Order',
+        'active' => 'Active',
+    ],
+];
