@@ -274,5 +274,8 @@ export function emptyProductAreaState(): ProductAreaState {
     solutions: [],
 
     division: [],
+
+    showContactForm: false,
+    contactForm: emptyContactFormState(),
   };
 }
