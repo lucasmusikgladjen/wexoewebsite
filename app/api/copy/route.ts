@@ -8,6 +8,7 @@ import {
 import { TABLE_IDS as LP_TABLE_IDS } from '@/lib/airtable';
 import { PA_TABLE_IDS } from '@/lib/product-area-mapper';
 import { AUDIENCE_TABLE_IDS } from '@/lib/audience-mapper';
+import { invalidateWexoeCoreCache, AUDIENCE_ENTITIES } from '@/lib/wexoe-cache';
 
 const AIRTABLE_API_KEY = process.env.AIRTABLE_API_KEY;
 
@@ -220,6 +221,8 @@ async function copyAudience(
   fields.Slug = newSlug;
 
   const created = await createRecord(apiKey, AUDIENCE_TABLE_IDS.audienceHeroes, fields);
+
+  await invalidateWexoeCoreCache(AUDIENCE_ENTITIES, 'audience:copy');
 
   return NextResponse.json({
     success: true,
