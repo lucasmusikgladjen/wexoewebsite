@@ -38,7 +38,7 @@ import {
   computeFinalParentArrays,
   deleteRelationChildren,
 } from './page-types/relation-sync';
-import type { RelationDef, RelationSyncResult } from './page-types/types';
+import type { PageTypeServerDef, RelationDef, RelationSyncResult } from './page-types/types';
 
 // ─── Response shapes ───────────────────────────────────────────────────────
 
@@ -411,4 +411,50 @@ export function createPageRoute<TState, TListItem>(
   }
 
   return { GET, POST, PATCH, DELETE };
+}
+
+// ─── Adapter: PageTypeServerDef → PageRouteConfig ──────────────────────────
+
+/**
+ * Bygger `PageRouteConfig` från en `PageTypeServerDef`. Tillåter sidtyper
+ * att deklareras en gång i `lib/page-types/<type>.server.ts` och drivas av
+ * factory:n utan att duplicera fält:
+ *
+ *   const { GET, POST, PATCH, DELETE } = createPageRoute(
+ *     pageTypeToRouteConfig(audienceServer, process.env.AIRTABLE_API_KEY, loadAudienceState),
+ *   );
+ */
+export function pageTypeToRouteConfig<TState, TListItem>(
+  serverDef: PageTypeServerDef<TState, TListItem>,
+  apiKey: string | undefined,
+  loadState?: (apiKey: string, recordId: string) => Promise<TState>,
+): PageRouteConfig<TState, TListItem> {
+  return {
+    apiKey,
+    tableId: serverDef.tableId,
+    baseId: serverDef.baseId,
+    cacheEntities: serverDef.cacheEntities,
+    cacheContext: serverDef.id,
+
+    loadState,
+    stateToFields: serverDef.stateToFields,
+    listMapper: serverDef.listItemMapper,
+    listFields: serverDef.listFields,
+    listSort: serverDef.listSort,
+
+    slugAccessor: serverDef.slug?.accessor,
+    slugField: serverDef.slug?.field,
+    validateSlugFormat: serverDef.slug?.validateFormat,
+    checkReservedSlug: serverDef.slug?.checkReserved,
+    checkDuplicateSlug: serverDef.slug?.checkDuplicate,
+
+    validate: serverDef.validate
+      ? (s: TState) => {
+          const issue = serverDef.validate!(s);
+          return issue ? issue.message : null;
+        }
+      : undefined,
+
+    relations: serverDef.relations,
+  };
 }

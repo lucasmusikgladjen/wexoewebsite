@@ -23,6 +23,14 @@ export const AUDIENCE_TABLE_IDS = {
 
 export function audienceStateFromRecord(record: AirtableRecord): AudienceState {
   const f = record.fields;
+  const valueH2 = str(f, 'Value H2');
+  const valueText1 = str(f, 'Value Text 1');
+  const valueText2 = str(f, 'Value Text 2');
+  const benefit1 = str(f, 'Benefit 1');
+  const benefit2 = str(f, 'Benefit 2');
+  const benefit3 = str(f, 'Benefit 3');
+  const caseTitle = str(f, 'Case Title');
+
   return {
     mode: 'edit',
     recordId: record.id,
@@ -38,14 +46,19 @@ export function audienceStateFromRecord(record: AirtableRecord): AudienceState {
     statNumber: str(f, 'Stat Number'),
     statLabel: str(f, 'Stat Label'),
 
-    valueH2: str(f, 'Value H2'),
-    valueText1: str(f, 'Value Text 1'),
-    valueText2: str(f, 'Value Text 2'),
-    benefit1: str(f, 'Benefit 1'),
-    benefit2: str(f, 'Benefit 2'),
-    benefit3: str(f, 'Benefit 3'),
+    // showValue/showCase persisteras inte i Airtable — defaulta till true
+    // i edit-läge om någon av fälten har innehåll, annars false. Speglar
+    // AudienceBuilder:s legacy-logik.
+    showValue: !!(valueH2 || valueText1 || valueText2 || benefit1 || benefit2 || benefit3),
+    valueH2,
+    valueText1,
+    valueText2,
+    benefit1,
+    benefit2,
+    benefit3,
 
-    caseTitle: str(f, 'Case Title'),
+    showCase: !!caseTitle,
+    caseTitle,
     caseDescription: str(f, 'Case Description'),
     caseResult: str(f, 'Case Result'),
     caseLinkText: str(f, 'Case Link Text'),

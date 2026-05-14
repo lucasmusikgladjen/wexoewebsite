@@ -94,6 +94,10 @@ export interface PageTypeServerDef<TState, TListItem = unknown> {
 
   /** Hur en record presenteras i list-svaret (GET ?action=list). */
   listItemMapper: (record: AirtableRecord) => TListItem;
+  /** Fält som ska hämtas vid list. Default: alla fält. */
+  listFields?: readonly string[];
+  /** Sort-instruktion till list. Default: ingen sortering. */
+  listSort?: ReadonlyArray<{ field: string; direction: 'asc' | 'desc' }>;
 
   /** Lager 2 — deklarativa relationer mot andra tabeller. Tomt array eller
    *  utelämnat = bara primary record. */
@@ -273,6 +277,8 @@ export interface PreviewLayoutProps<TState> {
   activeSection: string | null;
   /** Bumpa för att trigga scroll till activeSection (klick i editor). */
   scrollTrigger: number;
+  /** Callback för att flytta active section när användaren klickar i previewen. */
+  onSectionClick: (id: string) => void;
 }
 
 export interface SlugInputConfig<TState> {

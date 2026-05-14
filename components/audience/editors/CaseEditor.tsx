@@ -1,57 +1,44 @@
 'use client';
 
 import { AudienceState } from '@/lib/audience-types';
-import { FieldInput, FieldTextarea } from '@/components/editors/FieldInput';
-import ButtonFieldset from '@/components/editors/ButtonFieldset';
-import EditorSection from '@/components/editors/EditorSection';
+import { Field } from '@/components/shared/fields';
+import type { SectionEditorProps } from '@/lib/page-types/types';
 
-interface Props {
-  state: AudienceState;
-  setField: <K extends keyof AudienceState>(key: K, value: AudienceState[K]) => void;
-  visible: boolean;
-  onToggleVisible: (v: boolean) => void;
-}
+export default function CaseEditor({ state, onChange }: SectionEditorProps<AudienceState>) {
+  const set = <K extends keyof AudienceState>(key: K, value: AudienceState[K]) =>
+    onChange({ ...state, [key]: value });
 
-export default function CaseEditor({ state, setField, visible, onToggleVisible }: Props) {
   return (
-    <EditorSection title="Kundcase-kort" visible={visible} onToggleVisible={onToggleVisible}>
-      <FieldInput
+    <>
+      <Field.Text
         label="Titel"
         value={state.caseTitle}
-        onChange={(v) => setField('caseTitle', v)}
+        onChange={(v) => set('caseTitle', v)}
         placeholder="Stor industrikund minskade nedtid med 40 %"
       />
 
-      <FieldTextarea
+      <Field.Textarea
         label="Beskrivning"
         value={state.caseDescription}
-        onChange={(v) => setField('caseDescription', v)}
+        onChange={(v) => set('caseDescription', v)}
         rows={4}
         placeholder="Kort sammanfattning av caset…"
       />
 
-      <FieldInput
+      <Field.Text
         label="Resultat"
         value={state.caseResult}
-        onChange={(v) => setField('caseResult', v)}
+        onChange={(v) => set('caseResult', v)}
         placeholder="40 % minskad nedtid"
       />
 
-      <ButtonFieldset
+      <Field.Buttons
         label="Länk"
         segments={[
-          {
-            value: state.caseLinkText,
-            onChange: (v) => setField('caseLinkText', v),
-            placeholder: 'Text',
-          },
-          {
-            value: state.caseLinkUrl,
-            onChange: (v) => setField('caseLinkUrl', v),
-            placeholder: 'URL',
-          },
+          { value: state.caseLinkText, onChange: (v) => set('caseLinkText', v), placeholder: 'Text' },
+          { value: state.caseLinkUrl, onChange: (v) => set('caseLinkUrl', v), placeholder: 'URL' },
         ]}
       />
-    </EditorSection>
+    </>
   );
 }

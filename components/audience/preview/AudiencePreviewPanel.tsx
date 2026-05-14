@@ -8,17 +8,12 @@ import ValuePreview from './ValuePreview';
 import CasePreview from './CasePreview';
 import ContactFormPreview from '@/components/contact-form/ContactFormPreview';
 
-interface Visibility {
-  value: boolean;
-  case: boolean;
-}
-
 interface Props {
   state: AudienceState;
-  activeSection: AudienceSectionId | null;
-  onSectionClick: (id: AudienceSectionId) => void;
+  /** PageTypeBuilder skickar `string | null` — vi normaliserar nedan. */
+  activeSection: AudienceSectionId | string | null;
+  onSectionClick: (id: string) => void;
   scrollTrigger: number;
-  visibility: Visibility;
 }
 
 export default function AudiencePreviewPanel({
@@ -26,10 +21,11 @@ export default function AudiencePreviewPanel({
   activeSection,
   onSectionClick,
   scrollTrigger,
-  visibility,
 }: Props) {
   const pageRef = useRef<HTMLDivElement>(null);
   useScrollToActiveSection(pageRef, activeSection, scrollTrigger);
+  const activeId = activeSection as AudienceSectionId | null;
+  const onSelect = (id: AudienceSectionId) => onSectionClick(id);
 
   const isEmpty =
     !state.title.trim() &&
@@ -57,17 +53,17 @@ export default function AudiencePreviewPanel({
         </div>
 
         <div style={{ fontFamily: 'var(--font-dm-sans)', color: '#11325D' }}>
-          <HeroPreview state={state} active={activeSection} onSelect={onSectionClick} />
+          <HeroPreview state={state} active={activeId} onSelect={onSelect} />
 
-          {visibility.value && (
+          {state.showValue && (
             <ValuePreview
               state={state}
-              active={activeSection}
-              onSelect={onSectionClick}
-              showCase={visibility.case}
+              active={activeId}
+              onSelect={onSelect}
+              showCase={state.showCase}
               caseSlot={
-                visibility.case ? (
-                  <CasePreview state={state} active={activeSection} onSelect={onSectionClick} />
+                state.showCase ? (
+                  <CasePreview state={state} active={activeId} onSelect={onSelect} />
                 ) : null
               }
             />
@@ -76,8 +72,8 @@ export default function AudiencePreviewPanel({
           {state.showContactForm && (
             <div
               data-section="contactForm"
-              onClick={() => onSectionClick('contactForm')}
-              className={`relative cursor-pointer ${activeSection === 'contactForm' ? 'ring-2 ring-orange-400 ring-inset' : ''}`}
+              onClick={() => onSelect('contactForm')}
+              className={`relative cursor-pointer ${activeId === 'contactForm' ? 'ring-2 ring-orange-400 ring-inset' : ''}`}
             >
               <ContactFormPreview state={state.contactForm} />
             </div>
