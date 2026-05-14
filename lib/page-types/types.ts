@@ -103,6 +103,27 @@ export interface PageTypeServerDef<TState, TListItem = unknown> {
    *  utelämnat = bara primary record. */
   relations?: RelationDef<TState, unknown>[];
 
+  /** Lager 3 — full override av create. När satt struntar factory:n i
+   *  `stateToFields`+`relations` och anropar denna istället. Använd när
+   *  sidtypen har egna förhandsregler (default-injection, Claude-transform,
+   *  multi-tabell-create i specifik ordning) som inte passar i Lager 2.
+   *  Slug-validering och cache-invalidering körs fortfarande av factory:n. */
+  create?: (
+    state: TState,
+    ctx: { apiKey: string },
+  ) => Promise<{ recordId: string; relations?: Record<string, RelationSyncResult> }>;
+
+  /** Lager 3 — full override av update. Se `create`. */
+  update?: (
+    recordId: string,
+    state: TState,
+    ctx: { apiKey: string },
+  ) => Promise<{ relations?: Record<string, RelationSyncResult> }>;
+
+  /** Lager 3 — full override av delete. Default = ta bort primary +
+   *  cascade owned relations. */
+  delete?: (recordId: string, ctx: { apiKey: string }) => Promise<void>;
+
   /** Vilka core-entiteter som ska cache-invalideras efter mutation. */
   cacheEntities?: readonly string[];
 

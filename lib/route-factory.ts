@@ -328,15 +328,19 @@ export function createPageRoute<TState, TListItem>(
     let state: TState;
     try { state = (await req.json()) as TState; } catch { return badRequest('Ogiltig JSON.'); }
 
-    const slugError = await runSlugChecks(cfg, cfg.apiKey, state, null);
-    if (slugError) return slugError;
-
-    if (cfg.validate) {
-      const msg = cfg.validate(state);
-      if (msg) return badRequest(msg);
-    }
-
+    // Slug-validering, custom validate och mutation körs alla inom samma
+    // try/catch så Airtable/nätverksfel under duplicate-slug-lookupen blir
+    // ett 500-JSON-svar (`{ success: false, error }`) istället för att
+    // bubbla upp som en oformaterad Next.js-500 utan body.
     try {
+      const slugError = await runSlugChecks(cfg, cfg.apiKey, state, null);
+      if (slugError) return slugError;
+
+      if (cfg.validate) {
+        const msg = cfg.validate(state);
+        if (msg) return badRequest(msg);
+      }
+
       const ctx: RouteContext = { apiKey: cfg.apiKey };
       const result = cfg.create
         ? await cfg.create(state, ctx)
@@ -365,15 +369,17 @@ export function createPageRoute<TState, TListItem>(
     let state: TState;
     try { state = (await req.json()) as TState; } catch { return badRequest('Ogiltig JSON.'); }
 
-    const slugError = await runSlugChecks(cfg, cfg.apiKey, state, recordId);
-    if (slugError) return slugError;
-
-    if (cfg.validate) {
-      const msg = cfg.validate(state);
-      if (msg) return badRequest(msg);
-    }
-
+    // Se POST-kommentaren — slug-validering inom samma try så Airtable/
+    // nätverksfel under duplicate-slug-lookupen ger ett 500-JSON-svar.
     try {
+      const slugError = await runSlugChecks(cfg, cfg.apiKey, state, recordId);
+      if (slugError) return slugError;
+
+      if (cfg.validate) {
+        const msg = cfg.validate(state);
+        if (msg) return badRequest(msg);
+      }
+
       const ctx: RouteContext = { apiKey: cfg.apiKey };
       const result = cfg.update
         ? await cfg.update(recordId, state, ctx)
@@ -456,5 +462,9 @@ export function pageTypeToRouteConfig<TState, TListItem>(
       : undefined,
 
     relations: serverDef.relations,
+
+    create: serverDef.create,
+    update: serverDef.update,
+    delete: serverDef.delete,
   };
 }

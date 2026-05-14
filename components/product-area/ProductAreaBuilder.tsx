@@ -191,24 +191,42 @@ export default function ProductAreaBuilder({ initialState, divisions }: Props) {
     setSaving(true);
     setError(null);
     try {
-      const res = await fetch('/api/product-area', {
-        method: 'POST',
+      const isCreate = !state.recordId;
+      const url = isCreate
+        ? '/api/product-area'
+        : `/api/product-area?id=${state.recordId}`;
+      const method = isCreate ? 'POST' : 'PATCH';
+      const res = await fetch(url, {
+        method,
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(state),
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Sparning misslyckades');
+      if (!res.ok || !data.success) throw new Error(data.error || 'Sparning misslyckades');
 
       if (data.mode === 'create' && data.recordId) {
         router.replace(`/editor/product-area/${data.recordId}`);
         return;
       }
 
-      if (data.newProductIds || data.newSolutionIds) {
+      // Plocka ut clientId→recordId-mappningarna ur factory:ns standard-
+      // shape `relations.<name>.created: Array<{clientId, recordId}>`.
+      const productIdMap = Object.fromEntries(
+        (data.relations?.products?.created ?? []).map(
+          (c: { clientId: string; recordId: string }) => [c.clientId, c.recordId],
+        ),
+      );
+      const solutionIdMap = Object.fromEntries(
+        (data.relations?.solutions?.created ?? []).map(
+          (c: { clientId: string; recordId: string }) => [c.clientId, c.recordId],
+        ),
+      );
+
+      if (Object.keys(productIdMap).length > 0 || Object.keys(solutionIdMap).length > 0) {
         setState((s) => ({
           ...s,
-          products: applyNewIds(s.products, data.newProductIds ?? {}),
-          solutions: applyNewIds(s.solutions, data.newSolutionIds ?? {}),
+          products: applyNewIds(s.products, productIdMap),
+          solutions: applyNewIds(s.solutions, solutionIdMap),
         }));
       }
 
