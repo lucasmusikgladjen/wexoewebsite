@@ -140,7 +140,19 @@ class Wexoe_Content_Block extends aviaShortcodeTemplate {
         $cfg = $types[$atts['content_type']];
         if (!is_callable($cfg['render']) || $atts['content_id'] === '') return '';
 
-        return call_user_func($cfg['render'], $atts['content_id']);
+        // Dropdown-värdet är `typ:id` (prefixet behövs för att JS-filtret ska
+        // kunna särskilja kollisioner mellan entiteter). Render-callbacks
+        // (t.ex. wexoe_pages_render() som anropar find_by('slug', $slug))
+        // förväntar sig rått slug/ID — strippa därför prefixet här och
+        // verifiera att det matchar vald content_type.
+        $raw_id = $atts['content_id'];
+        if (strpos($raw_id, ':') !== false) {
+            list($prefix, $raw_id) = explode(':', $raw_id, 2);
+            if ($prefix !== $atts['content_type']) return '';
+        }
+        if ($raw_id === '') return '';
+
+        return call_user_func($cfg['render'], $raw_id);
     }
 }
 ```
@@ -149,10 +161,19 @@ class Wexoe_Content_Block extends aviaShortcodeTemplate {
 
 Enfolds `select`-subtype är statisk vid sidladdning. Två alternativ:
 
-- **A. Förladda allt + JS-filter (rekommenderat första iteration):** Skicka alla poster (typ-prefixade keys) i `subtype` och lägg på en liten JS-snutt som lyssnar på `#content_type` och döljer/filtrerar `<option>`-elementen i `#content_id`. Räcker så länge totala antalet poster är < ~500.
+- **A. Förladda allt + JS-filter (rekommenderat första iteration):** Skicka alla poster i `subtype` med typ-prefixade keys (`"{type}:{raw_id}"`) och lägg på en liten JS-snutt som lyssnar på `#content_type` och döljer/filtrerar `<option>`-elementen i `#content_id`. Räcker så länge totala antalet poster är < ~500.
 - **B. AJAX-driven:** Registrera `wp_ajax_wexoe_alb_list` som returnerar `[{id,label}]` för vald typ. JS i builder-modal lyssnar på `change` och rebyggor `#content_id`. Mer kod men skalar.
 
 Börja med A → migrera till B om listorna växer.
+
+#### Viktigt: bevara rått ID vid rendering
+
+Enfolds `select`-subtype är en platt `[value => label]`-array, så vi måste prefixa optionernas `value` (`{type}:{raw_id}`) för att (1) JS-filtret ska kunna avgöra vilken option som hör till vilken typ och (2) slug-kollisioner mellan entiteter (t.ex. både `cms_unique_pages` och `landing_pages` kan ha `om-oss`) inte ska dela samma option. Konsekvensen är att det sparade `content_id`-attributet blir prefixat (`cms_unique_pages:om-oss`), men de befintliga render-funktionerna (`wexoe_pages_render()` → `$pages_repo->find_by('slug', $slug)`, `wexoe_landing_page_shortcode()` → `find($slug)` i `New plugins/wexoe-pages/wexoe-pages.php` m.fl.) förväntar sig **rått** slug/ID. Lösning:
+
+1. `shortcode_handler()` strippar prefixet innan render-callbacken anropas (se kodexemplet ovan) och verifierar att prefixet matchar `content_type` — detta är platsen där `content_id` översätts till det format som befintliga renderare redan stödjer.
+2. `wexoe_alb_initial_options()` returnerar `["{$type}:{$id}" => $label]` för alla typer plus en första tom rad så att stå-värdet inte renderar fel post.
+3. AJAX-läget (alt. B) skickar däremot tillbaka råa `{id,label}`-par direkt — när vi migrerar dit kan select:en innehålla råa IDs eftersom typ-dimensionen redan är borta. Tänk på att `shortcode_handler()` ska klara båda formaten (med och utan prefix).
+4. Bakåtkompatibilitet: gamla shortcodes (om någon redan sparat ett rått ID) fortsätter fungera tack vare strippa-om-prefix-finns-logiken.
 
 ### 3.4 AJAX-endpoint (för alt. B / framtida bruk)
 
