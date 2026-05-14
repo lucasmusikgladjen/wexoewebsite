@@ -358,9 +358,9 @@ OBS: Airtable MCP-servern saknar `delete_field`-endpoint. Gamla attachment-fält
 **Syfte:** Ersätta manuella `[wexoe_page slug="..."]`-shortcodes i Code Block med ett riktigt ALB-element ("Wexoe Content") som har två dropdowns: innehållstyp + post.
 
 **Filer skapade i `New plugins/wexoe-alb-blocks/`:**
-- `wexoe-alb-blocks.php` — bootstrap, dependency checks (`wexoe-core` + Enfold), `avia_register_shortcodes`-hook, frontend shortcode-fallback, `admin_enqueue_scripts`.
-- `includes/content-types.php` — filtrerbar `wexoe_alb_content_types()`-registry, generisk `wexoe_alb_list_by_slug()`, render-dispatch `wexoe_alb_render()`, fyra render-wrappers.
-- `includes/class-wexoe-content-block.php` — `Wexoe_Content_Block extends aviaShortcodeTemplate` (popup_elements, editor_element, shortcode_handler).
+- `wexoe-alb-blocks.php` — bootstrap, dependency checks (`wexoe-core` + Enfold), `avia_load_shortcodes`-hook som pekar Enfold på vår `shortcodes/`-katalog, frontend shortcode-fallback, `admin_enqueue_scripts`.
+- `includes/content-types.php` — filtrerbar `wexoe_alb_content_types()`-registry, generisk `wexoe_alb_list_by_slug()`, render-dispatch `wexoe_alb_render()` (med core_ready-guard), fyra render-wrappers.
+- `shortcodes/wexoe_content/wexoe_content.php` — `Wexoe_Content_Block extends aviaShortcodeTemplate` (popup_elements, editor_element, shortcode_handler). Sökväg/filnamn följer Enfolds discovery-konvention.
 - `assets/builder.js` — delegerad change-lyssnare + MutationObserver för att filtrera `content_id`-options på vald `content_type`. Optionernas value har formatet `{type}:{slug}`.
 - `assets/builder-icon.svg` — enkel ikon för builder-modalen.
 

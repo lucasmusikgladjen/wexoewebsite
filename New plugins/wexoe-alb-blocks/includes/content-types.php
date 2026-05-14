@@ -150,6 +150,15 @@ function wexoe_alb_initial_options() {
  * aldrig läcka redaktör-fel.
  */
 function wexoe_alb_render($content_type, $content_id) {
+    // Hård guard: render-wrappers anropar funktioner som refererar
+    // \Wexoe\Core\Core direkt (t.ex. wexoe_pages_render). Om wexoe-core
+    // inte är aktivt skulle det fatala. Returnera tomt istället så att
+    // sidor som råkar innehålla [wexoe_content] inte kraschar när
+    // beroendet saknas (deaktiverad plugin, uppgradering pågår).
+    if (!function_exists('wexoe_alb_core_ready') || !wexoe_alb_core_ready()) {
+        return '';
+    }
+
     $types = wexoe_alb_content_types();
     if (empty($types[$content_type])) return '';
 

@@ -36,20 +36,20 @@ function wexoe_alb_enfold_ready() {
 require_once WEXOE_ALB_DIR . 'includes/content-types.php';
 
 /**
- * Registrera ALB-modulen när Enfold laddar sina shortcodes.
+ * Lägg vår `shortcodes/`-katalog till Enfolds autoloader.
  *
- * Enfold kör `avia_register_shortcodes`-filter sent under init, vid den punkten
- * är basklassen aviaShortcodeTemplate garanterat laddad.
+ * Enfold ShortCode_Inserter glob:ar alla paths från `avia_load_shortcodes`,
+ * laddar `<name>/<name>.php` per subkatalog och instansierar alla klasser
+ * som ärver från `aviaShortcodeTemplate`. Det här är det officiella sättet
+ * att registrera egna ALB-element — inte att lägga klassnamn på
+ * `avia_register_shortcodes` (som inte är en discovery-hook).
  */
-add_filter('avia_register_shortcodes', 'wexoe_alb_register_module', 10, 1);
+add_filter('avia_load_shortcodes', 'wexoe_alb_register_shortcode_path', 10, 1);
 
-function wexoe_alb_register_module($shortcodes) {
-    if (!wexoe_alb_enfold_ready() || !wexoe_alb_core_ready()) {
-        return $shortcodes;
-    }
-    require_once WEXOE_ALB_DIR . 'includes/class-wexoe-content-block.php';
-    $shortcodes[] = 'Wexoe_Content_Block';
-    return $shortcodes;
+function wexoe_alb_register_shortcode_path($paths) {
+    if (!is_array($paths)) $paths = [];
+    $paths[ WEXOE_ALB_DIR . 'shortcodes/' ] = WEXOE_ALB_URL . 'shortcodes/';
+    return $paths;
 }
 
 /**
