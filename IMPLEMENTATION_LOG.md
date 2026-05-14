@@ -104,6 +104,22 @@ Fält-rename per tabell:
 
 OBS: Tre tomma stub-records ligger fortfarande i `core_partners` och tre i `core_divisions` från initial bootstrap. Kan raderas manuellt i Airtable UI.
 
+### LP-familj fullt migrerad (2026-05-14, fortsättning)
+
+**Schemas byggda i Wexoe NY via MCP:**
+
+- `cms_landing_page_downloads` (tbltAtilGKnQ2wc7I): name (primary, renamed från Name), internal_notes, is_active, order, description, thumbnail_url, file_url, button_text, tab_ids (auto-skapad back-link, omdöpt från default).
+- `cms_landing_page_tabs` (tblp8d32aj5BgGMvE): name (primary, renamed), internal_notes, is_active, order, tab_type (singleSelect: textimage/fullmedia/faq/calameo/downloads/compare/steps), 5 textimage-fält, fm_url, faq_items, 6 calameo-fält (3 slots), download_ids (länk → downloads), 4 compare-fält, 2 steps-fält, landing_page_ids (auto back-link omdöpt). Totalt 25 fält.
+- `cms_landing_pages` (tblpPlk17FZIKawXY): slug (primary, renamed), internal_notes, is_active, country_ids, h1, 3 SEO-fält, 6 hero-fält, 3 content-fält, sidebar_type, 6 case-fält, 2 calc-fält, 6 event-fält, 5 magnet-fält, 6 contact-fält, 4 show-flaggor, 2 color-fält, tab_ids, 15 contact_form-fält. Totalt ~60 fält.
+
+**Datamigration (37 records):**
+
+- 4 downloads: Datablad, ControlLogix 5580 Datablad, Whitepaper ROI, Migrationsguide PLC-5
+- 24 tabs (alla typer representerade): textimage (7), faq (4), compare (5), steps (4), fullmedia (2), downloads (2), calameo (1)
+- 9 LPs: test123, ftto-webinar, optixtest, test-event, plc5-migration, fjarraccess, optix, test-calc, ftto
+
+Alla länk-fält (tab_ids på LPs, download_ids på downloads-tabs) kopplade korrekt. Country=SE på alla LPs.
+
 ### Återstående arbete (manuella TODOs eller follow-up-session)
 
 Allt nedan följer mönstret som etablerats. Kan automatiseras i en uppföljande session — kräver främst ytterligare MCP-anrop.
