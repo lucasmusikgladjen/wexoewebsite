@@ -6,6 +6,7 @@ import HeroPreview from './preview/HeroPreview';
 import ContentPreview from './preview/ContentPreview';
 import TabsPreview from './preview/TabsPreview';
 import ContactPreview from './preview/ContactPreview';
+import ContactFormPreview from './contact-form/ContactFormPreview';
 
 interface Props {
   state: PageState;
@@ -82,6 +83,17 @@ export default function PreviewPanel({ state, activeSection, onSectionClick, scr
             onClick={() => onSectionClick('contact')}
           >
             <ContactPreview state={state} />
+          </div>
+        )}
+
+        {/* Contact form */}
+        {state.showContactForm && (
+          <div
+            ref={(el) => { sectionRefs.current.contactForm = el; }}
+            className={`preview-section ${activeSection === 'contactForm' ? 'active' : ''}`}
+            onClick={() => onSectionClick('contactForm')}
+          >
+            <ContactFormPreview state={state.contactForm} />
           </div>
         )}
 

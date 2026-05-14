@@ -1,8 +1,9 @@
 'use client';
 
 import { PageState, PageAction, SidebarType } from '@/lib/types';
-import { FieldInput, FieldTextarea, FieldSelect, FieldCheckbox, RichTextarea } from './FieldInput';
+import { FieldInput, FieldTextarea, FieldSelect, RichTextarea } from './FieldInput';
 import ButtonFieldset from './ButtonFieldset';
+import EditorSection from './EditorSection';
 
 interface Props {
   state: PageState;
@@ -22,31 +23,23 @@ export default function SidebarEditor({ state, dispatch }: Props) {
     dispatch({ type: 'SET_FIELD', field, value });
 
   return (
-    <div className="space-y-3">
-      <div className="flex items-center justify-between">
-        <h3 className="text-xl font-bold text-gray-900">Sidebar</h3>
-        <FieldCheckbox
-          label="Visa"
-          checked={state.showSidebar}
-          onChange={(v) => set('showSidebar', v)}
-        />
-      </div>
-      {state.showSidebar && (
-        <>
-          <FieldSelect
-            label="Typ"
-            value={state.sidebarType}
-            onChange={(v) => set('sidebarType', v as SidebarType)}
-            options={sidebarOptions}
-          />
+    <EditorSection
+      title="Sidebar"
+      visible={state.showSidebar}
+      onToggleVisible={(v) => set('showSidebar', v)}
+    >
+      <FieldSelect
+        label="Typ"
+        value={state.sidebarType}
+        onChange={(v) => set('sidebarType', v as SidebarType)}
+        options={sidebarOptions}
+      />
 
-          {state.sidebarType === 'case' && <CaseFields state={state} set={set} />}
-          {state.sidebarType === 'calculator' && <CalculatorFields state={state} set={set} />}
-          {state.sidebarType === 'event' && <EventFields state={state} set={set} />}
-          {state.sidebarType === 'leadmagnet' && <LeadMagnetFields state={state} set={set} />}
-        </>
-      )}
-    </div>
+      {state.sidebarType === 'case' && <CaseFields state={state} set={set} />}
+      {state.sidebarType === 'calculator' && <CalculatorFields state={state} set={set} />}
+      {state.sidebarType === 'event' && <EventFields state={state} set={set} />}
+      {state.sidebarType === 'leadmagnet' && <LeadMagnetFields state={state} set={set} />}
+    </EditorSection>
   );
 }
 

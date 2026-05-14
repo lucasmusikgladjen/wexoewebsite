@@ -2,6 +2,7 @@
 
 import { AudienceState } from '@/lib/audience-types';
 import { FieldCheckbox } from '@/components/editors/FieldInput';
+import EditorSection from '@/components/editors/EditorSection';
 
 interface Props {
   state: AudienceState;
@@ -10,14 +11,12 @@ interface Props {
 
 export default function SettingsEditor({ state, setField }: Props) {
   return (
-    <div className="space-y-3">
-      <h3 className="text-xl font-bold text-gray-900">Inställningar</h3>
-
+    <EditorSection title="Inställningar">
       <FieldCheckbox
         label="Aktiv (publicerad)"
         checked={state.active}
         onChange={(v) => setField('active', v)}
       />
-    </div>
+    </EditorSection>
   );
 }

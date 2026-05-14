@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 
@@ -10,14 +10,23 @@ interface PageRow {
   slug: string;
   h1: string;
   type: PageType;
+  /** Linked SSOT records (when the page type carries them). Populated from
+   *  the list-endpoint per page type. Absent fields = page type doesn't
+   *  expose that link. */
+  divisionIds?: string[];
+  countryIds?: string[];
 }
 
-type PageType = 'landing' | 'product' | 'audience' | 'unique' | 'contact';
+interface SsotOption {
+  recordId: string;
+  label: string;
+}
+
+type PageType = 'landing' | 'product' | 'audience' | 'unique';
 
 interface TypeDef {
   id: PageType;
   label: string;
-  available: boolean;
   description: string;
   editPath: (id: string) => string;
 }
@@ -25,47 +34,35 @@ interface TypeDef {
 const PAGE_TYPES: TypeDef[] = [
   {
     id: 'landing',
-    label: 'Landing page',
-    available: true,
+    label: 'Landing',
     description: 'Kampanj- och konverteringssida',
     editPath: (id) => `/editor/${id}`,
   },
   {
     id: 'product',
-    label: 'Produktsida',
-    available: true,
+    label: 'Produkt',
     description: 'Produktområdesida med produkter och lösningar',
     editPath: (id) => `/editor/product-area/${id}`,
   },
   {
     id: 'audience',
-    label: 'Audience-sida',
-    available: true,
-    description: 'Audience hero + värdeproposition',
+    label: 'Kundtyp',
+    description: 'Kundtyp-hero + värdeproposition',
     editPath: (id) => `/editor/audience/${id}`,
   },
   {
     id: 'unique',
-    label: 'Unik sida',
-    available: true,
+    label: 'Egen',
     description: 'Tier 2-sida (om-oss, karriär osv.) med fast sektion-struktur',
     editPath: (id) => `/editor/unique/${id}`,
-  },
-  {
-    id: 'contact',
-    label: 'Kontaktsida',
-    available: false,
-    description: 'Kommer snart',
-    editPath: () => '#',
   },
 ];
 
 const TYPE_LABEL: Record<PageType, string> = {
   landing: 'Landing',
   product: 'Produkt',
-  audience: 'Audience',
-  unique: 'Unik',
-  contact: 'Kontakt',
+  audience: 'Kundtyp',
+  unique: 'Egen',
 };
 
 export default function PageManager() {
@@ -78,6 +75,41 @@ export default function PageManager() {
   const [copyTarget, setCopyTarget] = useState<PageRow | null>(null);
   // Bumped after a successful copy to force the list effect to re-fetch.
   const [refreshKey, setRefreshKey] = useState(0);
+
+  // SSOT-länkade filter. Båda är `''` för "inget filter aktivt"; sätts till
+  // ett SSOT-record-id för att begränsa listan till sidor som länkar mot det.
+  const [divisionFilter, setDivisionFilter] = useState('');
+  const [countryFilter, setCountryFilter] = useState('');
+  const [divisionOptions, setDivisionOptions] = useState<SsotOption[]>([]);
+  const [countryOptions, setCountryOptions] = useState<SsotOption[]>([]);
+
+  useEffect(() => {
+    let cancelled = false;
+    Promise.all([
+      fetch('/api/core/core_divisions')
+        .then((r) => r.json())
+        .catch(() => ({ records: [] })),
+      fetch('/api/core/core_countries')
+        .then((r) => r.json())
+        .catch(() => ({ records: [] })),
+    ]).then(([divisions, countries]) => {
+      if (cancelled) return;
+      type CoreRecord = { _recordId: string; name?: string; slug?: string; code?: string };
+      setDivisionOptions(
+        ((divisions.records ?? []) as CoreRecord[]).map((d) => ({
+          recordId: d._recordId,
+          label: d.name || d.slug || d._recordId,
+        })),
+      );
+      setCountryOptions(
+        ((countries.records ?? []) as CoreRecord[]).map((c) => ({
+          recordId: c._recordId,
+          label: c.name || c.code || c._recordId,
+        })),
+      );
+    });
+    return () => { cancelled = true; };
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -98,7 +130,10 @@ export default function PageManager() {
         .then((r) => r.json())
         .then((data) => {
           if (data.error) throw new Error(data.error);
-          return (data.pages ?? []).map((p: Omit<PageRow, 'type'>) => ({ ...p, type: 'product' as const }));
+          return (data.pages ?? []).map((p: Omit<PageRow, 'type' | 'countryIds'>) => ({
+            ...p,
+            type: 'product' as const,
+          }));
         })
         .catch((err) => {
           console.error('[page-manager] PA fetch failed:', err);
@@ -118,12 +153,20 @@ export default function PageManager() {
         .then((r) => r.json())
         .then((data) => {
           if (data.error) throw new Error(data.error);
-          return (data.pages ?? []).map((p: { id: string; slug: string; h1: string }) => ({
+          return (data.pages ?? []).map((p: {
+            id: string;
+            slug: string;
+            h1: string;
+            divisionIds?: string[];
+            countryIds?: string[];
+          }) => ({
             id: p.id,
             name: p.h1 || p.slug,
             slug: p.slug,
             h1: p.h1,
             type: 'unique' as const,
+            divisionIds: p.divisionIds,
+            countryIds: p.countryIds,
           }));
         })
         .catch((err) => {
@@ -150,6 +193,8 @@ export default function PageManager() {
     const q = query.trim().toLowerCase();
     return pages.filter((p) => {
       if (activeType !== 'all' && p.type !== activeType) return false;
+      if (divisionFilter && !(p.divisionIds ?? []).includes(divisionFilter)) return false;
+      if (countryFilter && !(p.countryIds ?? []).includes(countryFilter)) return false;
       if (!q) return true;
       return (
         p.name.toLowerCase().includes(q) ||
@@ -157,7 +202,7 @@ export default function PageManager() {
         p.h1.toLowerCase().includes(q)
       );
     });
-  }, [pages, query, activeType]);
+  }, [pages, query, activeType, divisionFilter, countryFilter]);
 
   const counts = {
     all: pages?.length ?? 0,
@@ -165,7 +210,6 @@ export default function PageManager() {
     product: pages?.filter((p) => p.type === 'product').length ?? 0,
     audience: pages?.filter((p) => p.type === 'audience').length ?? 0,
     unique: pages?.filter((p) => p.type === 'unique').length ?? 0,
-    contact: 0,
   };
 
   const editPathFor = (page: PageRow) =>
@@ -212,7 +256,7 @@ export default function PageManager() {
         </div>
 
         {/* Type filter */}
-        <div className="flex items-center gap-6 mb-10 text-sm">
+        <div className="flex items-center gap-6 mb-4 text-sm">
           <button
             onClick={() => setActiveType('all')}
             className={`transition-colors ${activeType === 'all' ? 'text-gray-900' : 'text-gray-400 hover:text-gray-600'}`}
@@ -222,20 +266,45 @@ export default function PageManager() {
           {PAGE_TYPES.map((t) => (
             <button
               key={t.id}
-              onClick={() => t.available && setActiveType(t.id)}
-              disabled={!t.available}
+              onClick={() => setActiveType(t.id)}
               className={`transition-colors ${
                 activeType === t.id
                   ? 'text-gray-900'
-                  : t.available
-                  ? 'text-gray-400 hover:text-gray-600'
-                  : 'text-gray-300 cursor-not-allowed'
+                  : 'text-gray-400 hover:text-gray-600'
               }`}
-              title={t.available ? '' : 'Kommer snart'}
             >
               {t.label} <span className="text-gray-300 ml-1">{counts[t.id]}</span>
             </button>
           ))}
+        </div>
+
+        {/* SSOT filter — tom dropdown = inget filter aktivt. Designen
+            matchar resten av sidan (transparent, underline-bottom, samma
+            text-storlek som typ-filtret). */}
+        <div className="flex items-center gap-4 mb-10">
+          <SsotFilter
+            label="Division"
+            value={divisionFilter}
+            onChange={setDivisionFilter}
+            options={divisionOptions}
+          />
+          <SsotFilter
+            label="Land"
+            value={countryFilter}
+            onChange={setCountryFilter}
+            options={countryOptions}
+          />
+          {(divisionFilter || countryFilter) && (
+            <button
+              onClick={() => {
+                setDivisionFilter('');
+                setCountryFilter('');
+              }}
+              className="text-xs text-gray-400 hover:text-gray-600 transition-colors"
+            >
+              Rensa filter
+            </button>
+          )}
         </div>
 
         {/* List */}
@@ -286,22 +355,15 @@ export default function PageManager() {
                     </span>
                   </Link>
 
-                  {/* Kopiera button — sibling of the Link, hidden until the
-                      row is hovered (pointer-events-none so touch taps still
-                      fall through to the Link). Unique-sidor saknar copy-path
-                      i /api/copy och döljs därför helt. */}
+                  {/* Three-dots menu — sibling of the Link, appears on hover.
+                      Provides "Kopiera" today; designed to host future actions
+                      (Radera, Duplicera till annan typ, ...) without redesigning
+                      the row. Unique-sidor saknar copy-path i /api/copy så
+                      menyn döljs där tills fler alternativ tillkommer. */}
                   {page.type !== 'unique' && (
-                    <button
-                      type="button"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setCopyTarget(page);
-                      }}
-                      className="flex-none px-2.5 py-0.5 text-xs text-gray-400 hover:text-gray-600 border border-gray-200 rounded-md opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto focus-visible:opacity-100 focus-visible:pointer-events-auto transition-opacity"
-                      title="Kopiera sidan"
-                    >
-                      Kopiera
-                    </button>
+                    <RowActionsMenu
+                      onCopy={() => setCopyTarget(page)}
+                    />
                   )}
 
                   <span className="flex-none text-[10px] uppercase tracking-wider text-gray-300 whitespace-nowrap">
@@ -345,6 +407,162 @@ export default function PageManager() {
   );
 }
 
+/**
+ * Minimalistisk SSOT-filterdropdown — visas i samma rad som typ-filtret.
+ * Stäng på outside-click. Tom värde = inget filter aktivt.
+ */
+function SsotFilter({
+  label,
+  value,
+  onChange,
+  options,
+}: {
+  label: string;
+  value: string;
+  onChange: (v: string) => void;
+  options: SsotOption[];
+}) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    const handler = (e: MouseEvent) => {
+      if (!ref.current) return;
+      if (ref.current.contains(e.target as Node)) return;
+      setOpen(false);
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, [open]);
+
+  if (options.length === 0) return null;
+
+  const selected = options.find((o) => o.recordId === value);
+  const active = !!value;
+
+  return (
+    <div ref={ref} className="relative">
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        className={`flex items-center gap-1.5 text-sm transition-colors ${
+          active ? 'text-gray-900' : 'text-gray-400 hover:text-gray-600'
+        }`}
+      >
+        <span>{label}</span>
+        {selected && (
+          <span className="text-gray-900">: {selected.label}</span>
+        )}
+        <svg
+          width="10"
+          height="10"
+          viewBox="0 0 12 12"
+          className={`text-gray-300 transition-transform ${open ? 'rotate-180' : ''}`}
+          aria-hidden
+        >
+          <path d="M2 4 L6 8 L10 4" stroke="currentColor" strokeWidth="1.5" fill="none" strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
+      </button>
+
+      {open && (
+        <div className="absolute left-0 top-full mt-2 z-20 min-w-[180px] max-h-64 overflow-y-auto bg-white border border-gray-100 rounded-md shadow-md py-1">
+          <button
+            type="button"
+            onClick={() => {
+              onChange('');
+              setOpen(false);
+            }}
+            className={`w-full text-left px-3 py-1.5 text-xs transition-colors ${
+              !value ? 'text-gray-900 bg-gray-50' : 'text-gray-500 hover:bg-gray-50 hover:text-gray-900'
+            }`}
+          >
+            — Alla —
+          </button>
+          {options.map((opt) => (
+            <button
+              key={opt.recordId}
+              type="button"
+              onClick={() => {
+                onChange(opt.recordId);
+                setOpen(false);
+              }}
+              className={`w-full text-left px-3 py-1.5 text-xs transition-colors ${
+                value === opt.recordId ? 'text-gray-900 bg-gray-50' : 'text-gray-500 hover:bg-gray-50 hover:text-gray-900'
+              }`}
+            >
+              {opt.label}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+/**
+ * Three-dots overflow menu on the page-list row. Appears on hover and on
+ * keyboard focus. Designed to host additional row actions in the future
+ * (Radera, Duplicera till annan typ, ...) — today only "Kopiera" is wired.
+ */
+function RowActionsMenu({ onCopy }: { onCopy: () => void }) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    const handler = (e: MouseEvent) => {
+      if (!ref.current) return;
+      if (ref.current.contains(e.target as Node)) return;
+      setOpen(false);
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, [open]);
+
+  return (
+    <div ref={ref} className="relative flex-none">
+      <button
+        type="button"
+        onClick={(e) => {
+          e.stopPropagation();
+          setOpen((v) => !v);
+        }}
+        aria-label="Fler åtgärder"
+        className={`flex items-center justify-center w-7 h-7 rounded-md text-gray-400 hover:text-gray-700 hover:bg-gray-100 transition-opacity ${
+          open
+            ? 'opacity-100'
+            : 'opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto focus-visible:opacity-100 focus-visible:pointer-events-auto'
+        }`}
+      >
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
+          <circle cx="5" cy="12" r="1.6" />
+          <circle cx="12" cy="12" r="1.6" />
+          <circle cx="19" cy="12" r="1.6" />
+        </svg>
+      </button>
+
+      {open && (
+        <div
+          className="absolute right-0 top-full mt-1 z-20 min-w-[140px] bg-white border border-gray-100 rounded-md shadow-md py-1"
+          onClick={(e) => e.stopPropagation()}
+        >
+          <button
+            type="button"
+            onClick={() => {
+              setOpen(false);
+              onCopy();
+            }}
+            className="w-full text-left px-3 py-1.5 text-xs text-gray-600 hover:bg-gray-50 hover:text-gray-900"
+          >
+            Kopiera
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
+
 function AddPageDialog({
   onClose,
   onSelect,
@@ -352,12 +570,11 @@ function AddPageDialog({
   onClose: () => void;
   onSelect: (type: PageType) => void;
 }) {
-  const creatableTypes: Array<{ id: PageType; label: string; description: string; enabled: boolean }> = [
-    { id: 'landing', label: 'Landing page', description: 'Kampanj- och konverteringssida', enabled: true },
-    { id: 'product', label: 'Produktsida', description: 'Produktområdesida med produkter och lösningar', enabled: true },
-    { id: 'audience', label: 'Audience-sida', description: 'Audience hero + värdeproposition', enabled: true },
-    { id: 'unique', label: 'Unik sida', description: 'Tier 2-sida (om-oss, karriär osv.) med fast sektion-struktur', enabled: true },
-    { id: 'contact', label: 'Kontaktsida', description: 'Kommer snart', enabled: false },
+  const creatableTypes: Array<{ id: PageType; label: string; description: string }> = [
+    { id: 'landing', label: 'Landing page', description: 'Kampanj- och konverteringssida' },
+    { id: 'product', label: 'Produktsida', description: 'Produktområdesida med produkter och lösningar' },
+    { id: 'audience', label: 'Kundtyp-sida', description: 'Kundtyp hero + värdeproposition' },
+    { id: 'unique', label: 'Egen sida', description: 'Tier 2-sida (om-oss, karriär osv.) med fast sektion-struktur' },
   ];
 
   return (
@@ -377,28 +594,15 @@ function AddPageDialog({
           {creatableTypes.map((t) => (
             <button
               key={t.id}
-              disabled={!t.enabled}
               onClick={() => {
-                if (!t.enabled) return;
                 onSelect(t.id);
                 onClose();
               }}
-              className={`w-full text-left px-3 py-3 rounded-md transition-colors ${
-                t.enabled
-                  ? 'hover:bg-gray-50 cursor-pointer'
-                  : 'cursor-not-allowed opacity-50'
-              }`}
+              className="w-full text-left px-3 py-3 rounded-md transition-colors hover:bg-gray-50 cursor-pointer"
             >
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-gray-900">{t.label}</p>
-                  <p className="text-xs text-gray-400 mt-0.5">{t.description}</p>
-                </div>
-                {!t.enabled && (
-                  <span className="text-[10px] uppercase tracking-wider text-gray-300">
-                    Snart
-                  </span>
-                )}
+              <div>
+                <p className="text-sm font-medium text-gray-900">{t.label}</p>
+                <p className="text-xs text-gray-400 mt-0.5">{t.description}</p>
               </div>
             </button>
           ))}

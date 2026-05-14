@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { ProductAreaState, NormalSection } from '@/lib/product-area-types';
 import { FieldInput, FieldCheckbox, FieldColor, RichTextarea } from '@/components/editors/FieldInput';
+import EditorSection from '@/components/editors/EditorSection';
 import CollapsibleCard from './CollapsibleCard';
 
 interface Props {
@@ -53,13 +54,8 @@ export default function ContentBlocksEditor({ state, setNormal, visible, onToggl
   };
 
   return (
-    <div className="space-y-3">
-      <div className="flex items-center justify-between">
-        <h3 className="text-xl font-bold text-gray-900">Innehåll</h3>
-        <FieldCheckbox label="Visa" checked={visible} onChange={onToggleVisible} />
-      </div>
-
-      {visible && Array.from({ length: visibleCount }).map((_, i) => {
+    <EditorSection title="Innehåll" visible={visible} onToggleVisible={onToggleVisible}>
+      {Array.from({ length: visibleCount }).map((_, i) => {
         const n = (i + 1) as 1 | 2 | 3 | 4;
         const section = sections[i];
         return (
@@ -120,7 +116,7 @@ export default function ContentBlocksEditor({ state, setNormal, visible, onToggl
         );
       })}
 
-      {visible && visibleCount < 4 && (
+      {visibleCount < 4 && (
         <button
           type="button"
           onClick={addBlock}
@@ -129,6 +125,6 @@ export default function ContentBlocksEditor({ state, setNormal, visible, onToggl
           + Lägg till sektion
         </button>
       )}
-    </div>
+    </EditorSection>
   );
 }

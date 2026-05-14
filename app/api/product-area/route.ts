@@ -29,7 +29,7 @@ export async function GET(request: Request) {
   try {
     if (action === 'list') {
       const records = await listRecords(AIRTABLE_API_KEY, PA_TABLE_IDS.productAreas, {
-        fields: ['Name', 'Slug', 'H1'],
+        fields: ['Name', 'Slug', 'H1', 'Division'],
         sort: [{ field: 'Name', direction: 'asc' }],
       });
       const pages = records.map((r) => ({
@@ -37,6 +37,7 @@ export async function GET(request: Request) {
         name: (r.fields.Name as string) || '',
         slug: (r.fields.Slug as string) || '',
         h1: (r.fields.H1 as string) || '',
+        divisionIds: (r.fields.Division as string[] | undefined) ?? [],
       }));
       return NextResponse.json({ pages });
     }

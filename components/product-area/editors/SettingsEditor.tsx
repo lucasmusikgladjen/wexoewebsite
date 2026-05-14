@@ -2,6 +2,7 @@
 
 import { ProductAreaState, Division } from '@/lib/product-area-types';
 import { FieldCheckbox } from '@/components/editors/FieldInput';
+import EditorSection from '@/components/editors/EditorSection';
 
 interface Props {
   state: ProductAreaState;
@@ -11,9 +12,7 @@ interface Props {
 
 export default function SettingsEditor({ state, divisions, setField }: Props) {
   return (
-    <div className="space-y-3">
-      <h3 className="text-xl font-bold text-gray-900">Inställningar</h3>
-
+    <EditorSection title="Inställningar">
       <div className="space-y-2">
         <FieldCheckbox
           label="Sidomeny istället för toggle"
@@ -46,6 +45,6 @@ export default function SettingsEditor({ state, divisions, setField }: Props) {
           </select>
         </label>
       </div>
-    </div>
+    </EditorSection>
   );
 }

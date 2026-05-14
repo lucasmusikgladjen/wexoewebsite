@@ -8,6 +8,7 @@ import NormalSectionPreview from './NormalSectionPreview';
 import ProductsPreview from './ProductsPreview';
 import SolutionsPreview from './SolutionsPreview';
 import ContactPreview from './ContactPreview';
+import ContactFormPreview from '@/components/contact-form/ContactFormPreview';
 
 interface Visibility {
   content: boolean;
@@ -133,6 +134,16 @@ export default function ProductAreaPreviewPanel({
 
           {visibility.contact && (
             <ContactPreview state={state} active={activeSection} onSelect={onSectionClick} />
+          )}
+
+          {state.showContactForm && (
+            <div
+              data-section="contactForm"
+              onClick={() => onSectionClick('contactForm')}
+              className={`relative cursor-pointer ${activeSection === 'contactForm' ? 'ring-2 ring-orange-400 ring-inset' : ''}`}
+            >
+              <ContactFormPreview state={state.contactForm} />
+            </div>
           )}
         </div>
 

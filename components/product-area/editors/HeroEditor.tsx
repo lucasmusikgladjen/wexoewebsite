@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { ProductAreaState } from '@/lib/product-area-types';
 import { FieldInput, FieldTextarea, FieldSelect, RichTextarea } from '@/components/editors/FieldInput';
 import ButtonFieldset from '@/components/editors/ButtonFieldset';
+import EditorSection from '@/components/editors/EditorSection';
 
 interface Props {
   state: ProductAreaState;
@@ -54,9 +55,7 @@ export default function HeroEditor({ state, setField }: Props) {
   };
 
   return (
-    <div className="space-y-3">
-      <h3 className="text-xl font-bold text-gray-900">Hero</h3>
-
+    <EditorSection title="Hero">
       <FieldInput
         label="H1"
         value={state.h1}
@@ -158,6 +157,6 @@ export default function HeroEditor({ state, setField }: Props) {
           </div>
         )}
       </div>
-    </div>
+    </EditorSection>
   );
 }
