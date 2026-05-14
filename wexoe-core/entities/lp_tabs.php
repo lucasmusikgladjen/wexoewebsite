@@ -3,77 +3,73 @@
  * Entity schema: lp_tabs
  *
  * LP-flikar — polymorfa (textimage, fullmedia, faq, calameo, downloads, compare, steps).
- * Airtable-tabell: LP Tabs (tblvecOh3rAGmw3mw)
+ * Airtable-tabell: cms_landing_page_tabs (tblp8d32aj5BgGMvE) i Wexoe NY.
  *
- * Primärnyckel: saknas (ingen slug). Uppslag sker via _record_id (find_by_ids).
+ * Primärnyckel: 'name' (visningsnamn på flik-pill).
  *
- * Synlighetsfilter: tabs har 'visa' + 'order' som styr vilka som visas och i vilken ordning.
+ * Synlighetsfilter: tabs har 'is_active' + 'order' som styr vilka som visas och i vilken ordning.
  * Filtrering görs i feature-pluginet, inte i schemat — Core normaliserar alla rader.
- *
- * Calameo: tre uppsättningar (Calameo 1-3 Title/Src) hanteras som pseudo_array.
  */
 
 if (!defined('ABSPATH')) exit;
 
 return [
-    'table_id' => 'tblvecOh3rAGmw3mw',
+    'base_id' => \Wexoe\Core\Plugin::SSOT_BASE_ID,
+    'table_id' => 'tblp8d32aj5BgGMvE',
+    'primary_key' => 'name',
     'cache_ttl' => 86400,
     'required' => ['name'],
     'fields' => [
         // Core
-        'name' => 'Name',
-        'order' => ['source' => 'Order', 'type' => 'float'],
-        'visa' => ['source' => 'Visa', 'type' => 'bool'],
-        'tab_type' => 'Tab Type',
+        'name' => 'name',
+        'internal_notes' => 'internal_notes',
+        'is_active' => ['source' => 'is_active', 'type' => 'bool'],
+        'order' => ['source' => 'order', 'type' => 'float'],
+        'tab_type' => 'tab_type',
 
         // Text + Image tab
-        'ti_h2' => 'TI H2',
-        'ti_text' => 'TI Text',
-        'ti_benefits' => [
-            'source' => 'TI Benefits',
-            'type' => 'lines',
-        ],
-        'ti_image' => 'TI Image',
-        'ti_inverted' => ['source' => 'TI Inverted', 'type' => 'bool'],
+        'ti_h2' => 'ti_h2',
+        'ti_text' => 'ti_text',
+        'ti_benefits' => ['source' => 'ti_benefits', 'type' => 'lines'],
+        'ti_image_url' => 'ti_image_url',
+        'ti_inverted' => ['source' => 'ti_inverted', 'type' => 'bool'],
 
         // Full media tab
-        'fm_url' => 'FM URL',
+        'fm_url' => 'fm_url',
 
         // FAQ tab
-        'faq_items' => 'FAQ Items',
+        'faq_items' => 'faq_items',
 
-        // Calameo tab — pseudo-array (3 slots)
-        'calameos' => [
-            'type' => 'pseudo_array',
-            'prefix' => 'Calameo',
-            'count' => 3,
-            'fields' => [
-                'title' => 'Title',
-                'src' => 'Src',
-            ],
-        ],
+        // Calameo tab — tre slots
+        'calameo_1_title' => 'calameo_1_title',
+        'calameo_1_src' => 'calameo_1_src',
+        'calameo_2_title' => 'calameo_2_title',
+        'calameo_2_src' => 'calameo_2_src',
+        'calameo_3_title' => 'calameo_3_title',
+        'calameo_3_src' => 'calameo_3_src',
 
         // Downloads tab
         'download_ids' => [
-            'source' => 'LP Downloads',
+            'source' => 'download_ids',
             'type' => 'link',
             'entity' => 'lp_downloads',
         ],
 
         // Compare tab
-        'compare_title' => 'Compare Title',
-        'compare_col_a' => 'Compare Col A',
-        'compare_col_b' => 'Compare Col B',
-        'compare_rows' => 'Compare Rows',
+        'compare_title' => 'compare_title',
+        'compare_col_a' => 'compare_col_a',
+        'compare_col_b' => 'compare_col_b',
+        'compare_rows' => 'compare_rows',
 
         // Steps tab
-        'steps_title' => 'Steps Title',
-        'steps' => 'Steps',
+        'steps_title' => 'steps_title',
+        'steps' => 'steps',
 
-        // Back-link (not used in rendering but part of schema)
+        // Back-link
         'landing_page_ids' => [
-            'source' => 'Landing Page',
+            'source' => 'landing_page_ids',
             'type' => 'link',
+            'entity' => 'landing_pages',
         ],
     ],
 ];
