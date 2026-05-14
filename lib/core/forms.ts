@@ -43,14 +43,15 @@ export interface CoreEntityFormConfig {
   listMetaField?: string;
 }
 
-const ACTIVE_FIELD: FormField = { key: 'active', label: 'Aktiv', type: 'checkbox', help: 'Avaktivera istället för att radera.' };
+const ACTIVE_FIELD: FormField = { key: 'is_active', label: 'Aktiv', type: 'checkbox', help: 'Avaktivera istället för att radera.' };
 const ORDER_FIELD: FormField = { key: 'order', label: 'Sorteringsordning', type: 'number', help: 'Lägre värde = visas först. Använd multiplar av 10.' };
 
 export const CORE_ENTITY_FORMS: Record<CoreEntityName, CoreEntityFormConfig> = {
   core_company: {
     listLabelField: 'slug',
     fields: [
-      { key: 'slug', label: 'Namn', type: 'text', isPrimary: true },
+      { key: 'slug', label: 'Slug (intern nyckel)', type: 'text', isPrimary: true },
+      { key: 'company_name', label: 'Företagsnamn', type: 'text' },
       { key: 'country_ids', label: 'Land', type: 'link', linkedEntity: 'core_countries' },
       { key: 'tagline', label: 'Tagline', type: 'text' },
       { key: 'org_number', label: 'Organisationsnummer', type: 'text', width: 'half' },
@@ -76,9 +77,9 @@ export const CORE_ENTITY_FORMS: Record<CoreEntityName, CoreEntityFormConfig> = {
     fields: [
       { key: 'slug', label: 'Slug', type: 'text', isPrimary: true },
       { key: 'is_default', label: 'Är default', type: 'checkbox' },
-      { key: 'logo_primary', label: 'Logo primär', type: 'image' },
-      { key: 'logo_dark_background', label: 'Logo mörk bakgrund', type: 'image' },
-      { key: 'favicon', label: 'Favicon', type: 'image' },
+      { key: 'logo_primary_url', label: 'Logo primär', type: 'image' },
+      { key: 'logo_dark_url', label: 'Logo mörk bakgrund', type: 'image' },
+      { key: 'favicon_url', label: 'Favicon', type: 'image' },
       { key: 'color_primary', label: 'Primärfärg', type: 'color', width: 'half' },
       { key: 'color_secondary', label: 'Sekundärfärg', type: 'color', width: 'half' },
       { key: 'color_accent', label: 'Accentfärg', type: 'color', width: 'half' },
@@ -139,7 +140,7 @@ export const CORE_ENTITY_FORMS: Record<CoreEntityName, CoreEntityFormConfig> = {
       { key: 'title', label: 'Titel', type: 'text' },
       { key: 'email', label: 'E-post', type: 'email', width: 'half' },
       { key: 'phone', label: 'Telefon', type: 'phone', width: 'half' },
-      { key: 'image', label: 'Porträttbild', type: 'image' },
+      { key: 'image_url', label: 'Porträttbild', type: 'image' },
       { key: 'linkedin_url', label: 'LinkedIn', type: 'url' },
       { key: 'bio', label: 'Bio', type: 'textarea' },
       { key: 'division_ids', label: 'Divisioner', type: 'link', linkedEntity: 'core_divisions' },
@@ -152,8 +153,8 @@ export const CORE_ENTITY_FORMS: Record<CoreEntityName, CoreEntityFormConfig> = {
     listLabelField: 'name',
     fields: [
       { key: 'name', label: 'Partnernamn', type: 'text', isPrimary: true },
-      { key: 'logo', label: 'Logo (ljus bakgrund)', type: 'image' },
-      { key: 'logo_transparent', label: 'Logo (mörk bakgrund)', type: 'image' },
+      { key: 'logo_url', label: 'Logo (ljus bakgrund)', type: 'image' },
+      { key: 'logo_transparent_url', label: 'Logo (mörk bakgrund)', type: 'image' },
       { key: 'url', label: 'Hemsida', type: 'url' },
       { key: 'description', label: 'Beskrivning', type: 'textarea' },
       { key: 'division_ids', label: 'Divisioner', type: 'link', linkedEntity: 'core_divisions' },
@@ -170,8 +171,8 @@ export const CORE_ENTITY_FORMS: Record<CoreEntityName, CoreEntityFormConfig> = {
       { key: 'quote', label: 'Citat', type: 'textarea' },
       { key: 'author_name', label: 'Författarens namn', type: 'text', width: 'half' },
       { key: 'author_title', label: 'Författarens titel', type: 'text', width: 'half' },
-      { key: 'author_image', label: 'Porträttbild', type: 'image' },
-      { key: 'featured', label: 'Featured', type: 'checkbox', help: 'Framhäv i carouseller.' },
+      { key: 'author_image_url', label: 'Porträttbild', type: 'image' },
+      { key: 'is_featured', label: 'Featured', type: 'checkbox', help: 'Framhäv i carouseller.' },
       { key: 'customer_type_ids', label: 'Kundtyper', type: 'link', linkedEntity: 'core_customer_types' },
       { key: 'division_ids', label: 'Divisioner', type: 'link', linkedEntity: 'core_divisions' },
       { key: 'country_ids', label: 'Länder', type: 'link', linkedEntity: 'core_countries' },
