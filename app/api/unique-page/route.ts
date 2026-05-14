@@ -1,138 +1,56 @@
 /**
  * CRUD-route för cms_unique_pages.
  *
+ *   GET    /api/unique-page?action=list     — list
  *   POST   /api/unique-page                 — create
  *   PATCH  /api/unique-page?id=recXXX       — update
  *   DELETE /api/unique-page?id=recXXX       — delete
- *   GET    /api/unique-page?action=list     — list
  *
- * Skriver mot SSOT-basen (Wexoe NY). Invaliderar Wexoe Core cache efter mutation.
+ * Drivs av createPageRoute() i lib/route-factory.ts — slug-validering,
+ * duplikat-koll, reservedSlug-koll och cache-invalidering är konfigurerade
+ * deklarativt nedan. Fältnamn är snake_case enligt cms_unique_pages-schema.
+ *
+ * Single-record läses server-side via getRecord() i
+ * app/editor/unique/[recordId]/page.tsx, inte via denna route — därför saknas
+ * action=get.
  */
 
-import { NextRequest, NextResponse } from 'next/server';
-import { createRecord, updateRecord, deleteRecords, listRecords, SSOT_BASE_ID } from '@/lib/airtable';
+import { SSOT_BASE_ID, AirtableRecord } from '@/lib/airtable';
 import { uniquePageStateToFields, UNIQUE_PAGES_TABLE_ID } from '@/lib/unique-page-mapper';
 import { UniquePageState } from '@/lib/unique-page-types';
-import { invalidateWexoeCoreCache, UNIQUE_PAGES_ENTITIES } from '@/lib/wexoe-cache';
-import { isReservedSlug } from '@/lib/core/reserved-slugs';
+import { UNIQUE_PAGES_ENTITIES } from '@/lib/wexoe-cache';
+import { createPageRoute } from '@/lib/route-factory';
 
-const apiKey = process.env.AIRTABLE_API_KEY;
-
-function badRequest(message: string) {
-  return NextResponse.json({ success: false, error: message }, { status: 400 });
-}
-function serverError(message: string) {
-  return NextResponse.json({ success: false, error: message }, { status: 500 });
-}
-
-async function invalidate(context: string) {
-  await invalidateWexoeCoreCache(UNIQUE_PAGES_ENTITIES, context);
+interface UniquePageListItem {
+  id: string;
+  slug: string;
+  h1: string;
+  published: boolean;
+  divisionIds: string[];
+  countryIds: string[];
 }
 
-function validateSlug(slug: string): string | null {
-  if (!slug) return 'Slug är obligatorisk.';
-  if (isReservedSlug(slug)) return `Slug "${slug}" är reserverad och kan inte användas.`;
-  if (!/^[a-z0-9][a-z0-9-]*$/.test(slug)) return 'Slug får bara innehålla lower-case bokstäver, siffror och bindestreck.';
-  return null;
-}
+export const { GET, POST, PATCH, DELETE } = createPageRoute<UniquePageState, UniquePageListItem>({
+  apiKey: process.env.AIRTABLE_API_KEY,
+  tableId: UNIQUE_PAGES_TABLE_ID,
+  baseId: SSOT_BASE_ID,
+  cacheEntities: UNIQUE_PAGES_ENTITIES,
+  cacheContext: 'unique-page',
 
-export async function GET(req: NextRequest) {
-  if (!apiKey) return serverError('AIRTABLE_API_KEY ej konfigurerad.');
-  const url = new URL(req.url);
-  const action = url.searchParams.get('action');
-  if (action !== 'list') return badRequest('action=list krävs.');
-  try {
-    const records = await listRecords(apiKey, UNIQUE_PAGES_TABLE_ID, { baseId: SSOT_BASE_ID });
-    const pages = records.map((r) => ({
-      id: r.id,
-      slug: r.fields['slug'] ?? '',
-      h1: r.fields['h1'] ?? '',
-      published: r.fields['is_published'] === true,
-      divisionIds: (r.fields['division_ids'] as string[] | undefined) ?? [],
-      countryIds: (r.fields['country_ids'] as string[] | undefined) ?? [],
-    }));
-    return NextResponse.json({ success: true, pages });
-  } catch (err) {
-    return serverError(err instanceof Error ? err.message : 'List misslyckades.');
-  }
-}
+  stateToFields: uniquePageStateToFields,
 
-export async function POST(req: NextRequest) {
-  if (!apiKey) return serverError('AIRTABLE_API_KEY ej konfigurerad.');
-  let state: UniquePageState;
-  try { state = (await req.json()) as UniquePageState; } catch { return badRequest('Ogiltig JSON.'); }
+  listMapper: (r: AirtableRecord): UniquePageListItem => ({
+    id: r.id,
+    slug: (r.fields['slug'] as string) ?? '',
+    h1: (r.fields['h1'] as string) ?? '',
+    published: r.fields['is_published'] === true,
+    divisionIds: (r.fields['division_ids'] as string[] | undefined) ?? [],
+    countryIds: (r.fields['country_ids'] as string[] | undefined) ?? [],
+  }),
 
-  const slugError = validateSlug(state.slug);
-  if (slugError) return badRequest(slugError);
-
-  try {
-    // Säkerställ unik slug.
-    const existing = await listRecords(apiKey, UNIQUE_PAGES_TABLE_ID, {
-      baseId: SSOT_BASE_ID,
-      filterByFormula: `{slug}="${state.slug.replace(/"/g, '\\"')}"`,
-    });
-    if (existing.length > 0) {
-      return NextResponse.json(
-        { success: false, code: 'duplicate_slug', error: 'En sida med den slug:en finns redan.' },
-        { status: 409 },
-      );
-    }
-
-    const fields = uniquePageStateToFields(state, 'create');
-    const created = await createRecord(apiKey, UNIQUE_PAGES_TABLE_ID, fields, SSOT_BASE_ID);
-    await invalidate('unique-page/create');
-    return NextResponse.json({ success: true, mode: 'create', recordId: created.id }, { status: 201 });
-  } catch (err) {
-    return serverError(err instanceof Error ? err.message : 'Create misslyckades.');
-  }
-}
-
-export async function PATCH(req: NextRequest) {
-  if (!apiKey) return serverError('AIRTABLE_API_KEY ej konfigurerad.');
-  const url = new URL(req.url);
-  const recordId = url.searchParams.get('id');
-  if (!recordId) return badRequest('Saknar ?id=recXXX.');
-
-  let state: UniquePageState;
-  try { state = (await req.json()) as UniquePageState; } catch { return badRequest('Ogiltig JSON.'); }
-
-  const slugError = validateSlug(state.slug);
-  if (slugError) return badRequest(slugError);
-
-  try {
-    // Spegla POST-duplikatkollen — annars kan en redaktör byta slug till en
-    // som redan ägs av en annan record och två sidor får samma slug.
-    const existing = await listRecords(apiKey, UNIQUE_PAGES_TABLE_ID, {
-      baseId: SSOT_BASE_ID,
-      filterByFormula: `{slug}="${state.slug.replace(/"/g, '\\"')}"`,
-    });
-    const collision = existing.find((r) => r.id !== recordId);
-    if (collision) {
-      return NextResponse.json(
-        { success: false, code: 'duplicate_slug', error: 'En annan sida har redan den slug:en.' },
-        { status: 409 },
-      );
-    }
-
-    const fields = uniquePageStateToFields(state, 'update');
-    await updateRecord(apiKey, UNIQUE_PAGES_TABLE_ID, recordId, fields, SSOT_BASE_ID);
-    await invalidate('unique-page/update');
-    return NextResponse.json({ success: true, mode: 'update' });
-  } catch (err) {
-    return serverError(err instanceof Error ? err.message : 'Update misslyckades.');
-  }
-}
-
-export async function DELETE(req: NextRequest) {
-  if (!apiKey) return serverError('AIRTABLE_API_KEY ej konfigurerad.');
-  const url = new URL(req.url);
-  const recordId = url.searchParams.get('id');
-  if (!recordId) return badRequest('Saknar ?id=recXXX.');
-  try {
-    await deleteRecords(apiKey, UNIQUE_PAGES_TABLE_ID, [recordId], SSOT_BASE_ID);
-    await invalidate('unique-page/delete');
-    return NextResponse.json({ success: true, deleted: true });
-  } catch (err) {
-    return serverError(err instanceof Error ? err.message : 'Delete misslyckades.');
-  }
-}
+  slugAccessor: (s) => s.slug,
+  slugField: 'slug',
+  validateSlugFormat: true,
+  checkReservedSlug: true,
+  checkDuplicateSlug: true,
+});
