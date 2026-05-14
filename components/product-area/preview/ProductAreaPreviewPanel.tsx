@@ -1,7 +1,8 @@
 'use client';
 
-import { useEffect, useRef } from 'react';
+import { useRef } from 'react';
 import { ProductAreaState, ProductAreaSectionId, NormalSection } from '@/lib/product-area-types';
+import { useScrollToActiveSection } from '@/hooks/useScrollToActiveSection';
 import TopBannerPreview from './TopBannerPreview';
 import HeroPreview from './HeroPreview';
 import NormalSectionPreview from './NormalSectionPreview';
@@ -52,18 +53,7 @@ export default function ProductAreaPreviewPanel({
   visibility,
 }: Props) {
   const pageRef = useRef<HTMLDivElement>(null);
-
-  // Scroll the active section into the centre of the preview pane whenever
-  // the active section or scrollTrigger changes. Uses the `data-section`
-  // attribute already applied by PreviewSection, so we don't need to thread
-  // refs through every sub-component.
-  useEffect(() => {
-    if (!activeSection || !pageRef.current) return;
-    const el = pageRef.current.querySelector(`[data-section="${activeSection}"]`);
-    if (el) {
-      (el as HTMLElement).scrollIntoView({ behavior: 'smooth', block: 'center' });
-    }
-  }, [activeSection, scrollTrigger]);
+  useScrollToActiveSection(pageRef, activeSection, scrollTrigger);
 
   const normals: Array<{ n: 1 | 2 | 3 | 4; section: NormalSection }> = [
     { n: 1, section: state.normal1 },

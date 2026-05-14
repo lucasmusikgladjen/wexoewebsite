@@ -1,7 +1,8 @@
 'use client';
 
-import { useEffect, useRef } from 'react';
+import { useRef } from 'react';
 import { AudienceState, AudienceSectionId } from '@/lib/audience-types';
+import { useScrollToActiveSection } from '@/hooks/useScrollToActiveSection';
 import HeroPreview from './HeroPreview';
 import ValuePreview from './ValuePreview';
 import CasePreview from './CasePreview';
@@ -28,14 +29,7 @@ export default function AudiencePreviewPanel({
   visibility,
 }: Props) {
   const pageRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    if (!activeSection || !pageRef.current) return;
-    const el = pageRef.current.querySelector(`[data-section="${activeSection}"]`);
-    if (el) {
-      (el as HTMLElement).scrollIntoView({ behavior: 'smooth', block: 'center' });
-    }
-  }, [activeSection, scrollTrigger]);
+  useScrollToActiveSection(pageRef, activeSection, scrollTrigger);
 
   const isEmpty =
     !state.title.trim() &&
