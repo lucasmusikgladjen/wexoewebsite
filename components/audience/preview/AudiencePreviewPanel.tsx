@@ -5,6 +5,7 @@ import { AudienceState, AudienceSectionId } from '@/lib/audience-types';
 import HeroPreview from './HeroPreview';
 import ValuePreview from './ValuePreview';
 import CasePreview from './CasePreview';
+import ContactFormPreview from '@/components/contact-form/ContactFormPreview';
 
 interface Visibility {
   value: boolean;
@@ -76,6 +77,16 @@ export default function AudiencePreviewPanel({
                 ) : null
               }
             />
+          )}
+
+          {state.showContactForm && (
+            <div
+              data-section="contactForm"
+              onClick={() => onSectionClick('contactForm')}
+              className={`relative cursor-pointer ${activeSection === 'contactForm' ? 'ring-2 ring-orange-400 ring-inset' : ''}`}
+            >
+              <ContactFormPreview state={state.contactForm} />
+            </div>
           )}
         </div>
 

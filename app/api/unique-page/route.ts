@@ -48,6 +48,8 @@ export async function GET(req: NextRequest) {
       slug: r.fields['Slug'] ?? '',
       h1: r.fields['H1'] ?? '',
       published: r.fields['Published'] === true,
+      divisionIds: (r.fields['Division'] as string[] | undefined) ?? [],
+      countryIds: (r.fields['Country'] as string[] | undefined) ?? [],
     }));
     return NextResponse.json({ success: true, pages });
   } catch (err) {

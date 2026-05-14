@@ -2,6 +2,7 @@
 
 import { PageState, PageAction, Tab, TabType } from '@/lib/types';
 import { FieldInput, FieldSelect, FieldCheckbox, RichTextarea } from './FieldInput';
+import EditorSection from './EditorSection';
 
 function ItemCard({ index, onRemove, children }: { index?: number; onRemove: () => void; children: React.ReactNode }) {
   return (
@@ -43,34 +44,30 @@ export default function TabsEditor({ state, dispatch }: Props) {
   };
 
   return (
-    <div className="space-y-3">
-      <div className="flex items-center justify-between">
-        <h3 className="text-xl font-bold text-gray-900">Tabs</h3>
-        <FieldCheckbox label="Visa" checked={state.showTabs} onChange={(v) => set('showTabs', v)} />
-      </div>
-      {state.showTabs && (
-        <>
-          {state.tabs.map((tab, index) => (
-            <TabEditor
-              key={tab.id}
-              tab={tab}
-              index={index}
-              total={state.tabs.length}
-              dispatch={dispatch}
-              onMoveUp={() => moveTab(index, -1)}
-              onMoveDown={() => moveTab(index, 1)}
-              onRemove={() => dispatch({ type: 'REMOVE_TAB', tabId: tab.id })}
-            />
-          ))}
-          <button
-            onClick={() => dispatch({ type: 'ADD_TAB' })}
-            className="w-full py-2 text-sm text-gray-300 hover:text-gray-500 transition-colors"
-          >
-            + Lägg till tab
-          </button>
-        </>
-      )}
-    </div>
+    <EditorSection
+      title="Tabs"
+      visible={state.showTabs}
+      onToggleVisible={(v) => set('showTabs', v)}
+    >
+      {state.tabs.map((tab, index) => (
+        <TabEditor
+          key={tab.id}
+          tab={tab}
+          index={index}
+          total={state.tabs.length}
+          dispatch={dispatch}
+          onMoveUp={() => moveTab(index, -1)}
+          onMoveDown={() => moveTab(index, 1)}
+          onRemove={() => dispatch({ type: 'REMOVE_TAB', tabId: tab.id })}
+        />
+      ))}
+      <button
+        onClick={() => dispatch({ type: 'ADD_TAB' })}
+        className="w-full py-2 text-sm text-gray-300 hover:text-gray-500 transition-colors"
+      >
+        + Lägg till tab
+      </button>
+    </EditorSection>
   );
 }
 

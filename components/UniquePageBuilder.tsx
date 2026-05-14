@@ -18,8 +18,7 @@ import PartnersMarqueeEditor from './unique-page/editors/PartnersMarqueeEditor';
 import TestimonialCardEditor from './unique-page/editors/TestimonialCardEditor';
 import CtaBannerEditor from './unique-page/editors/CtaBannerEditor';
 import UniquePagePreview from './unique-page/preview/UniquePagePreview';
-import CollapsibleSection from './unique-page/editors/CollapsibleSection';
-import ContactFormEditor from './contact-form/ContactFormEditor';
+import ContactFormSection from './contact-form/ContactFormSection';
 
 interface CountryOption { recordId: string; code: string; name: string; }
 interface DivisionOption { recordId: string; slug: string; name: string; }
@@ -237,16 +236,12 @@ export default function UniquePageBuilder({ initialState, countryOptions, divisi
           </div>
 
           <div ref={sectionRef('contactForm')} onClick={() => onSectionFocus('contactForm')} onFocusCapture={() => onSectionFocus('contactForm')}>
-            <CollapsibleSection
-              title="Kontaktformulär"
+            <ContactFormSection
               visible={state.showContactForm}
               onToggleVisible={(v) => setField('showContactForm', v)}
-            >
-              <ContactFormEditor
-                state={state.contactForm}
-                onChange={(s) => setField('contactForm', s)}
-              />
-            </CollapsibleSection>
+              state={state.contactForm}
+              onChange={(s) => setField('contactForm', s)}
+            />
           </div>
         </>
       )}

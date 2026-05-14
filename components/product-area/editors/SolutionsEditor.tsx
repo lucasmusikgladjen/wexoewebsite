@@ -3,6 +3,7 @@
 import { ProductAreaState, LinkedSolution, emptyLinkedSolution } from '@/lib/product-area-types';
 import { FieldInput, FieldCheckbox, FieldColor, RichTextarea } from '@/components/editors/FieldInput';
 import CollapsibleCard from './CollapsibleCard';
+import EditorSection from '@/components/editors/EditorSection';
 
 interface Props {
   state: ProductAreaState;
@@ -48,15 +49,7 @@ export default function SolutionsEditor({ state, setField, visible, onToggleVisi
   };
 
   return (
-    <div className="space-y-3">
-      <div className="flex items-center justify-between">
-        <h3 className="text-xl font-bold text-gray-900">Lösningar</h3>
-        <FieldCheckbox label="Visa" checked={visible} onChange={onToggleVisible} />
-      </div>
-
-      {visible && (
-      <>
-
+    <EditorSection title="Lösningar" visible={visible} onToggleVisible={onToggleVisible}>
       <FieldInput
         label="Rubrik"
         value={state.solutionsTitle}
@@ -146,8 +139,6 @@ export default function SolutionsEditor({ state, setField, visible, onToggleVisi
           defaultColor="#FFFFFF"
         />
       </div>
-      </>
-      )}
-    </div>
+    </EditorSection>
   );
 }

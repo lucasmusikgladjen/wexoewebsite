@@ -1,62 +1,39 @@
 'use client';
 
-import { ReactNode, useState } from 'react';
+import { ReactNode } from 'react';
+import EditorSection from '@/components/editors/EditorSection';
 
 interface Props {
   title: string;
   /** True = sektion visas i preview/render. Optional för sektioner som inte har toggle (metadata). */
   visible?: boolean;
   onToggleVisible?: (v: boolean) => void;
-  /** Hint som visas till höger i header. */
+  /** Hint som visas till höger i header. Bibehållen för bak­åtkompatibilitet men inte längre renderad. */
   hint?: string;
   defaultOpen?: boolean;
   children: ReactNode;
 }
 
+/**
+ * Thin wrapper kvar för bakåtkompatibilitet — delegerar till den delade
+ * `EditorSection`-headern så alla editorer ser likadana ut.
+ */
 export default function CollapsibleSection({
   title,
   visible,
   onToggleVisible,
-  hint,
   defaultOpen,
   children,
 }: Props) {
-  const [open, setOpen] = useState(defaultOpen ?? (visible ?? true));
-  const hasToggle = onToggleVisible !== undefined;
-
   return (
-    <div className="border border-gray-100 rounded-md overflow-hidden bg-white">
-      <div className="flex items-center gap-2 px-3 py-2 bg-gray-50 border-b border-gray-100">
-        <button
-          type="button"
-          onClick={() => setOpen((o) => !o)}
-          className="flex-1 flex items-center gap-2 text-left text-sm font-medium text-gray-800 hover:text-gray-900"
-        >
-          <svg
-            width="10"
-            height="10"
-            viewBox="0 0 12 12"
-            className={`text-gray-400 transition-transform ${open ? 'rotate-90' : ''}`}
-          >
-            <path d="M4 2 L8 6 L4 10" stroke="currentColor" strokeWidth="1.5" fill="none" strokeLinecap="round" strokeLinejoin="round" />
-          </svg>
-          {title}
-        </button>
-        {hint && <span className="text-[10px] uppercase tracking-wider text-gray-300">{hint}</span>}
-        {hasToggle && (
-          <label className="flex items-center gap-1.5 text-[11px] text-gray-500">
-            <input
-              type="checkbox"
-              checked={!!visible}
-              onChange={(e) => onToggleVisible?.(e.target.checked)}
-              className="h-3.5 w-3.5"
-            />
-            Visa
-          </label>
-        )}
-      </div>
-      {open && <div className="p-3 space-y-3">{children}</div>}
-    </div>
+    <EditorSection
+      title={title}
+      visible={visible}
+      onToggleVisible={onToggleVisible}
+      defaultOpen={defaultOpen}
+    >
+      {children}
+    </EditorSection>
   );
 }
 

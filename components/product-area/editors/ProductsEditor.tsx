@@ -4,6 +4,7 @@ import { ProductAreaState, LinkedProduct, emptyLinkedProduct } from '@/lib/produ
 import { FieldInput, FieldCheckbox, FieldColor, RichTextarea } from '@/components/editors/FieldInput';
 import CollapsibleCard from './CollapsibleCard';
 import ButtonFieldset from '@/components/editors/ButtonFieldset';
+import EditorSection from '@/components/editors/EditorSection';
 
 interface Props {
   state: ProductAreaState;
@@ -50,14 +51,7 @@ export default function ProductsEditor({ state, setField, visible, onToggleVisib
   };
 
   return (
-    <div className="space-y-3">
-      <div className="flex items-center justify-between">
-        <h3 className="text-xl font-bold text-gray-900">Produkter</h3>
-        <FieldCheckbox label="Visa" checked={visible} onChange={onToggleVisible} />
-      </div>
-
-      {visible && (
-      <>
+    <EditorSection title="Produkter" visible={visible} onToggleVisible={onToggleVisible}>
       {state.products.map((product, i) => (
         <CollapsibleCard
           key={product.clientId}
@@ -198,8 +192,6 @@ export default function ProductsEditor({ state, setField, visible, onToggleVisib
           defaultColor="#F28C28"
         />
       </div>
-      </>
-      )}
-    </div>
+    </EditorSection>
   );
 }
