@@ -6,8 +6,8 @@
 
 import { AirtableRecord, LEGACY_BASE_ID } from './airtable';
 import { AudienceState } from './audience-types';
-import { ContactFormState, ContactFormLayout, ContactFormTheme, emptyContactFormState } from './contact-form-types';
 import { str, bool } from './airtable-helpers';
+import { contactFormFromFields, contactFormToFields } from './contact-form-mapper';
 
 // Audience Heroes (Customer types-tabellen) ligger fortfarande i gamla Wexoe-
 // basen. `listRecords/createRecord/updateRecord`-anrop måste explicit pass:a
@@ -52,30 +52,7 @@ export function audienceStateFromRecord(record: AirtableRecord): AudienceState {
     caseLinkUrl: str(f, 'Case Link URL'),
 
     showContactForm: bool(f, 'Show Contact Form'),
-    contactForm: contactFormStateFromRecord(record),
-  };
-}
-
-function contactFormStateFromRecord(record: AirtableRecord): ContactFormState {
-  const f = record.fields;
-  const empty = emptyContactFormState();
-  const layoutRaw = str(f, 'Contact Form Layout');
-  const themeRaw = str(f, 'Contact Form Theme');
-  return {
-    eyebrow: str(f, 'Contact Form Eyebrow'),
-    title: str(f, 'Contact Form Title'),
-    subtitle: str(f, 'Contact Form Subtitle'),
-    layout: (layoutRaw === 'centered' ? 'centered' : 'split') as ContactFormLayout,
-    theme: (themeRaw === 'light' ? 'light' : 'dark') as ContactFormTheme,
-    showCompany: f['Contact Form Show Company'] === true ? true : f['Contact Form Show Company'] === false ? false : empty.showCompany,
-    showPhone: f['Contact Form Show Phone'] === true ? true : f['Contact Form Show Phone'] === false ? false : empty.showPhone,
-    showDropdown: f['Contact Form Show Dropdown'] === true ? true : f['Contact Form Show Dropdown'] === false ? false : empty.showDropdown,
-    dropdownLabel: str(f, 'Contact Form Dropdown Label'),
-    options: str(f, 'Contact Form Options'),
-    ctaText: str(f, 'Contact Form CTA Text'),
-    messageLabel: str(f, 'Contact Form Message Label'),
-    trustSignals: str(f, 'Contact Form Trust Signals'),
-    showContactPerson: f['Contact Form Show Contact Person'] === true ? true : f['Contact Form Show Contact Person'] === false ? false : empty.showContactPerson,
+    contactForm: contactFormFromFields(f),
   };
 }
 
@@ -111,20 +88,7 @@ export function audienceStateToFields(
     'Case Link URL': state.caseLinkUrl,
 
     'Show Contact Form': state.showContactForm,
-    'Contact Form Eyebrow': state.contactForm.eyebrow,
-    'Contact Form Title': state.contactForm.title,
-    'Contact Form Subtitle': state.contactForm.subtitle,
-    'Contact Form Layout': state.contactForm.layout,
-    'Contact Form Theme': state.contactForm.theme,
-    'Contact Form Show Company': state.contactForm.showCompany,
-    'Contact Form Show Phone': state.contactForm.showPhone,
-    'Contact Form Show Dropdown': state.contactForm.showDropdown,
-    'Contact Form Dropdown Label': state.contactForm.dropdownLabel,
-    'Contact Form Options': state.contactForm.options,
-    'Contact Form CTA Text': state.contactForm.ctaText,
-    'Contact Form Message Label': state.contactForm.messageLabel,
-    'Contact Form Trust Signals': state.contactForm.trustSignals,
-    'Contact Form Show Contact Person': state.contactForm.showContactPerson,
+    ...contactFormToFields(state.contactForm),
   };
 
   // Stat Number is an Airtable number field — coerce, treat blank as null.
