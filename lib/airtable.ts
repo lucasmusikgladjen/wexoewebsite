@@ -1,11 +1,26 @@
-const BASE_ID = 'appXoUcK68dQwASjF';
-/** SSOT-basen (Wexoe NY) — `core_*` + `cms_unique_pages`. */
-export const SSOT_BASE_ID = 'appokKSTaBdCa8YiW';
+/**
+ * Airtable REST client.
+ *
+ * Allt går mot Wexoe NY-basen — gamla Wexoe-basen (appXoUcK68dQwASjF) är
+ * deprecated och raderas efter migrationen.
+ */
 
+export const BASE_ID = 'appokKSTaBdCa8YiW';
+
+/** Bakåtkompatibelt alias — pekar nu på samma bas som BASE_ID. */
+export const SSOT_BASE_ID = BASE_ID;
+
+/**
+ * Table IDs i Wexoe NY. Håll i synk med
+ * `wexoeplugins/wexoe-core/entities/*.php` och `lib/core/registry.ts`.
+ */
 export const TABLE_IDS = {
-  landingPages: 'tbl8KDqGq0Ray1uqS',
-  tabs: 'tblvecOh3rAGmw3mw',
-  downloads: 'tblbLM827DzjWGjCR',
+  landingPages: 'tblpPlk17FZIKawXY',
+  landingPageTabs: 'tblp8d32aj5BgGMvE',
+  landingPageDownloads: 'tbltAtilGKnQ2wc7I',
+  // Legacy aliases (matches old key names while we phase out)
+  tabs: 'tblp8d32aj5BgGMvE',
+  downloads: 'tbltAtilGKnQ2wc7I',
 } as const;
 
 function resolveBaseId(baseId?: string): string {
@@ -100,13 +115,14 @@ export async function updateRecords(
   apiKey: string,
   tableId: string,
   records: Array<{ id: string; fields: Record<string, unknown> }>,
+  baseId?: string,
 ): Promise<AirtableRecord[]> {
   if (records.length === 0) return [];
   const results: AirtableRecord[] = [];
   for (let i = 0; i < records.length; i += 10) {
     const batch = records.slice(i, i + 10);
     const res = await fetch(
-      `https://api.airtable.com/v0/${BASE_ID}/${tableId}`,
+      `https://api.airtable.com/v0/${resolveBaseId(baseId)}/${tableId}`,
       {
         method: 'PATCH',
         headers: authHeaders(apiKey),
@@ -195,6 +211,7 @@ export async function createRecords(
   apiKey: string,
   tableId: string,
   records: Array<{ fields: Record<string, unknown> }>,
+  baseId?: string,
 ): Promise<AirtableRecord[]> {
   if (records.length === 0) return [];
 
@@ -203,7 +220,7 @@ export async function createRecords(
   for (let i = 0; i < records.length; i += 10) {
     const batch = records.slice(i, i + 10);
     const res = await fetch(
-      `https://api.airtable.com/v0/${BASE_ID}/${tableId}`,
+      `https://api.airtable.com/v0/${resolveBaseId(baseId)}/${tableId}`,
       {
         method: 'POST',
         headers: {

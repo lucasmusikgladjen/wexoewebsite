@@ -1,18 +1,20 @@
 /**
  * TS-interfaces för normaliserade SSOT-records.
  *
- * Format speglar Wexoe Core domain-keys (lower_snake_case) snarare än
- * Airtable-fältnamn (Title Case With Spaces).
+ * Post-migration: snake_case överallt — Airtable display-namn matchar
+ * dessa property-namn 1:1 (passthrough).
  */
 
 export interface CoreRecordCommon {
   _recordId: string;
+  internal_notes?: string;
 }
 
 export interface CoreCompany extends CoreRecordCommon {
   slug: string;
   is_default: boolean;
   country_ids: string[];
+  company_name: string;
   tagline: string;
   org_number: string;
   vat_number: string;
@@ -29,15 +31,14 @@ export interface CoreCompany extends CoreRecordCommon {
   youtube_url: string;
   hours_mon_thur: string;
   hours_friday: string;
-  internal_notes: string;
 }
 
 export interface CoreGraphicProfile extends CoreRecordCommon {
   slug: string;
   is_default: boolean;
-  logo_primary: string;
-  logo_dark_background: string;
-  favicon: string;
+  logo_primary_url: string;
+  logo_dark_url: string;
+  favicon_url: string;
   color_primary: string;
   color_secondary: string;
   color_accent: string;
@@ -60,7 +61,7 @@ export interface CoreCountry extends CoreRecordCommon {
   locale: string;
   default_language: string;
   order: number;
-  active: boolean;
+  is_active: boolean;
 }
 
 export interface CoreDivision extends CoreRecordCommon {
@@ -68,7 +69,7 @@ export interface CoreDivision extends CoreRecordCommon {
   slug: string;
   description: string;
   order: number;
-  active: boolean;
+  is_active: boolean;
   country_ids: string[];
 }
 
@@ -78,7 +79,7 @@ export interface CoreCustomerType extends CoreRecordCommon {
   description: string;
   icon: string;
   order: number;
-  active: boolean;
+  is_active: boolean;
 }
 
 export interface CoreCoworker extends CoreRecordCommon {
@@ -86,23 +87,23 @@ export interface CoreCoworker extends CoreRecordCommon {
   title: string;
   email: string;
   phone: string;
-  image: string;
+  image_url: string;
   linkedin_url: string;
   bio: string;
   order: number;
-  active: boolean;
+  is_active: boolean;
   division_ids: string[];
   country_ids: string[];
 }
 
 export interface CorePartner extends CoreRecordCommon {
   name: string;
-  logo: string;
-  logo_transparent: string;
+  logo_url: string;
+  logo_transparent_url: string;
   url: string;
   description: string;
   order: number;
-  active: boolean;
+  is_active: boolean;
   division_ids: string[];
   country_ids: string[];
 }
@@ -112,10 +113,10 @@ export interface CoreTestimonial extends CoreRecordCommon {
   quote: string;
   author_name: string;
   author_title: string;
-  author_image: string;
+  author_image_url: string;
   order: number;
-  active: boolean;
-  featured: boolean;
+  is_active: boolean;
+  is_featured: boolean;
   customer_type_ids: string[];
   division_ids: string[];
   country_ids: string[];

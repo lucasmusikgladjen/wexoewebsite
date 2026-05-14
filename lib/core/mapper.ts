@@ -2,8 +2,8 @@
  * Bidirektional mappning mellan Airtable-records och normaliserade TS-objekt
  * för SSOT-entiteter.
  *
- * Mappar Airtable Title Case-fältnamn → lower_snake_case domain-keys.
- * Bild-fält är singleLineText URL-strängar (wp-content), inte multipleAttachments.
+ * Post-migration: snake_case överallt — passthrough mellan Airtable display-namn
+ * och kod-fält. Bild-fält är singleLineText URL-strängar (wp-content).
  */
 
 import { AirtableRecord } from '../airtable';
@@ -44,26 +44,27 @@ function readCompany(rec: AirtableRecord) {
   const { _recordId, f } = readCommon(rec);
   return {
     _recordId,
-    slug: asString(f['Slug']),
-    is_default: asBool(f['Is Default']),
-    country_ids: asLinkIds(f['Country']),
-    tagline: asString(f['Tagline']),
-    org_number: asString(f['Org Number']),
-    vat_number: asString(f['VAT Number']),
-    email: asString(f['Email']),
-    email_order: asString(f['Email order']),
-    phone: asString(f['Phone']),
-    phone_emergency: asString(f['Phone Emergency']),
-    address_line_1: asString(f['Address Line 1']),
-    address_postal_code: asString(f['Address Postal Code']),
-    address_city: asString(f['Address City']),
-    linkedin_url: asString(f['LinkedIn URL']),
-    facebook_url: asString(f['Facebook URL']),
-    instagram_url: asString(f['Instagram URL']),
-    youtube_url: asString(f['YouTube URL']),
-    hours_mon_thur: asString(f['Hours Mon-Thur']),
-    hours_friday: asString(f['Hours Friday']),
-    internal_notes: asString(f['Internal Notes']),
+    slug: asString(f['slug']),
+    is_default: asBool(f['is_default']),
+    country_ids: asLinkIds(f['country_ids']),
+    company_name: asString(f['company_name']),
+    tagline: asString(f['tagline']),
+    org_number: asString(f['org_number']),
+    vat_number: asString(f['vat_number']),
+    email: asString(f['email']),
+    email_order: asString(f['email_order']),
+    phone: asString(f['phone']),
+    phone_emergency: asString(f['phone_emergency']),
+    address_line_1: asString(f['address_line_1']),
+    address_postal_code: asString(f['address_postal_code']),
+    address_city: asString(f['address_city']),
+    linkedin_url: asString(f['linkedin_url']),
+    facebook_url: asString(f['facebook_url']),
+    instagram_url: asString(f['instagram_url']),
+    youtube_url: asString(f['youtube_url']),
+    hours_mon_thur: asString(f['hours_mon_thur']),
+    hours_friday: asString(f['hours_friday']),
+    internal_notes: asString(f['internal_notes']),
   };
 }
 
@@ -71,22 +72,23 @@ function readGraphicProfile(rec: AirtableRecord) {
   const { _recordId, f } = readCommon(rec);
   return {
     _recordId,
-    slug: asString(f['Slug']),
-    is_default: asBool(f['Is Default']),
-    logo_primary: asString(f['Logo Primary']),
-    logo_dark_background: asString(f['Logo Dark Background']),
-    favicon: asString(f['Favicon']),
-    color_primary: asString(f['Color Primary']),
-    color_secondary: asString(f['Color Secondary']),
-    color_accent: asString(f['Color Accent']),
-    color_background_light: asString(f['Color Background Light']),
-    color_background_dark: asString(f['Color Background Dark']),
-    color_text_primary: asString(f['Color Text Primary']),
-    color_text_secondary: asString(f['Color Text Secondary']),
-    font_heading: asString(f['Font Heading']),
-    font_body: asString(f['Font Body']),
-    font_css_url: asString(f['Font CSS URL']),
-    division_ids: asLinkIds(f['Division']),
+    slug: asString(f['slug']),
+    is_default: asBool(f['is_default']),
+    logo_primary_url: asString(f['logo_primary_url']),
+    logo_dark_url: asString(f['logo_dark_url']),
+    favicon_url: asString(f['favicon_url']),
+    color_primary: asString(f['color_primary']),
+    color_secondary: asString(f['color_secondary']),
+    color_accent: asString(f['color_accent']),
+    color_background_light: asString(f['color_background_light']),
+    color_background_dark: asString(f['color_background_dark']),
+    color_text_primary: asString(f['color_text_primary']),
+    color_text_secondary: asString(f['color_text_secondary']),
+    font_heading: asString(f['font_heading']),
+    font_body: asString(f['font_body']),
+    font_css_url: asString(f['font_css_url']),
+    division_ids: asLinkIds(f['division_ids']),
+    internal_notes: asString(f['internal_notes']),
   };
 }
 
@@ -94,15 +96,16 @@ function readCountry(rec: AirtableRecord) {
   const { _recordId, f } = readCommon(rec);
   return {
     _recordId,
-    name: asString(f['Name']),
-    code: asString(f['Code']),
-    domain: asString(f['Domain']),
-    url_prefix: asString(f['URL Prefix']),
-    currency: asString(f['Currency']),
-    locale: asString(f['Locale']),
-    default_language: asString(f['Default Language']),
-    order: asNumber(f['Order']),
-    active: asBool(f['Active']),
+    name: asString(f['name']),
+    code: asString(f['code']),
+    domain: asString(f['domain']),
+    url_prefix: asString(f['url_prefix']),
+    currency: asString(f['currency']),
+    locale: asString(f['locale']),
+    default_language: asString(f['default_language']),
+    order: asNumber(f['order']),
+    is_active: asBool(f['is_active']),
+    internal_notes: asString(f['internal_notes']),
   };
 }
 
@@ -110,12 +113,13 @@ function readDivision(rec: AirtableRecord) {
   const { _recordId, f } = readCommon(rec);
   return {
     _recordId,
-    name: asString(f['Name']),
-    slug: asString(f['Slug']),
-    description: asString(f['Description']),
-    order: asNumber(f['Order']),
-    active: asBool(f['Active']),
-    country_ids: asLinkIds(f['Country']),
+    name: asString(f['name']),
+    slug: asString(f['slug']),
+    description: asString(f['description']),
+    order: asNumber(f['order']),
+    is_active: asBool(f['is_active']),
+    country_ids: asLinkIds(f['country_ids']),
+    internal_notes: asString(f['internal_notes']),
   };
 }
 
@@ -123,12 +127,13 @@ function readCustomerType(rec: AirtableRecord) {
   const { _recordId, f } = readCommon(rec);
   return {
     _recordId,
-    name: asString(f['Name']),
-    slug: asString(f['Slug']),
-    description: asString(f['Description']),
-    icon: asString(f['Icon']),
-    order: asNumber(f['Order']),
-    active: asBool(f['Active']),
+    name: asString(f['name']),
+    slug: asString(f['slug']),
+    description: asString(f['description']),
+    icon: asString(f['icon']),
+    order: asNumber(f['order']),
+    is_active: asBool(f['is_active']),
+    internal_notes: asString(f['internal_notes']),
   };
 }
 
@@ -136,17 +141,18 @@ function readCoworker(rec: AirtableRecord) {
   const { _recordId, f } = readCommon(rec);
   return {
     _recordId,
-    full_name: asString(f['Full Name']),
-    title: asString(f['Title']),
-    email: asString(f['Email']),
-    phone: asString(f['Phone']),
-    image: asString(f['Image']),
-    linkedin_url: asString(f['LinkedIn URL']),
-    bio: asString(f['Bio']),
-    order: asNumber(f['Order']),
-    active: asBool(f['Active']),
-    division_ids: asLinkIds(f['Division']),
-    country_ids: asLinkIds(f['Country']),
+    full_name: asString(f['full_name']),
+    title: asString(f['title']),
+    email: asString(f['email']),
+    phone: asString(f['phone']),
+    image_url: asString(f['image_url']),
+    linkedin_url: asString(f['linkedin_url']),
+    bio: asString(f['bio']),
+    order: asNumber(f['order']),
+    is_active: asBool(f['is_active']),
+    division_ids: asLinkIds(f['division_ids']),
+    country_ids: asLinkIds(f['country_ids']),
+    internal_notes: asString(f['internal_notes']),
   };
 }
 
@@ -154,15 +160,16 @@ function readPartner(rec: AirtableRecord) {
   const { _recordId, f } = readCommon(rec);
   return {
     _recordId,
-    name: asString(f['Name']),
-    logo: asString(f['Logo']),
-    logo_transparent: asString(f['Logo Transparent']),
-    url: asString(f['URL']),
-    description: asString(f['Description']),
-    order: asNumber(f['Order']),
-    active: asBool(f['Active']),
-    division_ids: asLinkIds(f['Division']),
-    country_ids: asLinkIds(f['Country']),
+    name: asString(f['name']),
+    logo_url: asString(f['logo_url']),
+    logo_transparent_url: asString(f['logo_transparent_url']),
+    url: asString(f['url']),
+    description: asString(f['description']),
+    order: asNumber(f['order']),
+    is_active: asBool(f['is_active']),
+    division_ids: asLinkIds(f['division_ids']),
+    country_ids: asLinkIds(f['country_ids']),
+    internal_notes: asString(f['internal_notes']),
   };
 }
 
@@ -170,17 +177,18 @@ function readTestimonial(rec: AirtableRecord) {
   const { _recordId, f } = readCommon(rec);
   return {
     _recordId,
-    internal_name: asString(f['Internal Name']),
-    quote: asString(f['Quote']),
-    author_name: asString(f['Author Name']),
-    author_title: asString(f['Author Title']),
-    author_image: asString(f['Author Image']),
-    order: asNumber(f['Order']),
-    active: asBool(f['Active']),
-    featured: asBool(f['Featured']),
-    customer_type_ids: asLinkIds(f['Customer Type']),
-    division_ids: asLinkIds(f['Division']),
-    country_ids: asLinkIds(f['Country']),
+    internal_name: asString(f['internal_name']),
+    quote: asString(f['quote']),
+    author_name: asString(f['author_name']),
+    author_title: asString(f['author_title']),
+    author_image_url: asString(f['author_image_url']),
+    order: asNumber(f['order']),
+    is_active: asBool(f['is_active']),
+    is_featured: asBool(f['is_featured']),
+    customer_type_ids: asLinkIds(f['customer_type_ids']),
+    division_ids: asLinkIds(f['division_ids']),
+    country_ids: asLinkIds(f['country_ids']),
+    internal_notes: asString(f['internal_notes']),
   };
 }
 
@@ -208,130 +216,137 @@ function cleanField(v: unknown): unknown {
 
 function writeCompany(s: Record<string, unknown>): Record<string, unknown> {
   return {
-    'Slug': cleanField(s.slug),
-    // Singleton: bara ett record finns och det är alltid default.
-    'Is Default': true,
-    'Country': asLinkIds(s.country_ids),
-    'Tagline': cleanField(s.tagline),
-    'Org Number': cleanField(s.org_number),
-    'VAT Number': cleanField(s.vat_number),
-    'Email': cleanField(s.email),
-    'Email order': cleanField(s.email_order),
-    'Phone': cleanField(s.phone),
-    'Phone Emergency': cleanField(s.phone_emergency),
-    'Address Line 1': cleanField(s.address_line_1),
-    'Address Postal Code': cleanField(s.address_postal_code),
-    'Address City': cleanField(s.address_city),
-    'LinkedIn URL': cleanField(s.linkedin_url),
-    'Facebook URL': cleanField(s.facebook_url),
-    'Instagram URL': cleanField(s.instagram_url),
-    'YouTube URL': cleanField(s.youtube_url),
-    'Hours Mon-Thur': cleanField(s.hours_mon_thur),
-    'Hours Friday': cleanField(s.hours_friday),
-    'Internal Notes': cleanField(s.internal_notes),
+    'slug': cleanField(s.slug),
+    'is_default': true, // Singleton: bara ett record finns och det är alltid default.
+    'country_ids': asLinkIds(s.country_ids),
+    'company_name': cleanField(s.company_name),
+    'tagline': cleanField(s.tagline),
+    'org_number': cleanField(s.org_number),
+    'vat_number': cleanField(s.vat_number),
+    'email': cleanField(s.email),
+    'email_order': cleanField(s.email_order),
+    'phone': cleanField(s.phone),
+    'phone_emergency': cleanField(s.phone_emergency),
+    'address_line_1': cleanField(s.address_line_1),
+    'address_postal_code': cleanField(s.address_postal_code),
+    'address_city': cleanField(s.address_city),
+    'linkedin_url': cleanField(s.linkedin_url),
+    'facebook_url': cleanField(s.facebook_url),
+    'instagram_url': cleanField(s.instagram_url),
+    'youtube_url': cleanField(s.youtube_url),
+    'hours_mon_thur': cleanField(s.hours_mon_thur),
+    'hours_friday': cleanField(s.hours_friday),
+    'internal_notes': cleanField(s.internal_notes),
   };
 }
 
 function writeGraphicProfile(s: Record<string, unknown>): Record<string, unknown> {
   return {
-    'Slug': cleanField(s.slug),
-    'Is Default': !!s.is_default,
-    'Logo Primary': cleanField(s.logo_primary),
-    'Logo Dark Background': cleanField(s.logo_dark_background),
-    'Favicon': cleanField(s.favicon),
-    'Color Primary': cleanField(s.color_primary),
-    'Color Secondary': cleanField(s.color_secondary),
-    'Color Accent': cleanField(s.color_accent),
-    'Color Background Light': cleanField(s.color_background_light),
-    'Color Background Dark': cleanField(s.color_background_dark),
-    'Color Text Primary': cleanField(s.color_text_primary),
-    'Color Text Secondary': cleanField(s.color_text_secondary),
-    'Font Heading': cleanField(s.font_heading),
-    'Font Body': cleanField(s.font_body),
-    'Font CSS URL': cleanField(s.font_css_url),
-    'Division': asLinkIds(s.division_ids),
+    'slug': cleanField(s.slug),
+    'is_default': !!s.is_default,
+    'logo_primary_url': cleanField(s.logo_primary_url),
+    'logo_dark_url': cleanField(s.logo_dark_url),
+    'favicon_url': cleanField(s.favicon_url),
+    'color_primary': cleanField(s.color_primary),
+    'color_secondary': cleanField(s.color_secondary),
+    'color_accent': cleanField(s.color_accent),
+    'color_background_light': cleanField(s.color_background_light),
+    'color_background_dark': cleanField(s.color_background_dark),
+    'color_text_primary': cleanField(s.color_text_primary),
+    'color_text_secondary': cleanField(s.color_text_secondary),
+    'font_heading': cleanField(s.font_heading),
+    'font_body': cleanField(s.font_body),
+    'font_css_url': cleanField(s.font_css_url),
+    'division_ids': asLinkIds(s.division_ids),
+    'internal_notes': cleanField(s.internal_notes),
   };
 }
 
 function writeCountry(s: Record<string, unknown>): Record<string, unknown> {
   return {
-    'Name': cleanField(s.name),
-    'Code': cleanField(s.code),
-    'Domain': cleanField(s.domain),
-    'URL Prefix': cleanField(s.url_prefix),
-    'Currency': cleanField(s.currency),
-    'Locale': cleanField(s.locale),
-    'Default Language': cleanField(s.default_language),
-    'Order': s.order === '' ? null : Number(s.order ?? 0),
-    'Active': !!s.active,
+    'name': cleanField(s.name),
+    'code': cleanField(s.code),
+    'domain': cleanField(s.domain),
+    'url_prefix': cleanField(s.url_prefix),
+    'currency': cleanField(s.currency),
+    'locale': cleanField(s.locale),
+    'default_language': cleanField(s.default_language),
+    'order': s.order === '' ? null : Number(s.order ?? 0),
+    'is_active': !!s.is_active,
+    'internal_notes': cleanField(s.internal_notes),
   };
 }
 
 function writeDivision(s: Record<string, unknown>): Record<string, unknown> {
   return {
-    'Name': cleanField(s.name),
-    'Slug': cleanField(s.slug),
-    'Description': cleanField(s.description),
-    'Order': s.order === '' ? null : Number(s.order ?? 0),
-    'Active': !!s.active,
-    'Country': asLinkIds(s.country_ids),
+    'name': cleanField(s.name),
+    'slug': cleanField(s.slug),
+    'description': cleanField(s.description),
+    'order': s.order === '' ? null : Number(s.order ?? 0),
+    'is_active': !!s.is_active,
+    'country_ids': asLinkIds(s.country_ids),
+    'internal_notes': cleanField(s.internal_notes),
   };
 }
 
 function writeCustomerType(s: Record<string, unknown>): Record<string, unknown> {
   return {
-    'Name': cleanField(s.name),
-    'Slug': cleanField(s.slug),
-    'Description': cleanField(s.description),
-    'Icon': cleanField(s.icon),
-    'Order': s.order === '' ? null : Number(s.order ?? 0),
-    'Active': !!s.active,
+    'name': cleanField(s.name),
+    'slug': cleanField(s.slug),
+    'description': cleanField(s.description),
+    'icon': cleanField(s.icon),
+    'order': s.order === '' ? null : Number(s.order ?? 0),
+    'is_active': !!s.is_active,
+    'internal_notes': cleanField(s.internal_notes),
   };
 }
 
 function writeCoworker(s: Record<string, unknown>): Record<string, unknown> {
   return {
-    'Full Name': cleanField(s.full_name),
-    'Title': cleanField(s.title),
-    'Email': cleanField(s.email),
-    'Phone': cleanField(s.phone),
-    'Image': cleanField(s.image),
-    'LinkedIn URL': cleanField(s.linkedin_url),
-    'Bio': cleanField(s.bio),
-    'Order': s.order === '' ? null : Number(s.order ?? 0),
-    'Active': !!s.active,
-    'Division': asLinkIds(s.division_ids),
-    'Country': asLinkIds(s.country_ids),
+    'full_name': cleanField(s.full_name),
+    'title': cleanField(s.title),
+    'email': cleanField(s.email),
+    'phone': cleanField(s.phone),
+    'image_url': cleanField(s.image_url),
+    'linkedin_url': cleanField(s.linkedin_url),
+    'bio': cleanField(s.bio),
+    'order': s.order === '' ? null : Number(s.order ?? 0),
+    'is_active': !!s.is_active,
+    'division_ids': asLinkIds(s.division_ids),
+    'country_ids': asLinkIds(s.country_ids),
+    'internal_notes': cleanField(s.internal_notes),
   };
 }
 
 function writePartner(s: Record<string, unknown>): Record<string, unknown> {
   return {
-    'Name': cleanField(s.name),
-    'Logo': cleanField(s.logo),
-    'Logo Transparent': cleanField(s.logo_transparent),
-    'URL': cleanField(s.url),
-    'Description': cleanField(s.description),
-    'Order': s.order === '' ? null : Number(s.order ?? 0),
-    'Active': !!s.active,
-    'Division': asLinkIds(s.division_ids),
-    'Country': asLinkIds(s.country_ids),
+    'name': cleanField(s.name),
+    'logo_url': cleanField(s.logo_url),
+    'logo_transparent_url': cleanField(s.logo_transparent_url),
+    'url': cleanField(s.url),
+    'description': cleanField(s.description),
+    'order': s.order === '' ? null : Number(s.order ?? 0),
+    'is_active': !!s.is_active,
+    'division_ids': asLinkIds(s.division_ids),
+    'country_ids': asLinkIds(s.country_ids),
+    'internal_notes': cleanField(s.internal_notes),
   };
 }
 
 function writeTestimonial(s: Record<string, unknown>): Record<string, unknown> {
   return {
-    'Internal Name': cleanField(s.internal_name),
-    'Quote': cleanField(s.quote),
-    'Author Name': cleanField(s.author_name),
-    'Author Title': cleanField(s.author_title),
-    'Author Image': cleanField(s.author_image),
-    'Order': s.order === '' ? null : Number(s.order ?? 0),
-    'Active': !!s.active,
-    'Featured': !!s.featured,
-    'Customer Type': asLinkIds(s.customer_type_ids),
-    'Division': asLinkIds(s.division_ids),
-    'Country': asLinkIds(s.country_ids),
+    'internal_name': cleanField(s.internal_name),
+    'quote': cleanField(s.quote),
+    'author_name': cleanField(s.author_name),
+    'author_title': cleanField(s.author_title),
+    'author_image_url': cleanField(s.author_image_url),
+    'order': s.order === '' ? null : Number(s.order ?? 0),
+    'is_active': !!s.is_active,
+    'is_featured': !!s.is_featured,
+    'customer_type_ids': asLinkIds(s.customer_type_ids),
+    'division_ids': asLinkIds(s.division_ids),
+    'country_ids': asLinkIds(s.country_ids),
+    'internal_notes': cleanField(s.internal_notes),
   };
 }
 
