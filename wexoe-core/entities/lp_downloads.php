@@ -3,30 +3,34 @@
  * Entity schema: lp_downloads
  *
  * Nedladdningsbara resurser kopplade till LP Tabs.
- * Airtable-tabell: LP Downloads (tblbLM827DzjWGjCR)
+ * Airtable-tabell: cms_landing_page_downloads (tbltAtilGKnQ2wc7I) i Wexoe NY.
  *
- * Primärnyckel: saknas. Uppslag via _record_id (find_by_ids).
+ * Primärnyckel: 'name'.
  */
 
 if (!defined('ABSPATH')) exit;
 
 return [
-    'table_id' => 'tblbLM827DzjWGjCR',
+    'base_id' => \Wexoe\Core\Plugin::SSOT_BASE_ID,
+    'table_id' => 'tbltAtilGKnQ2wc7I',
+    'primary_key' => 'name',
     'cache_ttl' => 86400,
     'required' => ['name'],
     'fields' => [
-        'name' => 'Name',
-        'description' => 'Description',
-        'thumbnail' => 'Thumbnail',
-        'file_url' => 'File URL',
-        'button_text' => 'Button Text',
-        'order' => ['source' => 'Order', 'type' => 'float'],
-        'visa' => ['source' => 'Visa', 'type' => 'bool'],
+        'name' => 'name',
+        'internal_notes' => 'internal_notes',
+        'is_active' => ['source' => 'is_active', 'type' => 'bool'],
+        'order' => ['source' => 'order', 'type' => 'float'],
+        'description' => 'description',
+        'thumbnail_url' => 'thumbnail_url',
+        'file_url' => 'file_url',
+        'button_text' => 'button_text',
 
         // Back-link
         'tab_ids' => [
-            'source' => 'Tab',
+            'source' => 'tab_ids',
             'type' => 'link',
+            'entity' => 'lp_tabs',
         ],
     ],
 ];

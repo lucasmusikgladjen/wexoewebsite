@@ -1,57 +1,32 @@
 <?php
 /**
- * Entity schema: audience_heroes
+ * Entity schema: partner_pages
  *
- * Dynamic hero + value-proposition sections for audience landing pages.
- * Airtable-tabell: cms_customer_type_pages (tblZufoWVNKPuJdMK) i Wexoe NY.
- *
- * Primärnyckel: 'slug' — matchar [wexoe_audience slug="..."] shortcodes.
- *
- * BREAKING CHANGE: case-fält (case_title, case_description, case_result, case_link)
- * har lyfts ut till en separat tabell `cms_case_pages` (entity `case_pages`).
- * Hämta dem via `case_ids`-länken.
+ * Dedikerade publika partner-sidor. Innehåll kombinerar publika fält i denna
+ * tabell med data hämtad via scope från `core_partners`.
+ * Airtable-tabell: cms_partner_pages (tblQv5E8pSgwxy6wU) i Wexoe NY.
  */
 
 if (!defined('ABSPATH')) exit;
 
 return [
     'base_id' => \Wexoe\Core\Plugin::SSOT_BASE_ID,
-    'table_id' => 'tblZufoWVNKPuJdMK',
+    'table_id' => 'tblQv5E8pSgwxy6wU',
     'primary_key' => 'slug',
     'cache_ttl' => 86400,
     'required' => ['slug'],
     'fields' => [
-        // Core
         'slug' => 'slug',
         'internal_notes' => 'internal_notes',
         'is_active' => ['source' => 'is_active', 'type' => 'bool'],
         'country_ids' => ['source' => 'country_ids', 'type' => 'link', 'entity' => 'core_countries'],
-        'customer_type_ids' => ['source' => 'customer_type_ids', 'type' => 'link', 'entity' => 'core_customer_types'],
-
-        // Hero
-        'eyebrow' => 'eyebrow',
-        'title' => 'title',
-        'description' => 'description',
-        'cta_text' => 'cta_text',
-        'cta_url' => 'cta_url',
+        'partner_ids' => ['source' => 'partner_ids', 'type' => 'link', 'entity' => 'core_partners'],
+        'h1' => 'h1',
+        'hero_description' => 'hero_description',
         'hero_image_url' => 'hero_image_url',
-        'stat_number' => ['source' => 'stat_number', 'type' => 'int'],
-        'stat_label' => 'stat_label',
-
-        // Value proposition
-        'value_h2' => 'value_h2',
-        'value_text_1' => 'value_text_1',
-        'value_text_2' => 'value_text_2',
-        'benefit_1' => 'benefit_1',
-        'benefit_2' => 'benefit_2',
-        'benefit_3' => 'benefit_3',
-
-        // Linked cases
-        'case_ids' => [
-            'source' => 'case_ids',
-            'type' => 'link',
-            'entity' => 'case_pages',
-        ],
+        'hero_cta_text' => 'hero_cta_text',
+        'hero_cta_url' => 'hero_cta_url',
+        'body_markdown' => 'body_markdown',
 
         // Contact Form (delad med ContactForm-renderer)
         'show_contact_form' => ['source' => 'show_contact_form', 'type' => 'bool'],

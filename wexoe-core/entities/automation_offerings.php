@@ -1,24 +1,33 @@
 <?php
+/**
+ * Entity schema: automation_offerings
+ *
+ * Erbjudande-block (gamla Offerings-tabellen).
+ * Airtable-tabell: cms_offerings i Wexoe NY (skapad i migrationen).
+ */
+
 if (!defined('ABSPATH')) exit;
 
 return [
-    'table_id' => 'tbldQZJu3NHHP5dUh',
+    'base_id' => \Wexoe\Core\Plugin::SSOT_BASE_ID,
+    'table_id' => null, // Sätts efter MCP-skapande
     'cache_ttl' => 86400,
     'required' => ['name'],
     'fields' => [
-        'name' => 'Name',
-        'division' => 'Division',
-        'order' => ['source' => 'Order', 'type' => 'float'],
-        'heading' => 'Heading',
-        'description' => 'Description',
-        'image' => ['source' => 'Image', 'type' => 'attachment'],
-        'image_url' => 'Image',
-        'benefit_1' => 'Benefit 1',
-        'benefit_2' => 'Benefit 2',
-        'benefit_3' => 'Benefit 3',
-        'benefit_4' => 'Benefit 4',
-        'benefit_5' => 'Benefit 5',
-        'cta_text' => 'CTA Text',
-        'cta_url' => 'CTA URL',
+        'name' => 'name',
+        'internal_notes' => 'internal_notes',
+        'is_active' => ['source' => 'is_active', 'type' => 'bool'],
+        'order' => ['source' => 'order', 'type' => 'float'],
+        'division' => 'division',
+        'heading' => 'heading',
+        'description' => 'description',
+        'image_url' => 'image_url',
+        'benefit_1' => 'benefit_1',
+        'benefit_2' => 'benefit_2',
+        'benefit_3' => 'benefit_3',
+        'benefit_4' => 'benefit_4',
+        'benefit_5' => 'benefit_5',
+        'cta_text' => 'cta_text',
+        'cta_url' => 'cta_url',
     ],
 ];

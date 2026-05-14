@@ -15,11 +15,12 @@ return [
     'cache_ttl' => 3600,
     'required' => ['name', 'slug'],
     'fields' => [
-        'name' => 'Name',
-        'slug' => 'Slug',
-        'description' => 'Description',
-        'order' => ['source' => 'Order', 'type' => 'int'],
-        'active' => ['source' => 'Active', 'type' => 'bool'],
-        'country_ids' => ['source' => 'Country', 'type' => 'link', 'entity' => 'core_countries'],
+        'name' => 'name',
+        'internal_notes' => 'internal_notes',
+        'slug' => 'slug',
+        'description' => 'description',
+        'order' => ['source' => 'order', 'type' => 'int'],
+        'is_active' => ['source' => 'is_active', 'type' => 'bool'],
+        'country_ids' => ['source' => 'country_ids', 'type' => 'link', 'entity' => 'core_countries'],
     ],
 ];

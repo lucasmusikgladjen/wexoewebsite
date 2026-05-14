@@ -5,8 +5,8 @@
  * SSOT — Kundtyper (taxonomi).
  * Airtable-tabell: core_customer_types (tblLsYRMZz6JA6GBK) i Wexoe NY.
  *
- * OBS: Inte att förväxla med audience_heroes (Customer types-tabellen i Wexoe-basen)
- * som håller publika audience-sidor.
+ * OBS: Inte att förväxla med `audience_heroes` (cms_customer_type_pages-tabellen
+ * i Wexoe NY) som håller publika audience-sidor.
  */
 
 if (!defined('ABSPATH')) exit;
@@ -18,11 +18,12 @@ return [
     'cache_ttl' => 3600,
     'required' => ['name', 'slug'],
     'fields' => [
-        'name' => 'Name',
-        'slug' => 'Slug',
-        'description' => 'Description',
-        'icon' => 'Icon',
-        'order' => ['source' => 'Order', 'type' => 'int'],
-        'active' => ['source' => 'Active', 'type' => 'bool'],
+        'name' => 'name',
+        'internal_notes' => 'internal_notes',
+        'slug' => 'slug',
+        'description' => 'description',
+        'icon' => 'icon',
+        'order' => ['source' => 'order', 'type' => 'int'],
+        'is_active' => ['source' => 'is_active', 'type' => 'bool'],
     ],
 ];
