@@ -52,8 +52,6 @@ function wexoe_pages_shortcode($atts) {
  *
  * Returnerar tom sträng om sidan inte finns eller inte är publicerad.
  * Sektioner renderas i fast ordning baserat på `show_<x>`-flaggor.
- *
- * Sektion-renderings-koden läggs i Fas 6 — denna fas är bara skelett.
  */
 function wexoe_pages_render($slug) {
     $repo = \Wexoe\Core\Core::entity('cms_unique_pages');
@@ -84,7 +82,7 @@ function wexoe_pages_render($slug) {
             'eyebrow'   => $page['hero_eyebrow'] ?? '',
             'title'     => !empty($page['hero_h1_override']) ? $page['hero_h1_override'] : ($page['h1'] ?? ''),
             'subtitle'  => $page['hero_subtitle'] ?? '',
-            'image_url' => wexoe_pages_attachment_url($page['hero_image_url'] ?? null),
+            'image_url' => (string) ($page['hero_image'] ?? ''),
             'cta_text'  => $page['hero_cta_text'] ?? '',
             'cta_url'   => $page['hero_cta_url'] ?? '',
             'theme'     => $page['hero_theme'] ?? 'dark',
@@ -95,7 +93,7 @@ function wexoe_pages_render($slug) {
         echo \Wexoe\Core\Renderers\TextImage::render([
             'h2'        => $page['text_image_a_h2'] ?? '',
             'body'      => $page['text_image_a_body'] ?? '',
-            'image_url' => wexoe_pages_attachment_url($page['text_image_a_image_url'] ?? null),
+            'image_url' => (string) ($page['text_image_a_image'] ?? ''),
             'reversed'  => !empty($page['text_image_a_reversed']),
             'theme'     => $page['text_image_a_theme'] ?? 'light',
         ]);
@@ -105,7 +103,7 @@ function wexoe_pages_render($slug) {
         echo \Wexoe\Core\Renderers\TextImage::render([
             'h2'        => $page['text_image_b_h2'] ?? '',
             'body'      => $page['text_image_b_body'] ?? '',
-            'image_url' => wexoe_pages_attachment_url($page['text_image_b_image_url'] ?? null),
+            'image_url' => (string) ($page['text_image_b_image'] ?? ''),
             'reversed'  => !empty($page['text_image_b_reversed']),
             'theme'     => $page['text_image_b_theme'] ?? 'light',
         ]);
@@ -167,14 +165,14 @@ function wexoe_pages_render($slug) {
         ]);
     }
 
-    // Contact form-sektionen läggs i Fas 7 (när Renderers\ContactForm::render finns).
+    // Contact form-sektionen.
     if (!empty($page['show_contact_form']) && class_exists('\\Wexoe\\Core\\Renderers\\ContactForm')) {
         echo '<section id="kontakt">';
         echo \Wexoe\Core\Renderers\ContactForm::render(wexoe_pages_build_contact_form_config($page));
         echo '</section>';
     }
 
-    // Tredjepartsutökning (Fas 11+).
+    // Tredjepartsutökning.
     do_action('wexoe_pages_render_sections', $page);
 
     echo '</article>';
@@ -218,7 +216,6 @@ function wexoe_pages_resolve_scope($page, $field_map) {
 
 /**
  * Bygg ContactForm-renderer-config från cms_unique_pages-fält.
- * Implementeras fullt i Fas 7 — placeholderbult här så Fas 6 inte bryter.
  */
 function wexoe_pages_build_contact_form_config($page) {
     return [
@@ -252,45 +249,27 @@ function wexoe_pages_resolve_contact_person($page) {
     $matches = \Wexoe\Core\Helpers\Collections::coworkers_for_scope($scope);
     if (empty($matches)) return null;
     $c = $matches[0];
-    $img = $c['image'] ?? null;
-    $img_url = is_array($img) ? ($img['url'] ?? '') : '';
     return [
         'name'  => $c['full_name'] ?? '',
         'title' => $c['title'] ?? '',
         'email' => $c['email'] ?? '',
         'phone' => $c['phone'] ?? '',
-        'image' => $img_url,
+        'image' => (string) ($c['image'] ?? ''),
     ];
 }
 
-/**
- * Extrahera URL från attachment-typed fält. Stödjer både array (rå attachment-payload)
- * och string (om Normalizer skickar URL direkt).
- */
-function wexoe_pages_attachment_url($value) {
-    if (is_string($value)) return $value;
-    if (is_array($value)) {
-        if (isset($value['url'])) return (string) $value['url'];
-        if (isset($value[0]['url'])) return (string) $value[0]['url'];
-    }
-    return '';
-}
-
 /* ============================================================
-   SEO META (skelett — utbyggnad i Fas 11)
+   SEO META
    ============================================================ */
 
 add_action('wp_head', 'wexoe_pages_seo_meta', 5);
 
 function wexoe_pages_seo_meta() {
-    // Försök matcha aktuell WP-page mot en cms_unique_pages-slug.
-    // Skelett: om sidan inte har en wexoe_page-shortcode i innehållet, gör inget.
     if (!is_singular()) return;
     global $post;
     if (!$post || !is_object($post)) return;
 
-    // Hitta första [wexoe_page slug="..."] i posten.
-    if (!preg_match('/\[wexoe_page\s+[^\]]*slug=["\']([^"\']+)["\']/i', $post->post_content, $m)) {
+    if (!preg_match('/\[wexoe_page\s+[^\]]*slug=["\']([^"\']+)["\'/i', $post->post_content, $m)) {
         return;
     }
     $slug = $m[1];

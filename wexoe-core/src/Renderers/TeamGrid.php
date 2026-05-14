@@ -31,8 +31,7 @@ class TeamGrid {
                     <?php foreach ($coworkers as $c): ?>
                         <div class="wxr-tg__card">
                             <?php
-                            $img = $c['image'] ?? null;
-                            $img_url = is_array($img) ? ($img['url'] ?? '') : '';
+                            $img_url = (string) ($c['image'] ?? '');
                             if ($img_url !== ''):
                             ?>
                                 <img class="wxr-tg__image" src="<?= esc_url($img_url) ?>" alt="" loading="lazy" />
