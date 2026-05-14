@@ -4,7 +4,6 @@ return [
     'table_id' => 'tbl1pe0bWz5zdkqJF',
     'base_id'  => \Wexoe\Core\Plugin::SSOT_BASE_ID,
     'field_types' => [
-        'author_image'      => 'attachment_url',
         'customer_type_ids' => 'link',
         'division_ids'      => 'link',
         'country_ids'       => 'link',

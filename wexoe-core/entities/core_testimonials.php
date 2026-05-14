@@ -19,7 +19,7 @@ return [
         'quote' => 'Quote',
         'author_name' => 'Author Name',
         'author_title' => 'Author Title',
-        'author_image' => ['source' => 'Author Image', 'type' => 'attachment'],
+        'author_image' => 'Author Image',
         'order' => ['source' => 'Order', 'type' => 'float'],
         'active' => ['source' => 'Active', 'type' => 'bool'],
         'featured' => ['source' => 'Featured', 'type' => 'bool'],

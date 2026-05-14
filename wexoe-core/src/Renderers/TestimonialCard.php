@@ -33,8 +33,7 @@ class TestimonialCard {
         $quote = (string) ($t['quote'] ?? '');
         if ($quote === '') return '';
 
-        $author_image = $t['author_image'] ?? null;
-        $author_image_url = is_array($author_image) ? ($author_image['url'] ?? '') : '';
+        $author_image_url = (string) ($t['author_image'] ?? '');
 
         ob_start();
         ?>

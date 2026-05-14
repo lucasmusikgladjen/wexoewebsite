@@ -35,7 +35,7 @@ return [
         'hero_eyebrow' => 'Hero Eyebrow',
         'hero_h1_override' => 'Hero H1 Override',
         'hero_subtitle' => 'Hero Subtitle',
-        'hero_image_url' => ['source' => 'Hero Image', 'type' => 'attachment'],
+        'hero_image' => 'Hero Image',
         'hero_cta_text' => 'Hero CTA Text',
         'hero_cta_url' => 'Hero CTA URL',
         'hero_theme' => 'Hero Theme',
@@ -44,7 +44,7 @@ return [
         'show_text_image_a' => ['source' => 'Show Text Image A', 'type' => 'bool'],
         'text_image_a_h2' => 'Text Image A H2',
         'text_image_a_body' => 'Text Image A Body',
-        'text_image_a_image_url' => ['source' => 'Text Image A Image', 'type' => 'attachment'],
+        'text_image_a_image' => 'Text Image A Image',
         'text_image_a_reversed' => ['source' => 'Text Image A Reversed', 'type' => 'bool'],
         'text_image_a_theme' => 'Text Image A Theme',
 
@@ -52,7 +52,7 @@ return [
         'show_text_image_b' => ['source' => 'Show Text Image B', 'type' => 'bool'],
         'text_image_b_h2' => 'Text Image B H2',
         'text_image_b_body' => 'Text Image B Body',
-        'text_image_b_image_url' => ['source' => 'Text Image B Image', 'type' => 'attachment'],
+        'text_image_b_image' => 'Text Image B Image',
         'text_image_b_reversed' => ['source' => 'Text Image B Reversed', 'type' => 'bool'],
         'text_image_b_theme' => 'Text Image B Theme',
 

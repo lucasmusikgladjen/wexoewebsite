@@ -29,8 +29,7 @@ class PartnersMarquee {
                 <?php if ($h2 !== ''): ?><h2 class="wxr-pm__h2"><?= esc_html($h2) ?></h2><?php endif; ?>
                 <div class="wxr-pm__row">
                     <?php foreach ($partners as $p):
-                        $logo = $p['logo'] ?? null;
-                        $logo_url = is_array($logo) ? ($logo['url'] ?? '') : '';
+                        $logo_url = (string) ($p['logo'] ?? '');
                         if ($logo_url === '') continue;
                         $name = (string) ($p['name'] ?? '');
                         $url = (string) ($p['url'] ?? '');

@@ -4,10 +4,8 @@ return [
     'table_id' => 'tblZ5YIYFelxA0nBm',
     'base_id'  => \Wexoe\Core\Plugin::SSOT_BASE_ID,
     'field_types' => [
-        'logo'             => 'attachment_url',
-        'logo_transparent' => 'attachment_url',
-        'division_ids'     => 'link',
-        'country_ids'      => 'link',
+        'division_ids' => 'link',
+        'country_ids'  => 'link',
     ],
     'fields' => [
         'name' => 'Name',

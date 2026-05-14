@@ -21,7 +21,7 @@ return [
         'name' => 'Name',
         'slug' => 'Slug',
         'description' => 'Description',
-        'icon' => ['source' => 'Icon', 'type' => 'attachment'],
+        'icon' => 'Icon',
         'order' => ['source' => 'Order', 'type' => 'int'],
         'active' => ['source' => 'Active', 'type' => 'bool'],
     ],

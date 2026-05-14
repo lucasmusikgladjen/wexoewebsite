@@ -21,7 +21,7 @@ return [
         'title' => 'Title',
         'email' => 'Email',
         'phone' => 'Phone',
-        'image' => ['source' => 'Image', 'type' => 'attachment'],
+        'image' => 'Image',
         'linkedin_url' => 'LinkedIn URL',
         'bio' => 'Bio',
         'order' => ['source' => 'Order', 'type' => 'float'],

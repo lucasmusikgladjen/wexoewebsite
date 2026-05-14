@@ -16,8 +16,8 @@ return [
     'required' => ['name'],
     'fields' => [
         'name' => 'Name',
-        'logo' => ['source' => 'Logo', 'type' => 'attachment'],
-        'logo_transparent' => ['source' => 'Logo Transparent', 'type' => 'attachment'],
+        'logo' => 'Logo',
+        'logo_transparent' => 'Logo Transparent',
         'url' => 'URL',
         'description' => 'Description',
         'order' => ['source' => 'Order', 'type' => 'float'],

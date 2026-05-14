@@ -13,19 +13,12 @@ return [
     'base_id'  => \Wexoe\Core\Plugin::SSOT_BASE_ID,
 
     /**
-     * Domain-keys för image-fält slutar på `_url` för att matcha read-schemats
-     * `attachment_url`-typing. WriteRepository konverterar URL-string → [{url}]
-     * via `field_types`-hinten.
-     *
-     * Linked-record-fält (country_ids, division_ids) passar genom som-är via
-     * 'link'-typen — utan denna typing skulle WriteRepository JSON-encoda dem.
+     * Bild-fält är nu singleLineText URL-strängar — ingen attachment_url-konvertering.
+     * Linked-record-fält passerar som-är via 'link'-typen.
      */
     'field_types' => [
-        'country_ids'            => 'link',
-        'division_ids'           => 'link',
-        'hero_image_url'         => 'attachment_url',
-        'text_image_a_image_url' => 'attachment_url',
-        'text_image_b_image_url' => 'attachment_url',
+        'country_ids'  => 'link',
+        'division_ids' => 'link',
     ],
 
     'fields' => [
@@ -44,7 +37,7 @@ return [
         'hero_eyebrow' => 'Hero Eyebrow',
         'hero_h1_override' => 'Hero H1 Override',
         'hero_subtitle' => 'Hero Subtitle',
-        'hero_image_url' => 'Hero Image',
+        'hero_image' => 'Hero Image',
         'hero_cta_text' => 'Hero CTA Text',
         'hero_cta_url' => 'Hero CTA URL',
         'hero_theme' => 'Hero Theme',
@@ -53,7 +46,7 @@ return [
         'show_text_image_a' => 'Show Text Image A',
         'text_image_a_h2' => 'Text Image A H2',
         'text_image_a_body' => 'Text Image A Body',
-        'text_image_a_image_url' => 'Text Image A Image',
+        'text_image_a_image' => 'Text Image A Image',
         'text_image_a_reversed' => 'Text Image A Reversed',
         'text_image_a_theme' => 'Text Image A Theme',
 
@@ -61,7 +54,7 @@ return [
         'show_text_image_b' => 'Show Text Image B',
         'text_image_b_h2' => 'Text Image B H2',
         'text_image_b_body' => 'Text Image B Body',
-        'text_image_b_image_url' => 'Text Image B Image',
+        'text_image_b_image' => 'Text Image B Image',
         'text_image_b_reversed' => 'Text Image B Reversed',
         'text_image_b_theme' => 'Text Image B Theme',
 

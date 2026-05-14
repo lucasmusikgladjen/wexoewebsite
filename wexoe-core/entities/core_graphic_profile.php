@@ -19,9 +19,9 @@ return [
     'fields' => [
         'slug' => 'Slug',
         'is_default' => ['source' => 'Is Default', 'type' => 'bool'],
-        'logo_primary' => ['source' => 'Logo Primary', 'type' => 'attachment'],
-        'logo_dark_background' => ['source' => 'Logo Dark Background', 'type' => 'attachment'],
-        'favicon' => ['source' => 'Favicon', 'type' => 'attachment'],
+        'logo_primary' => 'Logo Primary',
+        'logo_dark_background' => 'Logo Dark Background',
+        'favicon' => 'Favicon',
         'color_primary' => 'Color Primary',
         'color_secondary' => 'Color Secondary',
         'color_accent' => 'Color Accent',
