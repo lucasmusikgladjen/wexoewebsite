@@ -74,13 +74,15 @@ export default function AudienceBuilder({ initialState }: Props) {
     setSaving(true);
     setError(null);
     try {
-      const res = await fetch('/api/audience', {
-        method: 'POST',
+      const url = isCreate ? '/api/audience' : `/api/audience?id=${state.recordId}`;
+      const method = isCreate ? 'POST' : 'PATCH';
+      const res = await fetch(url, {
+        method,
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(state),
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Sparning misslyckades');
+      if (!res.ok || !data.success) throw new Error(data.error || 'Sparning misslyckades');
 
       if (data.mode === 'create' && data.recordId) {
         router.replace(`/editor/audience/${data.recordId}`);
