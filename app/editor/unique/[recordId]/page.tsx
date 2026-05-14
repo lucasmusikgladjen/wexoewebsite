@@ -1,31 +1,10 @@
 import { notFound } from 'next/navigation';
-import { getRecord, listRecords, SSOT_BASE_ID } from '@/lib/airtable';
-import UniquePageBuilder from '@/components/UniquePageBuilder';
+import { getRecord, SSOT_BASE_ID } from '@/lib/airtable';
+import PageTypeBuilder from '@/components/shared/builder/PageTypeBuilder';
+import { uniquePageUI } from '@/lib/page-types/unique-page.ui';
 import { uniquePageStateFromRecord, UNIQUE_PAGES_TABLE_ID } from '@/lib/unique-page-mapper';
 
 export const dynamic = 'force-dynamic';
-
-interface CountryOption { recordId: string; code: string; name: string; }
-interface DivisionOption { recordId: string; slug: string; name: string; }
-
-async function loadOptions(apiKey: string): Promise<{ countries: CountryOption[]; divisions: DivisionOption[] }> {
-  const [countries, divisions] = await Promise.all([
-    listRecords(apiKey, 'tblCZ082jWGUBrUAK', { baseId: SSOT_BASE_ID }),
-    listRecords(apiKey, 'tblyxs2zsoRBozxQS', { baseId: SSOT_BASE_ID }),
-  ]);
-  return {
-    countries: countries.map((r) => ({
-      recordId: r.id,
-      code: String(r.fields['Code'] ?? ''),
-      name: String(r.fields['Name'] ?? ''),
-    })),
-    divisions: divisions.map((r) => ({
-      recordId: r.id,
-      slug: String(r.fields['Slug'] ?? ''),
-      name: String(r.fields['Name'] ?? ''),
-    })),
-  };
-}
 
 export default async function EditUniquePage({
   params,
@@ -45,12 +24,12 @@ export default async function EditUniquePage({
   }
   if (!rec) notFound();
   const state = uniquePageStateFromRecord(rec);
-  const { countries, divisions } = await loadOptions(apiKey);
   return (
-    <UniquePageBuilder
+    <PageTypeBuilder
+      uiDef={uniquePageUI}
       initialState={state}
-      countryOptions={countries}
-      divisionOptions={divisions}
+      mode="edit"
+      recordId={recordId}
     />
   );
 }

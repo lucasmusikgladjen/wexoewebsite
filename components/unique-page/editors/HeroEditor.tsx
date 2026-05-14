@@ -2,20 +2,16 @@
 
 import { HeroState } from '@/lib/unique-page-types';
 import { Field } from '@/components/shared/fields';
-import EditorSection from '@/components/editors/EditorSection';
 
 interface Props {
   state: HeroState;
   onChange: (s: HeroState) => void;
-  visible: boolean;
-  onToggleVisible: (v: boolean) => void;
 }
 
-export default function HeroEditor({ state, onChange, visible, onToggleVisible }: Props) {
+export default function HeroEditor({ state, onChange }: Props) {
   const set = <K extends keyof HeroState>(k: K, v: HeroState[K]) => onChange({ ...state, [k]: v });
-
   return (
-    <EditorSection title="Hero" visible={visible} onToggleVisible={onToggleVisible}>
+    <>
       <Field.Text label="Eyebrow" value={state.eyebrow} onChange={(v) => set('eyebrow', v)} />
       <Field.Text
         label="H1 Override"
@@ -33,6 +29,6 @@ export default function HeroEditor({ state, onChange, visible, onToggleVisible }
         onChange={(v) => set('theme', v)}
         options={[{ value: 'dark', label: 'Mörkt' }, { value: 'light', label: 'Ljust' }]}
       />
-    </EditorSection>
+    </>
   );
 }

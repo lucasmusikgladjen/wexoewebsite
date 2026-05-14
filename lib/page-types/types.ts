@@ -270,6 +270,13 @@ export interface PageTypeUIDef<TState> {
   /** Slug-input config för toolbarens slug-fält. Om utelämnat visas
    *  ingen slug-input i toolbaren. */
   slugInput?: SlugInputConfig<TState>;
+
+  /** Extra innehåll i toolbarens vänstra del, direkt efter slug-input:en.
+   *  Används för t.ex. en prominent "Publicerad"-toggle. */
+  toolbarExtras?: ComponentType<{
+    state: TState;
+    setState: (next: TState) => void;
+  }>;
 }
 
 export interface PreviewLayoutProps<TState> {

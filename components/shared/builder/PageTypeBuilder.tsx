@@ -151,19 +151,25 @@ export default function PageTypeBuilder<TState>({
   const slug = slugConfig ? slugConfig.accessor(state) : '';
   const slugBadge = slugConfig?.badge?.(state, mode);
 
-  const toolbarLeft = slugConfig ? (
+  const ToolbarExtras = uiDef.toolbarExtras;
+  const toolbarLeft = slugConfig || ToolbarExtras ? (
     <div className="flex items-center gap-2">
-      <span className="text-xs text-gray-400">Slug:</span>
-      <input
-        type="text"
-        value={slug}
-        onChange={(e) => {
-          const cleaned = e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, '');
-          update(slugConfig.setter(state, cleaned));
-        }}
-        placeholder={slugConfig.placeholder ?? 'min-sida'}
-        className="w-44 px-2 py-1 text-sm border border-gray-200 rounded-md focus:border-gray-400 focus:outline-none"
-      />
+      {slugConfig && (
+        <>
+          <span className="text-xs text-gray-400">Slug:</span>
+          <input
+            type="text"
+            value={slug}
+            onChange={(e) => {
+              const cleaned = e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, '');
+              update(slugConfig.setter(state, cleaned));
+            }}
+            placeholder={slugConfig.placeholder ?? 'min-sida'}
+            className="w-44 px-2 py-1 text-sm border border-gray-200 rounded-md focus:border-gray-400 focus:outline-none"
+          />
+        </>
+      )}
+      {ToolbarExtras && <ToolbarExtras state={state} setState={update} />}
       {slugBadge && (
         <span className="text-[10px] uppercase tracking-wider text-gray-300 ml-2">
           {slugBadge}

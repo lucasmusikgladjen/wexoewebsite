@@ -2,20 +2,16 @@
 
 import { TextImageState } from '@/lib/unique-page-types';
 import { Field } from '@/components/shared/fields';
-import EditorSection from '@/components/editors/EditorSection';
 
 interface Props {
-  title: string;
   state: TextImageState;
   onChange: (s: TextImageState) => void;
-  visible: boolean;
-  onToggleVisible: (v: boolean) => void;
 }
 
-export default function TextImageEditor({ title, state, onChange, visible, onToggleVisible }: Props) {
+export default function TextImageEditor({ state, onChange }: Props) {
   const set = <K extends keyof TextImageState>(k: K, v: TextImageState[K]) => onChange({ ...state, [k]: v });
   return (
-    <EditorSection title={title} visible={visible} onToggleVisible={onToggleVisible}>
+    <>
       <Field.Text label="H2" value={state.h2} onChange={(v) => set('h2', v)} />
       <Field.Textarea
         label="Brödtext"
@@ -36,6 +32,6 @@ export default function TextImageEditor({ title, state, onChange, visible, onTog
         onChange={(v) => set('theme', v)}
         options={[{ value: 'light', label: 'Ljust' }, { value: 'dark', label: 'Mörkt' }]}
       />
-    </EditorSection>
+    </>
   );
 }
