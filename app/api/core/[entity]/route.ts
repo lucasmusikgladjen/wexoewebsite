@@ -90,7 +90,7 @@ export async function POST(
     try {
       const existing = await listRecords(apiKey, CORE_ENTITIES[entity].tableId, {
         baseId: SSOT_BASE_ID,
-        filterByFormula: '{Is Default}=TRUE()',
+        filterByFormula: '{is_default}=TRUE()',
       });
       if (existing.length > 0) {
         return NextResponse.json(
@@ -138,7 +138,7 @@ export async function PATCH(
     try {
       const existing = await listRecords(apiKey, CORE_ENTITIES[entity].tableId, {
         baseId: SSOT_BASE_ID,
-        filterByFormula: '{Is Default}=TRUE()',
+        filterByFormula: '{is_default}=TRUE()',
       });
       const other = existing.find((r) => r.id !== recordId);
       if (other) {

@@ -103,12 +103,12 @@ async function createNewPage(
     const tabPayloads = sortedTabs.map((tab) => ({
       fields: {
         ...tab.fields,
-        'Landing Page': [lp.id],
+        'landing_page_ids': [lp.id],
       },
     }));
     const createdTabs = await createRecords(
       airtableKey,
-      TABLE_IDS.tabs,
+      TABLE_IDS.landingPageTabs,
       tabPayloads,
     );
     sortedTabs.forEach((tab, i) => {
@@ -184,14 +184,14 @@ async function createNewPage(
         );
       }
       dlPayloads.push({
-        fields: { ...dl.fields, Tab: [tabId] },
+        fields: { ...dl.fields, tab_ids: [tabId] },
       });
     }
 
     if (dlPayloads.length > 0) {
       const createdDownloads = await createRecords(
         airtableKey,
-        TABLE_IDS.downloads,
+        TABLE_IDS.landingPageDownloads,
         dlPayloads,
       );
       downloadCount = createdDownloads.length;
@@ -227,25 +227,16 @@ async function updateExistingPage(
   //    diff against (PATCH vs CREATE vs DELETE).
   const existingLp = await getRecord(airtableKey, TABLE_IDS.landingPages, state.recordId);
   const existingTabIds: string[] =
-    (existingLp.fields['LP Tabs'] as string[] | undefined) ?? [];
+    (existingLp.fields['tab_ids'] as string[] | undefined) ?? [];
 
   let existingTabs: AirtableRecord[] = [];
   if (existingTabIds.length > 0) {
     const formula = `OR(${existingTabIds.map((id) => `RECORD_ID()='${id}'`).join(',')})`;
-    const url = new URL(
-      `https://api.airtable.com/v0/appXoUcK68dQwASjF/${TABLE_IDS.tabs}`,
-    );
-    url.searchParams.set('filterByFormula', formula);
-    url.searchParams.set('pageSize', '100');
-    const res = await fetch(url.toString(), {
-      headers: { Authorization: `Bearer ${airtableKey}` },
+    const { listRecords, BASE_ID } = await import('@/lib/airtable');
+    existingTabs = await listRecords(airtableKey, TABLE_IDS.landingPageTabs, {
+      filterByFormula: formula,
+      baseId: BASE_ID,
     });
-    if (!res.ok) {
-      const err = await res.json().catch(() => ({}));
-      throw new Error(err.error?.message || `Airtable error: ${res.status}`);
-    }
-    const data = await res.json();
-    existingTabs = data.records;
   }
   const existingTabsById = new Map(existingTabs.map((t) => [t.id, t]));
 
@@ -289,7 +280,7 @@ async function updateExistingPage(
     } else {
       tabsToCreate.push({
         clientIndex: tab._clientIndex,
-        fields: { ...mergedFields, 'Landing Page': [state.recordId] },
+        fields: { ...mergedFields, 'landing_page_ids': [state.recordId] },
       });
     }
   }
@@ -299,13 +290,13 @@ async function updateExistingPage(
   // DELETE first to free up the linked-record slots (Airtable allows this
   // order freely — it's more about keeping a clean narrative in logs).
   if (tabIdsToDelete.length > 0) {
-    await deleteRecords(airtableKey, TABLE_IDS.tabs, tabIdsToDelete);
+    await deleteRecords(airtableKey, TABLE_IDS.landingPageTabs, tabIdsToDelete);
   }
 
   if (tabsToPatch.length > 0) {
     await updateRecords(
       airtableKey,
-      TABLE_IDS.tabs,
+      TABLE_IDS.landingPageTabs,
       tabsToPatch.map(({ id, fields }) => ({ id, fields })),
     );
   }
@@ -318,7 +309,7 @@ async function updateExistingPage(
   if (tabsToCreate.length > 0) {
     const created = await createRecords(
       airtableKey,
-      TABLE_IDS.tabs,
+      TABLE_IDS.landingPageTabs,
       tabsToCreate.map((t) => ({ fields: t.fields })),
     );
     tabsToCreate.forEach((t, i) => {
@@ -394,7 +385,7 @@ async function updateExistingPage(
       ? existingTabsById.get(stateTab.recordId)
       : undefined;
     const existingDlIds: string[] =
-      (existingTabRecord?.fields['LP Downloads'] as string[] | undefined) ?? [];
+      (existingTabRecord?.fields['download_ids'] as string[] | undefined) ?? [];
 
     const stateDlRecordIds = new Set(
       stateTab.downloads.map((d) => d.recordId).filter((id): id is string => !!id),
@@ -410,7 +401,7 @@ async function updateExistingPage(
         dlToPatch.push({ id: dl._recordId, fields: dl.fields });
       } else {
         dlToCreate.push({
-          fields: { ...dl.fields, Tab: [tabAirtableId] },
+          fields: { ...dl.fields, tab_ids: [tabAirtableId] },
         });
       }
     }
@@ -418,15 +409,15 @@ async function updateExistingPage(
     const dlToDelete = existingDlIds.filter((id) => !stateDlRecordIds.has(id));
 
     if (dlToDelete.length > 0) {
-      await deleteRecords(airtableKey, TABLE_IDS.downloads, dlToDelete);
+      await deleteRecords(airtableKey, TABLE_IDS.landingPageDownloads, dlToDelete);
       downloadsDeleted += dlToDelete.length;
     }
     if (dlToPatch.length > 0) {
-      await updateRecords(airtableKey, TABLE_IDS.downloads, dlToPatch);
+      await updateRecords(airtableKey, TABLE_IDS.landingPageDownloads, dlToPatch);
       downloadsUpdated += dlToPatch.length;
     }
     if (dlToCreate.length > 0) {
-      await createRecords(airtableKey, TABLE_IDS.downloads, dlToCreate);
+      await createRecords(airtableKey, TABLE_IDS.landingPageDownloads, dlToCreate);
       downloadsCreated += dlToCreate.length;
     }
   }

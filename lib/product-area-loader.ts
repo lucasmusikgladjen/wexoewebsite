@@ -1,12 +1,14 @@
 import { getRecord, listRecords, AirtableRecord } from './airtable';
-import { PA_TABLE_IDS, productAreaStateFromRecords } from './product-area-mapper';
+import { PA_TABLE_IDS, PA_BASE_ID, productAreaStateFromRecords } from './product-area-mapper';
 import { ProductAreaState, Division } from './product-area-types';
 
-/** Fetch all Divisions (tiny table — no pagination concerns). */
+/** Fetch all Divisions (tiny table — no pagination concerns).
+ *  Lives in legacy Wexoe base, so PA_BASE_ID must be passed explicitly. */
 export async function loadDivisions(apiKey: string): Promise<Division[]> {
   const records = await listRecords(apiKey, PA_TABLE_IDS.divisions, {
     fields: ['Name'],
     sort: [{ field: 'Name', direction: 'asc' }],
+    baseId: PA_BASE_ID,
   });
   return records.map((r) => ({
     id: r.id,
@@ -15,12 +17,13 @@ export async function loadDivisions(apiKey: string): Promise<Division[]> {
 }
 
 /** Fetches a Product Area record plus all linked Products, Articles, and
- *  Solutions, and returns a fully-populated ProductAreaState. */
+ *  Solutions, and returns a fully-populated ProductAreaState.
+ *  All reads target the legacy Wexoe base (PA_BASE_ID). */
 export async function loadProductAreaState(
   apiKey: string,
   recordId: string,
 ): Promise<ProductAreaState> {
-  const pa = await getRecord(apiKey, PA_TABLE_IDS.productAreas, recordId);
+  const pa = await getRecord(apiKey, PA_TABLE_IDS.productAreas, recordId, PA_BASE_ID);
 
   const productIds = (pa.fields['Products'] as string[] | undefined) ?? [];
   const solutionIds = (pa.fields['Solutions'] as string[] | undefined) ?? [];
@@ -28,7 +31,10 @@ export async function loadProductAreaState(
   let products: AirtableRecord[] = [];
   if (productIds.length > 0) {
     const formula = `OR(${productIds.map((id) => `RECORD_ID()='${id}'`).join(',')})`;
-    products = await listRecords(apiKey, PA_TABLE_IDS.products, { filterByFormula: formula });
+    products = await listRecords(apiKey, PA_TABLE_IDS.products, {
+      filterByFormula: formula,
+      baseId: PA_BASE_ID,
+    });
   }
 
   const articleIds = new Set<string>();
@@ -40,13 +46,19 @@ export async function loadProductAreaState(
   let articles: AirtableRecord[] = [];
   if (articleIds.size > 0) {
     const formula = `OR(${[...articleIds].map((id) => `RECORD_ID()='${id}'`).join(',')})`;
-    articles = await listRecords(apiKey, PA_TABLE_IDS.articles, { filterByFormula: formula });
+    articles = await listRecords(apiKey, PA_TABLE_IDS.articles, {
+      filterByFormula: formula,
+      baseId: PA_BASE_ID,
+    });
   }
 
   let solutions: AirtableRecord[] = [];
   if (solutionIds.length > 0) {
     const formula = `OR(${solutionIds.map((id) => `RECORD_ID()='${id}'`).join(',')})`;
-    solutions = await listRecords(apiKey, PA_TABLE_IDS.solutions, { filterByFormula: formula });
+    solutions = await listRecords(apiKey, PA_TABLE_IDS.solutions, {
+      filterByFormula: formula,
+      baseId: PA_BASE_ID,
+    });
   }
 
   return productAreaStateFromRecords({

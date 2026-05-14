@@ -6,7 +6,7 @@ import {
   updateRecord,
   updateRecords,
 } from '@/lib/airtable';
-import { PA_TABLE_IDS } from '@/lib/product-area-mapper';
+import { PA_TABLE_IDS, PA_BASE_ID } from '@/lib/product-area-mapper';
 import { loadProductAreaState, loadDivisions } from '@/lib/product-area-loader';
 import { ProductAreaState } from '@/lib/product-area-types';
 import { transformProductArea } from '@/lib/claude-transform';
@@ -31,6 +31,7 @@ export async function GET(request: Request) {
       const records = await listRecords(AIRTABLE_API_KEY, PA_TABLE_IDS.productAreas, {
         fields: ['Name', 'Slug', 'H1', 'Division'],
         sort: [{ field: 'Name', direction: 'asc' }],
+        baseId: PA_BASE_ID,
       });
       const pages = records.map((r) => ({
         id: r.id,
@@ -109,6 +110,7 @@ async function createProductArea(
   const existing = await listRecords(airtableKey, PA_TABLE_IDS.productAreas, {
     fields: ['Slug'],
     filterByFormula: `{Slug} = "${state.slug.replace(/"/g, '\\"')}"`,
+    baseId: PA_BASE_ID,
   });
   if (existing.length > 0) {
     return NextResponse.json(
@@ -155,6 +157,7 @@ async function createProductArea(
       airtableKey,
       PA_TABLE_IDS.products,
       product.fields,
+      PA_BASE_ID,
     );
     productIdByClientIndex[product._clientIndex] = created.id;
     const clientId = state.products[product._clientIndex]?.clientId;
@@ -170,6 +173,7 @@ async function createProductArea(
       airtableKey,
       PA_TABLE_IDS.solutions,
       solution.fields,
+      PA_BASE_ID,
     );
     solutionIdByClientIndex[solution._clientIndex] = created.id;
     const clientId = state.solutions[solution._clientIndex]?.clientId;
@@ -200,6 +204,7 @@ async function createProductArea(
     airtableKey,
     PA_TABLE_IDS.productAreas,
     paFields,
+    PA_BASE_ID,
   );
 
   // Drop the matching Wexoe Core entity caches in WordPress so the live
@@ -265,6 +270,7 @@ async function updateProductArea(
       airtableKey,
       PA_TABLE_IDS.products,
       product.fields,
+      PA_BASE_ID,
     );
     productIdByClientIndex[product._clientIndex] = created.id;
     const clientId = state.products[product._clientIndex]?.clientId;
@@ -279,7 +285,7 @@ async function updateProductArea(
     productIdByClientIndex[product._clientIndex] = product._recordId;
   }
   if (productPatchBatch.length > 0) {
-    await updateRecords(airtableKey, PA_TABLE_IDS.products, productPatchBatch);
+    await updateRecords(airtableKey, PA_TABLE_IDS.products, productPatchBatch, PA_BASE_ID);
   }
 
   // 4. Same diff for solutions — also shared, also never deleted, only
@@ -295,6 +301,7 @@ async function updateProductArea(
       airtableKey,
       PA_TABLE_IDS.solutions,
       solution.fields,
+      PA_BASE_ID,
     );
     solutionIdByClientIndex[solution._clientIndex] = created.id;
     const clientId = state.solutions[solution._clientIndex]?.clientId;
@@ -308,7 +315,7 @@ async function updateProductArea(
     solutionIdByClientIndex[solution._clientIndex] = solution._recordId;
   }
   if (solutionPatchBatch.length > 0) {
-    await updateRecords(airtableKey, PA_TABLE_IDS.solutions, solutionPatchBatch);
+    await updateRecords(airtableKey, PA_TABLE_IDS.solutions, solutionPatchBatch, PA_BASE_ID);
   }
 
   // 5. PATCH the Product Area record itself with Claude's transformed fields
@@ -327,7 +334,7 @@ async function updateProductArea(
     Products: productIdOrder,
     Solutions: solutionIdOrder,
     Division: state.division,
-  });
+  }, PA_BASE_ID);
 
   // Cache-bust Wexoe Core after a successful update so live edits aren't
   // hidden behind the 24h transient TTL on the WordPress side.
@@ -360,7 +367,7 @@ async function loadExistingPa(
   apiKey: string,
   recordId: string,
 ): Promise<{ productIds: string[]; solutionIds: string[] }> {
-  const record = await getRecord(apiKey, PA_TABLE_IDS.productAreas, recordId);
+  const record = await getRecord(apiKey, PA_TABLE_IDS.productAreas, recordId, PA_BASE_ID);
   return {
     productIds: (record.fields['Products'] as string[] | undefined) ?? [],
     solutionIds: (record.fields['Solutions'] as string[] | undefined) ?? [],
