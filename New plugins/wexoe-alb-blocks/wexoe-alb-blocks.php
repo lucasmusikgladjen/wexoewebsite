@@ -44,11 +44,16 @@ require_once WEXOE_ALB_DIR . 'includes/content-types.php';
  * att registrera egna ALB-element — inte att lägga klassnamn på
  * `avia_register_shortcodes` (som inte är en discovery-hook).
  */
-add_filter('avia_load_shortcodes', 'wexoe_alb_register_shortcode_path', 10, 1);
+add_filter('avia_load_shortcodes', 'wexoe_alb_register_shortcode_path', 15, 1);
 
 function wexoe_alb_register_shortcode_path($paths) {
     if (!is_array($paths)) $paths = [];
-    $paths[ WEXOE_ALB_DIR . 'shortcodes/' ] = WEXOE_ALB_URL . 'shortcodes/';
+
+    $path = WEXOE_ALB_DIR . 'shortcodes/';
+    if (!in_array($path, $paths, true)) {
+        array_unshift($paths, $path);
+    }
+
     return $paths;
 }
 

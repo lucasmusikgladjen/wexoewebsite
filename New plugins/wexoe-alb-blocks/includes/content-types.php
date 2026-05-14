@@ -127,17 +127,19 @@ function wexoe_alb_collect_all_options() {
 /**
  * Bygger den platta subtype-arrayen som matas till Enfolds select.
  *
- * Format: ['cms_unique_pages:om-oss' => 'Om oss (om-oss)', ...]
+ * Format för Enfold select: ['Wexoe Page – Om oss (om-oss)' => 'cms_unique_pages:om-oss', ...]
  * Den första posten är en tom platshållare så att stå-värdet inte
  * råkar mata in en post som redaktören inte valt aktivt.
  */
 function wexoe_alb_initial_options() {
-    $options = ['' => __('— Välj post —', 'wexoe')];
+    $options = [__('— Välj post —', 'wexoe') => ''];
 
+    $types = wexoe_alb_content_types();
     foreach (wexoe_alb_collect_all_options() as $type => $items) {
+        $type_label = isset($types[$type]['label']) ? $types[$type]['label'] : $type;
         foreach ($items as $item) {
             $key = $type . ':' . $item['id'];
-            $options[$key] = $item['label'];
+            $options[$type_label . ' – ' . $item['label']] = $key;
         }
     }
     return $options;
