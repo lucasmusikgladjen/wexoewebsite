@@ -7,6 +7,7 @@
 import { AirtableRecord, LEGACY_BASE_ID } from './airtable';
 import { AudienceState } from './audience-types';
 import { ContactFormState, ContactFormLayout, ContactFormTheme, emptyContactFormState } from './contact-form-types';
+import { str, bool } from './airtable-helpers';
 
 // Audience Heroes (Customer types-tabellen) ligger fortfarande i gamla Wexoe-
 // basen. `listRecords/createRecord/updateRecord`-anrop måste explicit pass:a
@@ -19,19 +20,6 @@ export const AUDIENCE_BASE_ID = LEGACY_BASE_ID;
 export const AUDIENCE_TABLE_IDS = {
   audienceHeroes: 'tblvNf1CqAYEFvTpu',
 } as const;
-
-type Fields = Record<string, unknown>;
-
-function str(fields: Fields, key: string): string {
-  const v = fields[key];
-  if (typeof v === 'string') return v;
-  if (typeof v === 'number') return String(v);
-  return '';
-}
-
-function bool(fields: Fields, key: string): boolean {
-  return fields[key] === true;
-}
 
 export function audienceStateFromRecord(record: AirtableRecord): AudienceState {
   const f = record.fields;

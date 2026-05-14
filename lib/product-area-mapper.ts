@@ -16,9 +16,8 @@ import {
   generateClientId,
 } from './product-area-types';
 import { AirtableRecord, LEGACY_BASE_ID } from './airtable';
+import { AirtableFields as Fields, str, bool, num } from './airtable-helpers';
 import { ContactFormState, ContactFormLayout, ContactFormTheme, emptyContactFormState } from './contact-form-types';
-
-type Fields = Record<string, unknown>;
 
 // ─── Table IDs (Product Area family) ───────────────────────────────────────
 //
@@ -38,20 +37,6 @@ export const PA_TABLE_IDS = {
   solutions: 'tblc98m9MJcpbWAVU',
   divisions: 'tblKam1tUTlR13atl',
 } as const;
-
-// ─── Helpers ───────────────────────────────────────────────────────────────
-
-function str(fields: Fields, key: string): string {
-  const v = fields[key];
-  return typeof v === 'string' ? v : '';
-}
-function bool(fields: Fields, key: string): boolean {
-  return fields[key] === true;
-}
-function num(fields: Fields, key: string, fallback = 0): number {
-  const v = fields[key];
-  return typeof v === 'number' ? v : fallback;
-}
 
 // ─── Reverse: Airtable → state ─────────────────────────────────────────────
 

@@ -7,6 +7,7 @@
  */
 
 import { AirtableRecord } from './airtable';
+import { asString, asNumber, asBool, asLinkIds } from './airtable-helpers';
 import {
   UniquePageState,
   emptyUniquePageState,
@@ -15,18 +16,6 @@ import {
   ContactFormLayout,
 } from './unique-page-types';
 
-function asString(v: unknown): string {
-  return typeof v === 'string' ? v : (v == null ? '' : String(v));
-}
-function asNumber(v: unknown): number {
-  if (typeof v === 'number') return v;
-  if (typeof v === 'string' && v !== '') { const n = Number(v); if (!Number.isNaN(n)) return n; }
-  return 0;
-}
-function asBool(v: unknown): boolean { return v === true || v === 'true' || v === 1; }
-function asLinkIds(v: unknown): string[] {
-  return Array.isArray(v) ? v.filter((x): x is string => typeof x === 'string') : [];
-}
 function asTheme(v: unknown, def: Theme = 'dark'): Theme {
   return v === 'light' ? 'light' : v === 'dark' ? 'dark' : def;
 }
