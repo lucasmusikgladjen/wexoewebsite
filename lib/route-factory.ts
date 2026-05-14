@@ -1,21 +1,25 @@
 /**
  * Route-factory för sidtypsspecifika CRUD-routes.
  *
- * Etapp 1 — Lager 1 (standard CRUD för primary record):
- *   - GET    ?action=list           → lista records
- *   - GET    ?action=get&id=recXXX  → ladda en record:s state (om loadState gives)
- *   - POST                          → create
- *   - PATCH  ?id=recXXX             → update
- *   - DELETE ?id=recXXX             → delete
+ * Trelagsmodellen:
+ *   Lager 1 — Standard CRUD för primary record.
+ *   Lager 2 — Declarative relations (RelationDef) — ramverket diff:ar
+ *             state mot Airtable och skapar/uppdaterar/raderar child-records.
+ *   Lager 3 — Full override via `create` / `update` / `delete` hooks när
+ *             ingen av de andra två räcker.
  *
- * Standardiserar:
- *   - Slug-validering (regex, reserved, duplikat) — opt-in via config
- *   - Felformat (`{ success, error, code? }`)
- *   - Cache-invalidering efter mutation
+ * Endpoints (alla returnerar `{ success: false, error, code? }` vid fel):
+ *   GET    ?action=list             — lista records
+ *   GET    ?action=get&id=recXXX    — ladda en records state (om loadState gives)
+ *   POST                            — create
+ *   PATCH  ?id=recXXX               — update
+ *   DELETE ?id=recXXX               — delete (cascade owned relations)
  *
- * Lager 2 (declarative relations) och Lager 3 (full override) tillkommer
- * i Etapp 3 — strukturen är förberedd för att bära dem utan att bryta
- * dagens kontrakt.
+ * Save-responsen från POST/PATCH inkluderar `relations: Record<id, RelationSyncResult>`
+ * så klienten kan applicera clientId→recordId-mappningar utan reload.
+ *
+ * Se `lib/page-types/types.ts` för typer och `lib/page-types/relation-sync.ts`
+ * för synkningsmotorn.
  */
 
 import { NextRequest, NextResponse } from 'next/server';
@@ -25,9 +29,18 @@ import {
   updateRecord,
   deleteRecords,
   listRecords,
+  getRecord,
 } from './airtable';
 import { invalidateWexoeCoreCache } from './wexoe-cache';
 import { isReservedSlug } from './core/reserved-slugs';
+import {
+  syncRelations,
+  computeFinalParentArrays,
+  deleteRelationChildren,
+} from './page-types/relation-sync';
+import type { RelationDef, RelationSyncResult } from './page-types/types';
+
+// ─── Response shapes ───────────────────────────────────────────────────────
 
 export interface PageRouteListResponse<TListItem> {
   success: true;
@@ -40,7 +53,34 @@ export interface PageRouteErrorResponse {
   code?: string;
 }
 
+export interface PageRouteSaveResponse {
+  success: true;
+  mode: 'create' | 'update';
+  recordId: string;
+  relations: Record<string, RelationSyncResult>;
+}
+
+// ─── Route config ──────────────────────────────────────────────────────────
+
+export interface RouteContext {
+  apiKey: string;
+}
+
+export type CreateFn<TState> = (
+  state: TState,
+  ctx: RouteContext,
+) => Promise<{ recordId: string; relations?: Record<string, RelationSyncResult> }>;
+
+export type UpdateFn<TState> = (
+  recordId: string,
+  state: TState,
+  ctx: RouteContext,
+) => Promise<{ relations?: Record<string, RelationSyncResult> }>;
+
+export type DeleteFn = (recordId: string, ctx: RouteContext) => Promise<void>;
+
 export interface PageRouteConfig<TState, TListItem> {
+  // ─── Lager 1: primary ────────────────────────────────────────────────
   /** Vilken Airtable-tabell sidtypen lever i. */
   tableId: string;
   /** Vilken Airtable-bas. Default är SSOT-basen (BASE_ID i airtable.ts). */
@@ -56,8 +96,9 @@ export interface PageRouteConfig<TState, TListItem> {
   /** Hämta full state för en record (för ?action=get). Om utelämnad
    *  returnerar GET 400 för action=get. */
   loadState?: (apiKey: string, recordId: string) => Promise<TState>;
-  /** State → Airtable-fält (mode-aware för create-drops-empties etc). */
-  stateToFields: (state: TState, mode: 'create' | 'update') => Record<string, unknown>;
+  /** State → Airtable-fält (mode-aware för create-drops-empties etc).
+   *  Krävs när `create`/`update`-overrides inte används. */
+  stateToFields?: (state: TState, mode: 'create' | 'update') => Record<string, unknown>;
   /** Fält som ska hämtas vid list (mappas sen via listMapper). */
   listFields?: readonly string[];
   /** Hur en Airtable-record presenteras i list-svaret. */
@@ -65,19 +106,37 @@ export interface PageRouteConfig<TState, TListItem> {
   /** Sort-instruktion till list. Default: ingen sortering. */
   listSort?: ReadonlyArray<{ field: string; direction: 'asc' | 'desc' }>;
 
-  /** Hur slug:en plockas ur staten. Om utelämnad körs ingen slug-logik. */
+  /** Slug-policy — om utelämnad körs ingen slug-logik. */
   slugAccessor?: (state: TState) => string;
-  /** Air­table-fältnamnet för slug — krävs om slugAccessor satt. Default 'Slug'. */
+  /** Airtable-fältnamnet för slug — krävs om slugAccessor satt. Default 'Slug'. */
   slugField?: string;
-  /** Validera slug-formatet. Default kollar `^[a-z0-9][a-z0-9-]*$`. */
   validateSlugFormat?: boolean;
-  /** Kolla reservedSlugs-listan. */
   checkReservedSlug?: boolean;
-  /** Kolla att slug:en är unik bland records i tabellen (create + update). */
   checkDuplicateSlug?: boolean;
 
   /** Valfri extra validering — returnera felmeddelande eller null. */
   validate?: (state: TState) => string | null;
+
+  // ─── Lager 2: relations ──────────────────────────────────────────────
+  /** Declarative relations. Tomma/utelämnat = bara primary record. */
+  relations?: ReadonlyArray<RelationDef<TState, unknown>>;
+
+  // ─── Lager 3: full overrides ─────────────────────────────────────────
+  /**
+   * Helt egen create-logik. Anropas istället för stateToFields + createRecord
+   * + relations-sync. Override:n är ansvarig för att skriva både primary och
+   * eventuella relations själv. Returnera samma shape som standardimplementationen.
+   * Slug-validering, validate-hooken och cache-invalidering körs fortfarande
+   * av factory:n runtomkring.
+   */
+  create?: CreateFn<TState>;
+  /** Som `create` men för update. */
+  update?: UpdateFn<TState>;
+  /**
+   * Egen delete-logik. Default tar bort primary + cascade owned relations.
+   * Override:n är ansvarig för båda delar.
+   */
+  delete?: DeleteFn;
 }
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
@@ -137,11 +196,99 @@ async function invalidateCache<TState, TListItem>(
   await invalidateWexoeCoreCache(cfg.cacheEntities, `${cfg.cacheContext}/${action}`);
 }
 
+/**
+ * Lager 2-implementation av create: skapa primary, sen sync:a relations,
+ * sen skriv parent.parentField för alla parentLinkArray-relationer.
+ */
+async function defaultCreate<TState, TListItem>(
+  cfg: PageRouteConfig<TState, TListItem>,
+  state: TState,
+  ctx: RouteContext,
+): Promise<{ recordId: string; relations: Record<string, RelationSyncResult> }> {
+  if (!cfg.stateToFields) {
+    throw new Error('createPageRoute: behöver stateToFields eller `create` override.');
+  }
+  const primaryFields = cfg.stateToFields(state, 'create');
+  const created = await createRecord(ctx.apiKey, cfg.tableId, primaryFields, cfg.baseId);
+
+  if (!cfg.relations || cfg.relations.length === 0) {
+    return { recordId: created.id, relations: {} };
+  }
+
+  // Vid create finns inga existing children — sync ger oss bara create-grenen.
+  // Vi passar in den nya parent-record:en (parentField är tom).
+  const relations = await syncRelations(ctx.apiKey, created.id, created, state, cfg.relations);
+  const parentArrayUpdates = computeFinalParentArrays(state, cfg.relations, relations);
+  if (Object.keys(parentArrayUpdates).length > 0) {
+    await updateRecord(ctx.apiKey, cfg.tableId, created.id, parentArrayUpdates, cfg.baseId);
+  }
+  return { recordId: created.id, relations };
+}
+
+/**
+ * Lager 2-implementation av update: läs parent (för parentField), skriv
+ * primary, sync:a relations, skriv parent.parentField för alla
+ * parentLinkArray-relationer.
+ */
+async function defaultUpdate<TState, TListItem>(
+  cfg: PageRouteConfig<TState, TListItem>,
+  recordId: string,
+  state: TState,
+  ctx: RouteContext,
+): Promise<{ relations: Record<string, RelationSyncResult> }> {
+  if (!cfg.stateToFields) {
+    throw new Error('createPageRoute: behöver stateToFields eller `update` override.');
+  }
+  const primaryFields = cfg.stateToFields(state, 'update');
+
+  // Vi behöver parent-record:en för parentLinkArray-diff. Skriv primary
+  // FÖRST, läs efteråt — då har vi senaste tillståndet av parentField
+  // (även om PATCH inte ändrade det, så är det det aktuella värdet).
+  // OBS: alternativet är att läsa innan PATCH, men då riskerar vi race
+  // conditions. Att läsa efter är konsekvent.
+  await updateRecord(ctx.apiKey, cfg.tableId, recordId, primaryFields, cfg.baseId);
+
+  if (!cfg.relations || cfg.relations.length === 0) {
+    return { relations: {} };
+  }
+
+  const parentRecord = await getRecord(ctx.apiKey, cfg.tableId, recordId, cfg.baseId);
+  const relations = await syncRelations(ctx.apiKey, recordId, parentRecord, state, cfg.relations);
+  const parentArrayUpdates = computeFinalParentArrays(state, cfg.relations, relations);
+  if (Object.keys(parentArrayUpdates).length > 0) {
+    await updateRecord(ctx.apiKey, cfg.tableId, recordId, parentArrayUpdates, cfg.baseId);
+  }
+  return { relations };
+}
+
+async function defaultDelete<TState, TListItem>(
+  cfg: PageRouteConfig<TState, TListItem>,
+  recordId: string,
+  ctx: RouteContext,
+): Promise<void> {
+  if (cfg.relations && cfg.relations.length > 0) {
+    const parentRecord = await getRecord(ctx.apiKey, cfg.tableId, recordId, cfg.baseId);
+    await deleteRelationChildren(ctx.apiKey, recordId, parentRecord, cfg.relations);
+  }
+  await deleteRecords(ctx.apiKey, cfg.tableId, [recordId], cfg.baseId);
+}
+
 // ─── Factory ────────────────────────────────────────────────────────────────
 
 export function createPageRoute<TState, TListItem>(
   cfg: PageRouteConfig<TState, TListItem>,
 ) {
+  // Konfigurationssanity — fångas vid första requesten, inte vid modul-laddning,
+  // för att inte krascha vid bygg-tid om en sidtyp inte används än.
+  function assertCfgValid(): NextResponse<PageRouteErrorResponse> | null {
+    if (!cfg.stateToFields && (!cfg.create || !cfg.update)) {
+      return serverError(
+        'createPageRoute: konfigurationen saknar stateToFields OCH create/update-overrides.',
+      );
+    }
+    return null;
+  }
+
   async function GET(req: NextRequest): Promise<NextResponse> {
     if (!cfg.apiKey) return serverError('AIRTABLE_API_KEY ej konfigurerad.');
     const url = new URL(req.url);
@@ -174,6 +321,8 @@ export function createPageRoute<TState, TListItem>(
   }
 
   async function POST(req: NextRequest): Promise<NextResponse> {
+    const cfgError = assertCfgValid();
+    if (cfgError) return cfgError;
     if (!cfg.apiKey) return serverError('AIRTABLE_API_KEY ej konfigurerad.');
 
     let state: TState;
@@ -188,19 +337,26 @@ export function createPageRoute<TState, TListItem>(
     }
 
     try {
-      const fields = cfg.stateToFields(state, 'create');
-      const created = await createRecord(cfg.apiKey, cfg.tableId, fields, cfg.baseId);
+      const ctx: RouteContext = { apiKey: cfg.apiKey };
+      const result = cfg.create
+        ? await cfg.create(state, ctx)
+        : await defaultCreate(cfg, state, ctx);
       await invalidateCache(cfg, 'create');
-      return NextResponse.json(
-        { success: true, mode: 'create' as const, recordId: created.id },
-        { status: 201 },
-      );
+      const response: PageRouteSaveResponse = {
+        success: true,
+        mode: 'create',
+        recordId: result.recordId,
+        relations: result.relations ?? {},
+      };
+      return NextResponse.json(response, { status: 201 });
     } catch (err) {
       return serverError(err instanceof Error ? err.message : 'Create misslyckades.');
     }
   }
 
   async function PATCH(req: NextRequest): Promise<NextResponse> {
+    const cfgError = assertCfgValid();
+    if (cfgError) return cfgError;
     if (!cfg.apiKey) return serverError('AIRTABLE_API_KEY ej konfigurerad.');
     const url = new URL(req.url);
     const recordId = url.searchParams.get('id');
@@ -218,10 +374,18 @@ export function createPageRoute<TState, TListItem>(
     }
 
     try {
-      const fields = cfg.stateToFields(state, 'update');
-      await updateRecord(cfg.apiKey, cfg.tableId, recordId, fields, cfg.baseId);
+      const ctx: RouteContext = { apiKey: cfg.apiKey };
+      const result = cfg.update
+        ? await cfg.update(recordId, state, ctx)
+        : await defaultUpdate(cfg, recordId, state, ctx);
       await invalidateCache(cfg, 'update');
-      return NextResponse.json({ success: true, mode: 'update' as const, recordId });
+      const response: PageRouteSaveResponse = {
+        success: true,
+        mode: 'update',
+        recordId,
+        relations: result.relations ?? {},
+      };
+      return NextResponse.json(response);
     } catch (err) {
       return serverError(err instanceof Error ? err.message : 'Update misslyckades.');
     }
@@ -233,7 +397,12 @@ export function createPageRoute<TState, TListItem>(
     const recordId = url.searchParams.get('id');
     if (!recordId) return badRequest('Saknar ?id=recXXX.');
     try {
-      await deleteRecords(cfg.apiKey, cfg.tableId, [recordId], cfg.baseId);
+      const ctx: RouteContext = { apiKey: cfg.apiKey };
+      if (cfg.delete) {
+        await cfg.delete(recordId, ctx);
+      } else {
+        await defaultDelete(cfg, recordId, ctx);
+      }
       await invalidateCache(cfg, 'delete');
       return NextResponse.json({ success: true, deleted: true });
     } catch (err) {
