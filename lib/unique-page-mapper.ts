@@ -33,13 +33,6 @@ function asAlign(v: unknown): TextOnlyAlign {
 function asLayout(v: unknown): ContactFormLayout {
   return v === 'centered' ? 'centered' : 'split';
 }
-function attachUrl(v: unknown): string {
-  if (Array.isArray(v) && v.length > 0) {
-    const first = v[0] as { url?: string };
-    if (first && typeof first.url === 'string') return first.url;
-  }
-  return '';
-}
 
 export function uniquePageStateFromRecord(rec: AirtableRecord): UniquePageState {
   const f = rec.fields;
@@ -62,7 +55,7 @@ export function uniquePageStateFromRecord(rec: AirtableRecord): UniquePageState 
     eyebrow: asString(f['Hero Eyebrow']),
     h1Override: asString(f['Hero H1 Override']),
     subtitle: asString(f['Hero Subtitle']),
-    imageUrl: attachUrl(f['Hero Image']),
+    imageUrl: asString(f['Hero Image']),
     ctaText: asString(f['Hero CTA Text']),
     ctaUrl: asString(f['Hero CTA URL']),
     theme: asTheme(f['Hero Theme']),
@@ -73,7 +66,7 @@ export function uniquePageStateFromRecord(rec: AirtableRecord): UniquePageState 
   state.textImageA = {
     h2: asString(f['Text Image A H2']),
     body: asString(f['Text Image A Body']),
-    imageUrl: attachUrl(f['Text Image A Image']),
+    imageUrl: asString(f['Text Image A Image']),
     reversed: asBool(f['Text Image A Reversed']),
     theme: asTheme(f['Text Image A Theme'], 'light'),
   };
@@ -83,7 +76,7 @@ export function uniquePageStateFromRecord(rec: AirtableRecord): UniquePageState 
   state.textImageB = {
     h2: asString(f['Text Image B H2']),
     body: asString(f['Text Image B Body']),
-    imageUrl: attachUrl(f['Text Image B Image']),
+    imageUrl: asString(f['Text Image B Image']),
     reversed: asBool(f['Text Image B Reversed']),
     theme: asTheme(f['Text Image B Theme'], 'light'),
   };
@@ -166,10 +159,6 @@ export function uniquePageStateFromRecord(rec: AirtableRecord): UniquePageState 
   return state;
 }
 
-function attachInput(url: string): unknown {
-  return url ? [{ url }] : [];
-}
-
 /**
  * Konvertera UniquePageState → Airtable-fält-map.
  *
@@ -177,9 +166,6 @@ function attachInput(url: string): unknown {
  *   - 'create' (default): tomma värden tas bort innan POST så Airtable använder
  *     fält-defaults.
  *   - 'update': tomma textfält skickas som tom sträng så Airtable rensar dem.
- *     Annars skulle tomma fält utelämnas → Airtable lämnar gamla värdet.
- *     Bool/checkbox-fält och multi-link-arrayer skickas alltid (de är inte
- *     "tomma" på samma sätt — false respektive []).
  */
 export function uniquePageStateToFields(
   state: UniquePageState,
@@ -199,7 +185,7 @@ export function uniquePageStateToFields(
     'Hero Eyebrow': state.hero.eyebrow || null,
     'Hero H1 Override': state.hero.h1Override || null,
     'Hero Subtitle': state.hero.subtitle || null,
-    'Hero Image': attachInput(state.hero.imageUrl),
+    'Hero Image': state.hero.imageUrl || null,
     'Hero CTA Text': state.hero.ctaText || null,
     'Hero CTA URL': state.hero.ctaUrl || null,
     'Hero Theme': state.hero.theme,
@@ -207,14 +193,14 @@ export function uniquePageStateToFields(
     'Show Text Image A': state.showTextImageA,
     'Text Image A H2': state.textImageA.h2 || null,
     'Text Image A Body': state.textImageA.body || null,
-    'Text Image A Image': attachInput(state.textImageA.imageUrl),
+    'Text Image A Image': state.textImageA.imageUrl || null,
     'Text Image A Reversed': state.textImageA.reversed,
     'Text Image A Theme': state.textImageA.theme,
 
     'Show Text Image B': state.showTextImageB,
     'Text Image B H2': state.textImageB.h2 || null,
     'Text Image B Body': state.textImageB.body || null,
-    'Text Image B Image': attachInput(state.textImageB.imageUrl),
+    'Text Image B Image': state.textImageB.imageUrl || null,
     'Text Image B Reversed': state.textImageB.reversed,
     'Text Image B Theme': state.textImageB.theme,
 
@@ -267,12 +253,6 @@ export function uniquePageStateToFields(
     'Contact Form Show Contact Person': state.contactForm.showContactPerson,
   };
 
-  // Vid CREATE: skala bort tomma värden så Airtable använder fält-defaults
-  //   och payloaden inte spammas med null.
-  // Vid UPDATE: BEHÅLL null så Airtable rensar fältet. Att utelämna fältet
-  //   lämnar det orört (PATCH-semantik), så vi måste skicka explicit null för
-  //   att en redaktör ska kunna tömma t.ex. SEO-titel eller FAQ-items.
-  //   Airtable accepterar null för text/number/url/select-fält.
   const out: Record<string, unknown> = {};
   for (const [k, v] of Object.entries(fields)) {
     if (v === undefined) continue;
