@@ -96,6 +96,14 @@ Fält-rename per tabell:
 
 **Totalt: 87 fält omdöpta.**
 
+**Datamigration:**
+
+- `core_partners`: 17 records skapade från gamla Partners-tabellen (Rockwell Automation, HMS, Wittenstein, Spectrum / AMCI, ProSoft, IRINOX, R&M, Fibrain, Microsens, Ekkosense, LBW, nVent Schroff, Assetspire, TrendNET, Hager, Steinel, Arteche). Inkluderar logo_url där tillgängligt (R&M, LBW). Country = SE. Division-länkar lämnade tomma — gamla basens divisioner (INDUSTRY, IT INFRA, POWER, BUILDING INFRASTRUCTURE) matchar inte nya basens (Automation, Industri, Kassasystem). Användaren måste mappa manuellt.
+
+- `core_coworkers`: 8 unika records skapade från gamla Coworkers-tabellen (Joakim Knutson, Niclas Fransson, Jari Turja, Jan Hildeby, Andreas Grünerwald, Edis Residovski, Tony Annell, David Eriksson). Inkluderar full_name, title, email, phone, image_url, bio. Country = SE. Division-länkar lämnade tomma av samma skäl som ovan.
+
+OBS: Tre tomma stub-records ligger fortfarande i `core_partners` och tre i `core_divisions` från initial bootstrap. Kan raderas manuellt i Airtable UI.
+
 ### Återstående arbete (manuella TODOs eller follow-up-session)
 
 Allt nedan följer mönstret som etablerats. Kan automatiseras i en uppföljande session — kräver främst ytterligare MCP-anrop.
