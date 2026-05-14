@@ -2,22 +2,12 @@
  * Bidirektional mappning mellan Airtable-records och normaliserade TS-objekt
  * för SSOT-entiteter.
  *
- * Mappar Airtable Title Case-fältnamn → lower_snake_case domain-keys, samt
- * extraherar första attachment-URL ur multipleAttachments-fält.
+ * Mappar Airtable Title Case-fältnamn → lower_snake_case domain-keys.
+ * Bild-fält är singleLineText URL-strängar (wp-content), inte multipleAttachments.
  */
 
 import { AirtableRecord } from '../airtable';
 import { CoreEntityName } from './registry';
-
-type AttachmentLike = { url?: string };
-
-function firstAttachmentUrl(value: unknown): string {
-  if (Array.isArray(value) && value.length > 0) {
-    const first = value[0] as AttachmentLike;
-    if (first && typeof first.url === 'string') return first.url;
-  }
-  return '';
-}
 
 function asString(v: unknown): string {
   if (typeof v === 'string') return v;
@@ -83,9 +73,9 @@ function readGraphicProfile(rec: AirtableRecord) {
     _recordId,
     slug: asString(f['Slug']),
     is_default: asBool(f['Is Default']),
-    logo_primary: firstAttachmentUrl(f['Logo Primary']),
-    logo_dark_background: firstAttachmentUrl(f['Logo Dark Background']),
-    favicon: firstAttachmentUrl(f['Favicon']),
+    logo_primary: asString(f['Logo Primary']),
+    logo_dark_background: asString(f['Logo Dark Background']),
+    favicon: asString(f['Favicon']),
     color_primary: asString(f['Color Primary']),
     color_secondary: asString(f['Color Secondary']),
     color_accent: asString(f['Color Accent']),
@@ -136,7 +126,7 @@ function readCustomerType(rec: AirtableRecord) {
     name: asString(f['Name']),
     slug: asString(f['Slug']),
     description: asString(f['Description']),
-    icon: firstAttachmentUrl(f['Icon']),
+    icon: asString(f['Icon']),
     order: asNumber(f['Order']),
     active: asBool(f['Active']),
   };
@@ -150,7 +140,7 @@ function readCoworker(rec: AirtableRecord) {
     title: asString(f['Title']),
     email: asString(f['Email']),
     phone: asString(f['Phone']),
-    image: firstAttachmentUrl(f['Image']),
+    image: asString(f['Image']),
     linkedin_url: asString(f['LinkedIn URL']),
     bio: asString(f['Bio']),
     order: asNumber(f['Order']),
@@ -165,8 +155,8 @@ function readPartner(rec: AirtableRecord) {
   return {
     _recordId,
     name: asString(f['Name']),
-    logo: firstAttachmentUrl(f['Logo']),
-    logo_transparent: firstAttachmentUrl(f['Logo Transparent']),
+    logo: asString(f['Logo']),
+    logo_transparent: asString(f['Logo Transparent']),
     url: asString(f['URL']),
     description: asString(f['Description']),
     order: asNumber(f['Order']),
@@ -184,7 +174,7 @@ function readTestimonial(rec: AirtableRecord) {
     quote: asString(f['Quote']),
     author_name: asString(f['Author Name']),
     author_title: asString(f['Author Title']),
-    author_image: firstAttachmentUrl(f['Author Image']),
+    author_image: asString(f['Author Image']),
     order: asNumber(f['Order']),
     active: asBool(f['Active']),
     featured: asBool(f['Featured']),
@@ -210,10 +200,6 @@ export function readEntityRecord(entity: CoreEntityName, rec: AirtableRecord): R
 /* --------------------------------------------------------
    Domain → Airtable fields (för write)
    -------------------------------------------------------- */
-
-function writeAttachment(url: string): unknown {
-  return url ? [{ url }] : [];
-}
 
 function cleanField(v: unknown): unknown {
   if (v === undefined || v === '') return null;
@@ -250,9 +236,9 @@ function writeGraphicProfile(s: Record<string, unknown>): Record<string, unknown
   return {
     'Slug': cleanField(s.slug),
     'Is Default': !!s.is_default,
-    'Logo Primary': writeAttachment(asString(s.logo_primary)),
-    'Logo Dark Background': writeAttachment(asString(s.logo_dark_background)),
-    'Favicon': writeAttachment(asString(s.favicon)),
+    'Logo Primary': cleanField(s.logo_primary),
+    'Logo Dark Background': cleanField(s.logo_dark_background),
+    'Favicon': cleanField(s.favicon),
     'Color Primary': cleanField(s.color_primary),
     'Color Secondary': cleanField(s.color_secondary),
     'Color Accent': cleanField(s.color_accent),
@@ -297,7 +283,7 @@ function writeCustomerType(s: Record<string, unknown>): Record<string, unknown> 
     'Name': cleanField(s.name),
     'Slug': cleanField(s.slug),
     'Description': cleanField(s.description),
-    'Icon': writeAttachment(asString(s.icon)),
+    'Icon': cleanField(s.icon),
     'Order': s.order === '' ? null : Number(s.order ?? 0),
     'Active': !!s.active,
   };
@@ -309,7 +295,7 @@ function writeCoworker(s: Record<string, unknown>): Record<string, unknown> {
     'Title': cleanField(s.title),
     'Email': cleanField(s.email),
     'Phone': cleanField(s.phone),
-    'Image': writeAttachment(asString(s.image)),
+    'Image': cleanField(s.image),
     'LinkedIn URL': cleanField(s.linkedin_url),
     'Bio': cleanField(s.bio),
     'Order': s.order === '' ? null : Number(s.order ?? 0),
@@ -322,8 +308,8 @@ function writeCoworker(s: Record<string, unknown>): Record<string, unknown> {
 function writePartner(s: Record<string, unknown>): Record<string, unknown> {
   return {
     'Name': cleanField(s.name),
-    'Logo': writeAttachment(asString(s.logo)),
-    'Logo Transparent': writeAttachment(asString(s.logo_transparent)),
+    'Logo': cleanField(s.logo),
+    'Logo Transparent': cleanField(s.logo_transparent),
     'URL': cleanField(s.url),
     'Description': cleanField(s.description),
     'Order': s.order === '' ? null : Number(s.order ?? 0),
@@ -339,7 +325,7 @@ function writeTestimonial(s: Record<string, unknown>): Record<string, unknown> {
     'Quote': cleanField(s.quote),
     'Author Name': cleanField(s.author_name),
     'Author Title': cleanField(s.author_title),
-    'Author Image': writeAttachment(asString(s.author_image)),
+    'Author Image': cleanField(s.author_image),
     'Order': s.order === '' ? null : Number(s.order ?? 0),
     'Active': !!s.active,
     'Featured': !!s.featured,
