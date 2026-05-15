@@ -2,13 +2,14 @@
 /**
  * Wexoe Content — Avia Layout Builder-element.
  *
- * Registrerad via `avia_register_shortcodes`-filtret. Modulen exponerar två
+ * Registrerad via `avia_load_shortcodes`-filtret. Modulen exponerar två
  * dropdowns i builder-modalen: innehållstyp och post. Värdet sparas som
  * `[wexoe_content content_type="..." content_id="{type}:{slug}"]` i post_content.
  */
 
 if (!defined('ABSPATH')) exit;
 if (!class_exists('aviaShortcodeTemplate')) return;
+if (class_exists('Wexoe_Content_Block', false)) return;
 
 class Wexoe_Content_Block extends aviaShortcodeTemplate {
 
@@ -32,9 +33,9 @@ class Wexoe_Content_Block extends aviaShortcodeTemplate {
      * från alla typer och filtreras klient-sidan via assets/builder.js.
      */
     function popup_elements() {
-        $types = ['' => __('— Välj typ —', 'wexoe')];
+        $types = [__('— Välj typ —', 'wexoe') => ''];
         foreach (wexoe_alb_content_types() as $slug => $cfg) {
-            $types[$slug] = $cfg['label'];
+            $types[$cfg['label']] = $slug;
         }
 
         $this->elements = [
