@@ -1,5 +1,7 @@
 # Wexoe Page Builder
 
+> **Vill du skapa en ny sidtyp?** Läs `SKAPA-SIDA.md` (i denna repo) — den guidar dig genom hela flowet steg för steg. Du behöver inte läsa filen du nu har öppen. Den är teknisk referens.
+
 Wexoe Page Builder ("buildern") är vår interna marknadsförar-app för att skapa och redigera sidor på wexoe.com. Den lever här, separat från WordPress, för att vi ska kunna ge marknadsförarna ett kompromisslöst UX-flöde utan att Avia/Enfold står i vägen.
 
 Stack: Next.js (App Router) + TypeScript + Tailwind. Värd på Vercel. Läs från Airtable REST-API direkt; skriv via Claude API (Anthropic) som mellanled.

@@ -1,4 +1,6 @@
-# Skapa en ny sidtyp — buildern-sidan
+# Skapa en ny sidtyp — buildern-sidan (teknisk referens)
+
+> **Är du marknadsförare? Läs `SKAPA-SIDA.md` istället.** Den filen är skriven för dig och guidar dig genom hela flowet. Denna fil är teknisk referens som LLM:er och utvecklare kan dyka i vid behov.
 
 Receptet för att lägga till en helt ny sidtyp i Wexoe-systemet (t.ex. case-sidor, nyheter, leverantörssidor). Denna fil täcker bygget i `wexoebuilder`. Plugin-sidan (PHP-pluginet + Core-schemat + Airtable-tabellerna) täcks av `wexoeplugins/NEW_PAGE_TYPE.md` — pair-läs.
 
@@ -128,7 +130,7 @@ Notera:
 - `<!-- shared: ContactForm -->` = återanvänd den delade kontaktformulärsmodulen från Core, slipper duplicera markup.
 - `repeat: this` inom en `repeat`-block = den enskilda item-värdet (för enkla string-arrayer).
 
-Spara prototypen som `prototype.html` i en arbetskatalog. Den blir input till FAS 1–3.
+Spara prototypen som `prototype.html` i en arbetskatalog lokalt. Den **committas inte** — den är en arbetsartefakt som följer med från FAS 1 till FAS 3 och slängs när flowet är klart. Källan-of-truth efter att flowet är klart är PHP-pluginet + builder-preview-komponenten.
 
 ---
 
