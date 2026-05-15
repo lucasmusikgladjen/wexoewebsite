@@ -45,8 +45,8 @@ async function loadExistingPa(
 ): Promise<{ productIds: string[]; solutionIds: string[] }> {
   const record = await getRecord(apiKey, PA_TABLE_IDS.productAreas, recordId, PA_BASE_ID);
   return {
-    productIds: (record.fields['Products'] as string[] | undefined) ?? [],
-    solutionIds: (record.fields['Solutions'] as string[] | undefined) ?? [],
+    productIds: (record.fields['product_ids'] as string[] | undefined) ?? [],
+    solutionIds: (record.fields['solution_ids'] as string[] | undefined) ?? [],
   };
 }
 
@@ -124,13 +124,13 @@ export async function productAreaCreate(
     .filter((id): id is string => !!id);
 
   const paFields: Record<string, unknown> = {
-    Name: workingState.slug,
+    name: workingState.slug,
     ...transformed.productArea,
-    Products: productIdOrder,
-    Solutions: solutionIdOrder,
+    product_ids: productIdOrder,
+    solution_ids: solutionIdOrder,
   };
   if (workingState.division.length > 0) {
-    paFields.Division = workingState.division;
+    paFields.division_ids = workingState.division;
   }
 
   const createdPa = await createRecord(airtableKey, PA_TABLE_IDS.productAreas, paFields, PA_BASE_ID);
@@ -252,9 +252,9 @@ export async function productAreaUpdate(
 
   await updateRecord(airtableKey, PA_TABLE_IDS.productAreas, recordId, {
     ...transformed.productArea,
-    Products: productIdOrder,
-    Solutions: solutionIdOrder,
-    Division: state.division,
+    product_ids: productIdOrder,
+    solution_ids: solutionIdOrder,
+    division_ids: state.division,
   }, PA_BASE_ID);
 
   return {
@@ -278,14 +278,14 @@ export interface ProductAreaListItem {
 export async function listProductAreas(apiKey: string): Promise<ProductAreaListItem[]> {
   const records = await listRecords(apiKey, PA_TABLE_IDS.productAreas, {
     baseId: PA_BASE_ID,
-    fields: ['Name', 'Slug', 'H1', 'Division'],
-    sort: [{ field: 'Name', direction: 'asc' }],
+    fields: ['name', 'slug', 'h1', 'division_ids'],
+    sort: [{ field: 'slug', direction: 'asc' }],
   });
   return records.map((r) => ({
     id: r.id,
-    name: (r.fields.Name as string) || '',
-    slug: (r.fields.Slug as string) || '',
-    h1: (r.fields.H1 as string) || '',
-    divisionIds: (r.fields.Division as string[] | undefined) ?? [],
+    name: (r.fields.name as string) || '',
+    slug: (r.fields.slug as string) || '',
+    h1: (r.fields.h1 as string) || '',
+    divisionIds: (r.fields.division_ids as string[] | undefined) ?? [],
   }));
 }
