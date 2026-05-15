@@ -16,6 +16,14 @@
  * a slow WP shouldn't bubble up to the editor.
  */
 
+export {
+  CUSTOMER_TYPE_PAGE_ENTITIES,
+  LP_ENTITIES,
+  PA_ENTITIES,
+  SSOT_ENTITIES,
+  UNIQUE_PAGES_ENTITIES,
+} from './wexoe-cache-entities';
+
 const WEBHOOK_URL = process.env.WEXOE_CORE_WEBHOOK_URL;
 const WEBHOOK_SECRET = process.env.WEXOE_CORE_WEBHOOK_SECRET;
 const WEBHOOK_TIMEOUT_MS = 5000;
@@ -70,20 +78,3 @@ export async function invalidateWexoeCoreCache(
     clearTimeout(timeout);
   }
 }
-
-// Entity names exactly match the schema files in
-// wexoeplugins/wexoe-core/entities/*.php — do NOT translate.
-export const LP_ENTITIES = ['landing_pages', 'lp_tabs', 'lp_downloads'] as const;
-export const PA_ENTITIES = ['product_areas', 'products', 'solutions'] as const;
-export const CUSTOMER_TYPE_PAGE_ENTITIES = ['customer_type_pages', 'case_pages'] as const;
-export const SSOT_ENTITIES = [
-  'core_company',
-  'core_graphic_profile',
-  'core_countries',
-  'core_divisions',
-  'core_customer_types',
-  'core_coworkers',
-  'core_partners',
-  'core_testimonials',
-] as const;
-export const UNIQUE_PAGES_ENTITIES = ['cms_unique_pages'] as const;
