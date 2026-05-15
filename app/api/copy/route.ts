@@ -6,8 +6,8 @@ import {
   AirtableRecord,
 } from '@/lib/airtable';
 import { TABLE_IDS as LP_TABLE_IDS } from '@/lib/airtable';
-import { PA_TABLE_IDS } from '@/lib/product-area-mapper';
-import { AUDIENCE_TABLE_IDS } from '@/lib/audience-mapper';
+import { PA_TABLE_IDS, PA_BASE_ID } from '@/lib/product-area-mapper';
+import { AUDIENCE_TABLE_IDS, AUDIENCE_BASE_ID } from '@/lib/audience-mapper';
 import { invalidateWexoeCoreCache, AUDIENCE_ENTITIES } from '@/lib/wexoe-cache';
 
 const AIRTABLE_API_KEY = process.env.AIRTABLE_API_KEY;
@@ -15,9 +15,12 @@ const AIRTABLE_API_KEY = process.env.AIRTABLE_API_KEY;
 // Fields we never want to write back as-is — these are linked-record fields
 // that point at the source record's owned children. The copy will re-link
 // to its own freshly-created children instead.
-const LP_FIELDS_TO_DROP = new Set(['LP Tabs']);
-const TAB_FIELDS_TO_DROP = new Set(['Landing Page', 'LP Downloads']);
-const DOWNLOAD_FIELDS_TO_DROP = new Set(['Tab']);
+//
+// LP family is migrated to Wexoe NY with snake_case keys. PA + Audience still
+// use legacy PascalCase keys until those tables migrate.
+const LP_FIELDS_TO_DROP = new Set(['tab_ids']);
+const TAB_FIELDS_TO_DROP = new Set(['landing_page_ids', 'download_ids']);
+const DOWNLOAD_FIELDS_TO_DROP = new Set(['tab_ids']);
 
 interface CopyRequest {
   type: 'landing' | 'product-area' | 'audience';
@@ -52,16 +55,28 @@ function defaultCopyName(name: string): string {
   return `${name} COPY`;
 }
 
-async function isSlugTaken(apiKey: string, tableId: string, slug: string): Promise<boolean> {
+/** Slug uniqueness check. `slugField` differs by family: LP/PA use the
+ *  primary `slug` (snake_case in NY base, PascalCase `Slug` in legacy). */
+async function isSlugTaken(
+  apiKey: string,
+  tableId: string,
+  slug: string,
+  slugField: string,
+  baseId?: string,
+): Promise<boolean> {
   const safeSlug = slug.replace(/"/g, '\\"');
   const matches = await listRecords(apiKey, tableId, {
-    fields: ['Slug'],
-    filterByFormula: `{Slug} = "${safeSlug}"`,
+    fields: [slugField],
+    filterByFormula: `{${slugField}} = "${safeSlug}"`,
+    baseId,
   });
   return matches.length > 0;
 }
 
 // ─── Landing Page (deep copy: LP + tabs + downloads) ───────────────────────
+//
+// LP family now lives in Wexoe NY with snake_case fields. Default base from
+// `lib/airtable.ts` already points there — no explicit baseId needed.
 
 async function copyLandingPage(
   apiKey: string,
@@ -70,51 +85,51 @@ async function copyLandingPage(
   slug: string | undefined,
 ) {
   const source = await getRecord(apiKey, LP_TABLE_IDS.landingPages, sourceId);
-  const sourceName = (source.fields.Name as string) || '';
-  const sourceSlug = (source.fields.Slug as string) || '';
+  const sourceSlug = (source.fields.slug as string) || '';
 
-  const newName = name?.trim() || defaultCopyName(sourceName);
+  // LP records dropped the standalone Name field — fall back to slug for
+  // the COPY label so the dialog still has something sensible to show.
+  const newName = name?.trim() || defaultCopyName(sourceSlug);
   const newSlug = slug?.trim() || defaultCopySlug(sourceSlug);
 
-  if (await isSlugTaken(apiKey, LP_TABLE_IDS.landingPages, newSlug)) {
+  if (await isSlugTaken(apiKey, LP_TABLE_IDS.landingPages, newSlug, 'slug')) {
     return NextResponse.json(
       { error: `Slug "${newSlug}" finns redan. Välj ett annat.` },
       { status: 409 },
     );
   }
 
-  // 1. CREATE the new LP record. Strip the LP Tabs link — the new tabs we
+  // 1. CREATE the new LP record. Strip the tab_ids link — the new tabs we
   //    create below will set their own back-link to this record.
   const lpFields = strip(source.fields, LP_FIELDS_TO_DROP);
-  lpFields.Name = newName;
-  lpFields.Slug = newSlug;
+  lpFields.slug = newSlug;
 
   const newLp = await createRecord(apiKey, LP_TABLE_IDS.landingPages, lpFields);
 
   // 2. Read all source tabs and downloads in two queries.
-  const tabIds = (source.fields['LP Tabs'] as string[] | undefined) ?? [];
+  const tabIds = (source.fields['tab_ids'] as string[] | undefined) ?? [];
   let sourceTabs: AirtableRecord[] = [];
   if (tabIds.length > 0) {
     const formula = `OR(${tabIds.map((id) => `RECORD_ID()='${id}'`).join(',')})`;
-    sourceTabs = await listRecords(apiKey, LP_TABLE_IDS.tabs, { filterByFormula: formula });
+    sourceTabs = await listRecords(apiKey, LP_TABLE_IDS.landingPageTabs, { filterByFormula: formula });
   }
 
-  // Sort by Order so creation order matches what the live page shows.
+  // Sort by order so creation order matches what the live page shows.
   sourceTabs.sort((a, b) => {
-    const oa = (a.fields.Order as number) ?? 0;
-    const ob = (b.fields.Order as number) ?? 0;
+    const oa = (a.fields.order as number) ?? 0;
+    const ob = (b.fields.order as number) ?? 0;
     return oa - ob;
   });
 
   const downloadIds = new Set<string>();
   for (const tab of sourceTabs) {
-    const ids = (tab.fields['LP Downloads'] as string[] | undefined) ?? [];
+    const ids = (tab.fields['download_ids'] as string[] | undefined) ?? [];
     ids.forEach((id) => downloadIds.add(id));
   }
   let sourceDownloads: AirtableRecord[] = [];
   if (downloadIds.size > 0) {
     const formula = `OR(${[...downloadIds].map((id) => `RECORD_ID()='${id}'`).join(',')})`;
-    sourceDownloads = await listRecords(apiKey, LP_TABLE_IDS.downloads, { filterByFormula: formula });
+    sourceDownloads = await listRecords(apiKey, LP_TABLE_IDS.landingPageDownloads, { filterByFormula: formula });
   }
 
   // 3. CREATE new tabs linked to the new LP. Map oldTabId → newTabId so we
@@ -122,22 +137,22 @@ async function copyLandingPage(
   const tabIdMap: Record<string, string> = {};
   for (const sourceTab of sourceTabs) {
     const tabFields = strip(sourceTab.fields, TAB_FIELDS_TO_DROP);
-    tabFields['Landing Page'] = [newLp.id];
-    const newTab = await createRecord(apiKey, LP_TABLE_IDS.tabs, tabFields);
+    tabFields['landing_page_ids'] = [newLp.id];
+    const newTab = await createRecord(apiKey, LP_TABLE_IDS.landingPageTabs, tabFields);
     tabIdMap[sourceTab.id] = newTab.id;
   }
 
   // 4. CREATE new downloads, each linked back to the *new* tab id.
   for (const sourceDl of sourceDownloads) {
-    const oldTabRefs = (sourceDl.fields.Tab as string[] | undefined) ?? [];
+    const oldTabRefs = (sourceDl.fields.tab_ids as string[] | undefined) ?? [];
     const newTabRefs = oldTabRefs
       .map((id) => tabIdMap[id])
       .filter((id): id is string => !!id);
     if (newTabRefs.length === 0) continue;
 
     const dlFields = strip(sourceDl.fields, DOWNLOAD_FIELDS_TO_DROP);
-    dlFields.Tab = newTabRefs;
-    await createRecord(apiKey, LP_TABLE_IDS.downloads, dlFields);
+    dlFields.tab_ids = newTabRefs;
+    await createRecord(apiKey, LP_TABLE_IDS.landingPageDownloads, dlFields);
   }
 
   return NextResponse.json({
@@ -152,6 +167,8 @@ async function copyLandingPage(
 }
 
 // ─── Product Area (shallow copy — share linked Products/Solutions) ─────────
+//
+// Still on legacy Wexoe base — pass PA_BASE_ID explicitly to all helpers.
 
 async function copyProductArea(
   apiKey: string,
@@ -159,14 +176,14 @@ async function copyProductArea(
   name: string | undefined,
   slug: string | undefined,
 ) {
-  const source = await getRecord(apiKey, PA_TABLE_IDS.productAreas, sourceId);
+  const source = await getRecord(apiKey, PA_TABLE_IDS.productAreas, sourceId, PA_BASE_ID);
   const sourceName = (source.fields.Name as string) || '';
   const sourceSlug = (source.fields.Slug as string) || '';
 
   const newName = name?.trim() || defaultCopyName(sourceName);
   const newSlug = slug?.trim() || defaultCopySlug(sourceSlug);
 
-  if (await isSlugTaken(apiKey, PA_TABLE_IDS.productAreas, newSlug)) {
+  if (await isSlugTaken(apiKey, PA_TABLE_IDS.productAreas, newSlug, 'Slug', PA_BASE_ID)) {
     return NextResponse.json(
       { error: `Slug "${newSlug}" finns redan. Välj ett annat.` },
       { status: 409 },
@@ -181,7 +198,7 @@ async function copyProductArea(
   fields.Name = newName;
   fields.Slug = newSlug;
 
-  const newPa = await createRecord(apiKey, PA_TABLE_IDS.productAreas, fields);
+  const newPa = await createRecord(apiKey, PA_TABLE_IDS.productAreas, fields, PA_BASE_ID);
 
   return NextResponse.json({
     success: true,
@@ -193,6 +210,8 @@ async function copyProductArea(
 }
 
 // ─── Audience (flat copy — single record, no children) ────────────────────
+//
+// Still on legacy Wexoe base — pass AUDIENCE_BASE_ID explicitly.
 
 async function copyAudience(
   apiKey: string,
@@ -200,7 +219,7 @@ async function copyAudience(
   name: string | undefined,
   slug: string | undefined,
 ) {
-  const source = await getRecord(apiKey, AUDIENCE_TABLE_IDS.audienceHeroes, sourceId);
+  const source = await getRecord(apiKey, AUDIENCE_TABLE_IDS.audienceHeroes, sourceId, AUDIENCE_BASE_ID);
   const sourceSlug = (source.fields.Slug as string) || '';
 
   // Audience records have no Name field — fall back to slug-based defaults.
@@ -210,7 +229,7 @@ async function copyAudience(
   // the response only.
   const newName = name?.trim() || defaultCopyName(sourceSlug);
 
-  if (await isSlugTaken(apiKey, AUDIENCE_TABLE_IDS.audienceHeroes, newSlug)) {
+  if (await isSlugTaken(apiKey, AUDIENCE_TABLE_IDS.audienceHeroes, newSlug, 'Slug', AUDIENCE_BASE_ID)) {
     return NextResponse.json(
       { error: `Slug "${newSlug}" finns redan. Välj ett annat.` },
       { status: 409 },
@@ -220,7 +239,7 @@ async function copyAudience(
   const fields: Record<string, unknown> = { ...source.fields };
   fields.Slug = newSlug;
 
-  const created = await createRecord(apiKey, AUDIENCE_TABLE_IDS.audienceHeroes, fields);
+  const created = await createRecord(apiKey, AUDIENCE_TABLE_IDS.audienceHeroes, fields, AUDIENCE_BASE_ID);
 
   await invalidateWexoeCoreCache(AUDIENCE_ENTITIES, 'audience:copy');
 

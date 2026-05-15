@@ -3,7 +3,6 @@ import { getRecord, listRecords, TABLE_IDS, AirtableRecord } from '@/lib/airtabl
 import { pageStateFromRecords } from '@/lib/page-mapper';
 
 const AIRTABLE_API_KEY = process.env.AIRTABLE_API_KEY;
-const BASE_ID = 'appXoUcK68dQwASjF';
 const LP_TABLE_ID = TABLE_IDS.landingPages;
 
 export async function GET(request: Request) {
@@ -16,21 +15,19 @@ export async function GET(request: Request) {
 
   try {
     if (action === 'list') {
-      // List all landing pages (id, name, slug, h1)
-      const url = `https://api.airtable.com/v0/${BASE_ID}/${LP_TABLE_ID}?fields%5B%5D=Name&fields%5B%5D=Slug&fields%5B%5D=H1&sort%5B0%5D%5Bfield%5D=Name&sort%5B0%5D%5Bdirection%5D=asc&pageSize=100`;
-      const res = await fetch(url, {
-        headers: { Authorization: `Bearer ${AIRTABLE_API_KEY}` },
+      // List all landing pages — slug is primary, h1 is the headline.
+      // Default base (Wexoe NY) used implicitly by listRecords.
+      const records = await listRecords(AIRTABLE_API_KEY, LP_TABLE_ID, {
+        fields: ['slug', 'h1', 'internal_notes'],
+        sort: [{ field: 'slug', direction: 'asc' }],
       });
-      if (!res.ok) {
-        const errData = await res.json().catch(() => ({}));
-        throw new Error(errData.error?.message || `Airtable error: ${res.status}`);
-      }
-      const data = await res.json();
-      const pages = data.records.map((r: AirtableRecord) => ({
+      const pages = records.map((r) => ({
         id: r.id,
-        name: (r.fields?.Name as string) || '',
-        slug: (r.fields?.Slug as string) || '',
-        h1: (r.fields?.H1 as string) || '',
+        // 'name' kept for back-compat with the dashboard's PageRow shape;
+        // we surface the slug since cms_landing_pages drops the legacy Name field.
+        name: (r.fields?.slug as string) || '',
+        slug: (r.fields?.slug as string) || '',
+        h1: (r.fields?.h1 as string) || '',
       }));
       return NextResponse.json({ pages });
     }
@@ -41,15 +38,15 @@ export async function GET(request: Request) {
         return NextResponse.json({ error: 'Missing id parameter' }, { status: 400 });
       }
 
-      // Fetch LP record + linked tabs + downloads in parallel where possible
+      // Fetch LP record + linked tabs + downloads
       const lp = await getRecord(AIRTABLE_API_KEY, TABLE_IDS.landingPages, recordId);
 
-      // Fetch linked tabs by record IDs from the LP record (avoids filterByFormula)
-      const tabIds = (lp.fields['LP Tabs'] as string[] | undefined) ?? [];
+      // Fetch linked tabs by record IDs from the LP record (snake_case post-migration)
+      const tabIds = (lp.fields['tab_ids'] as string[] | undefined) ?? [];
       let tabs: AirtableRecord[] = [];
       if (tabIds.length > 0) {
         const formula = `OR(${tabIds.map((id) => `RECORD_ID()='${id}'`).join(',')})`;
-        tabs = await listRecords(AIRTABLE_API_KEY, TABLE_IDS.tabs, {
+        tabs = await listRecords(AIRTABLE_API_KEY, TABLE_IDS.landingPageTabs, {
           filterByFormula: formula,
         });
       }
@@ -57,22 +54,22 @@ export async function GET(request: Request) {
       // Collect all download IDs across tabs
       const downloadIds = new Set<string>();
       for (const tab of tabs) {
-        const ids = (tab.fields['LP Downloads'] as string[] | undefined) ?? [];
+        const ids = (tab.fields['download_ids'] as string[] | undefined) ?? [];
         ids.forEach((id) => downloadIds.add(id));
       }
 
       let downloads: AirtableRecord[] = [];
       if (downloadIds.size > 0) {
         const formula = `OR(${[...downloadIds].map((id) => `RECORD_ID()='${id}'`).join(',')})`;
-        downloads = await listRecords(AIRTABLE_API_KEY, TABLE_IDS.downloads, {
+        downloads = await listRecords(AIRTABLE_API_KEY, TABLE_IDS.landingPageDownloads, {
           filterByFormula: formula,
         });
       }
 
-      // Group downloads by their parent tab id
+      // Group downloads by their parent tab id (back-link is now `tab_ids`)
       const downloadsByTabId: Record<string, AirtableRecord[]> = {};
       for (const dl of downloads) {
-        const tabRefs = (dl.fields['Tab'] as string[] | undefined) ?? [];
+        const tabRefs = (dl.fields['tab_ids'] as string[] | undefined) ?? [];
         for (const tabId of tabRefs) {
           (downloadsByTabId[tabId] ??= []).push(dl);
         }

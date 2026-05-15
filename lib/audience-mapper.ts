@@ -4,9 +4,17 @@
  * required because the schema is flat (no linked records).
  */
 
-import { AirtableRecord } from './airtable';
+import { AirtableRecord, LEGACY_BASE_ID } from './airtable';
 import { AudienceState } from './audience-types';
 import { ContactFormState, ContactFormLayout, ContactFormTheme, emptyContactFormState } from './contact-form-types';
+
+// Audience Heroes (Customer types-tabellen) ligger fortfarande i gamla Wexoe-
+// basen. `listRecords/createRecord/updateRecord`-anrop måste explicit pass:a
+// `baseId: AUDIENCE_BASE_ID`. När audiences migrerats till
+// `cms_customer_type_pages` i nya basen, byt till `BASE_ID` och uppdatera
+// tabell-ID:t nedan.
+
+export const AUDIENCE_BASE_ID = LEGACY_BASE_ID;
 
 export const AUDIENCE_TABLE_IDS = {
   audienceHeroes: 'tblvNf1CqAYEFvTpu',

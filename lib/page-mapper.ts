@@ -109,44 +109,44 @@ function parseSteps(text: string): StepItem[] {
 
 function tabFromRecord(record: AirtableRecord, downloads: AirtableRecord[]): Tab {
   const f = record.fields;
-  const rawType = str(f, 'Tab Type');
+  const rawType = str(f, 'tab_type');
   const type: TabType = (TAB_TYPES as string[]).includes(rawType) ? (rawType as TabType) : 'textimage';
 
   const tab: Tab = {
     ...createEmptyTab(),
     recordId: record.id,
-    name: str(f, 'Name'),
+    name: str(f, 'name'),
     type,
-    tiH2: str(f, 'TI H2'),
-    tiText: str(f, 'TI Text'),
-    tiBenefits: str(f, 'TI Benefits'),
-    tiImage: str(f, 'TI Image'),
-    tiInverted: bool(f, 'TI Inverted'),
-    fmUrl: str(f, 'FM URL'),
-    faqItems: parseFaqItems(str(f, 'FAQ Items')),
-    calTitle1: str(f, 'Calameo 1 Title'),
-    calUrl1: str(f, 'Calameo 1 Src'),
-    calTitle2: str(f, 'Calameo 2 Title'),
-    calUrl2: str(f, 'Calameo 2 Src'),
-    calTitle3: str(f, 'Calameo 3 Title'),
-    calUrl3: str(f, 'Calameo 3 Src'),
+    tiH2: str(f, 'ti_h2'),
+    tiText: str(f, 'ti_text'),
+    tiBenefits: str(f, 'ti_benefits'),
+    tiImage: str(f, 'ti_image_url'),
+    tiInverted: bool(f, 'ti_inverted'),
+    fmUrl: str(f, 'fm_url'),
+    faqItems: parseFaqItems(str(f, 'faq_items')),
+    calTitle1: str(f, 'calameo_1_title'),
+    calUrl1: str(f, 'calameo_1_src'),
+    calTitle2: str(f, 'calameo_2_title'),
+    calUrl2: str(f, 'calameo_2_src'),
+    calTitle3: str(f, 'calameo_3_title'),
+    calUrl3: str(f, 'calameo_3_src'),
     downloads: downloads
       .slice()
-      .sort((a, b) => num(a.fields, 'Order') - num(b.fields, 'Order'))
+      .sort((a, b) => num(a.fields, 'order') - num(b.fields, 'order'))
       .map((d, i) => ({
         id: `dl-load-${record.id}-${i}`,
         recordId: d.id,
-        name: str(d.fields, 'Name'),
-        description: str(d.fields, 'Description'),
-        fileUrl: str(d.fields, 'File URL'),
-        fileType: str(d.fields, 'Button Text'),
+        name: str(d.fields, 'name'),
+        description: str(d.fields, 'description'),
+        fileUrl: str(d.fields, 'file_url'),
+        fileType: str(d.fields, 'button_text'),
       })),
-    compareTitle: str(f, 'Compare Title'),
-    compareColA: str(f, 'Compare Col A') || 'Alternativ A',
-    compareColB: str(f, 'Compare Col B') || 'Alternativ B',
-    compareRows: parseCompareRows(str(f, 'Compare Rows')),
-    stepsTitle: str(f, 'Steps Title'),
-    stepsItems: parseSteps(str(f, 'Steps')),
+    compareTitle: str(f, 'compare_title'),
+    compareColA: str(f, 'compare_col_a') || 'Alternativ A',
+    compareColB: str(f, 'compare_col_b') || 'Alternativ B',
+    compareRows: parseCompareRows(str(f, 'compare_rows')),
+    stepsTitle: str(f, 'steps_title'),
+    stepsItems: parseSteps(str(f, 'steps')),
   };
 
   return tab;
@@ -166,9 +166,9 @@ export function pageStateFromRecords(args: {
 
   const sortedTabs = tabs
     .slice()
-    .sort((a, b) => num(a.fields, 'Order') - num(b.fields, 'Order'));
+    .sort((a, b) => num(a.fields, 'order') - num(b.fields, 'order'));
 
-  const rawSidebar = str(f, 'Sidebar Type');
+  const rawSidebar = str(f, 'sidebar_type');
   const sidebarType: SidebarType = (SIDEBAR_TYPES as string[]).includes(rawSidebar)
     ? (rawSidebar as SidebarType)
     : '';
@@ -177,87 +177,87 @@ export function pageStateFromRecords(args: {
     ...initialState,
     mode: 'edit',
     recordId: landingPage.id,
-    slug: str(f, 'Slug'),
+    slug: str(f, 'slug'),
 
-    h1: str(f, 'H1'),
-    heroDescription: str(f, 'Hero Description'),
-    heroImage: str(f, 'Hero Image'),
-    heroCta1Text: str(f, 'Hero CTA Text') || 'Kontakta oss',
-    heroCta1Url: str(f, 'Hero CTA URL') || '/kontakt/',
-    heroCta2Text: str(f, 'Hero CTA2 Text'),
-    heroCta2Url: str(f, 'Hero CTA2 URL'),
+    h1: str(f, 'h1'),
+    heroDescription: str(f, 'hero_description'),
+    heroImage: str(f, 'hero_image_url'),
+    heroCta1Text: str(f, 'hero_cta_text') || 'Kontakta oss',
+    heroCta1Url: str(f, 'hero_cta_url') || '/kontakt/',
+    heroCta2Text: str(f, 'hero_cta2_text'),
+    heroCta2Url: str(f, 'hero_cta2_url'),
 
-    contentH2: str(f, 'Content H2'),
-    contentText: str(f, 'Content Text'),
-    contentBenefits: str(f, 'Content Benefits'),
+    contentH2: str(f, 'content_h2'),
+    contentText: str(f, 'content_text'),
+    contentBenefits: str(f, 'content_benefits'),
 
     sidebarType,
-    caseTitle: str(f, 'Case Title'),
-    caseDescription: str(f, 'Case Description'),
-    caseImage: str(f, 'Case Image'),
-    caseOutcomes: str(f, 'Case Outcomes'),
-    caseCta: str(f, 'Case CTA Text'),
-    caseCtaUrl: str(f, 'Case CTA URL'),
-    eventType: str(f, 'Event Type'),
-    eventTitle: str(f, 'Event Title'),
-    eventDescription: str(f, 'Event Description'),
-    eventDate: str(f, 'Event Date'),
-    eventLocation: str(f, 'Event Location'),
-    eventWebhook: str(f, 'Event Webhook'),
-    magnetTitle: str(f, 'Magnet Title'),
-    magnetFormat: str(f, 'Magnet Format'),
-    magnetDescription: str(f, 'Magnet Description'),
-    magnetFileUrl: str(f, 'Magnet File URL'),
-    magnetWebhook: str(f, 'Magnet Webhook'),
-    calcTitle: str(f, 'Calc Title'),
-    calcHtml: str(f, 'Calc HTML'),
+    caseTitle: str(f, 'case_title'),
+    caseDescription: str(f, 'case_description'),
+    caseImage: str(f, 'case_image_url'),
+    caseOutcomes: str(f, 'case_outcomes'),
+    caseCta: str(f, 'case_cta_text'),
+    caseCtaUrl: str(f, 'case_cta_url'),
+    eventType: str(f, 'event_type'),
+    eventTitle: str(f, 'event_title'),
+    eventDescription: str(f, 'event_description'),
+    eventDate: str(f, 'event_date'),
+    eventLocation: str(f, 'event_location'),
+    eventWebhook: str(f, 'event_webhook'),
+    magnetTitle: str(f, 'magnet_title'),
+    magnetFormat: str(f, 'magnet_format'),
+    magnetDescription: str(f, 'magnet_description'),
+    magnetFileUrl: str(f, 'magnet_file_url'),
+    magnetWebhook: str(f, 'magnet_webhook'),
+    calcTitle: str(f, 'calc_title'),
+    calcHtml: str(f, 'calc_html'),
 
     tabs: sortedTabs.map((t) => tabFromRecord(t, downloadsByTabId[t.id] ?? [])),
 
-    contactName: str(f, 'Contact Name'),
-    contactTitle: str(f, 'Contact Title'),
-    contactEmail: str(f, 'Contact Email'),
-    contactPhone: str(f, 'Contact Phone'),
-    contactImage: str(f, 'Contact Image'),
-    contactQuote: str(f, 'Contact Quote'),
+    contactName: str(f, 'contact_name'),
+    contactTitle: str(f, 'contact_title'),
+    contactEmail: str(f, 'contact_email'),
+    contactPhone: str(f, 'contact_phone'),
+    contactImage: str(f, 'contact_image_url'),
+    contactQuote: str(f, 'contact_quote'),
 
-    showContent: bool(f, 'Show Content', true),
-    showSidebar: bool(f, 'Show Sidebar', true),
-    showTabs: bool(f, 'Show Tabs', true),
-    showContact: bool(f, 'Show Contact', true),
+    showContent: bool(f, 'show_content', true),
+    showSidebar: bool(f, 'show_sidebar', true),
+    showTabs: bool(f, 'show_tabs', true),
+    showContact: bool(f, 'show_contact', true),
 
-    colorMain: str(f, 'Color Main') || '#11325D',
-    colorSecondary: str(f, 'Color Secondary') || '#F28C28',
+    colorMain: str(f, 'color_main') || '#11325D',
+    colorSecondary: str(f, 'color_secondary') || '#F28C28',
 
-    showContactForm: bool(f, 'Show Contact Form', false),
+    showContactForm: bool(f, 'show_contact_form', false),
     contactForm: contactFormFromRecord(landingPage),
   };
 }
 
 /**
  * Generic helper: hämta ContactFormState från ett Airtable-record vars fält
- * följer `Contact Form *`-konventionen. Återanvänds från LP, PA, Audience.
+ * följer `contact_form_*`-konventionen. Återanvänds från LP, PA, Audience.
  */
 export function contactFormFromRecord(record: AirtableRecord): ContactFormState {
   const f = record.fields;
-  const layoutRaw = str(f, 'Contact Form Layout');
-  const themeRaw = str(f, 'Contact Form Theme');
+  const layoutRaw = str(f, 'contact_form_layout');
+  const themeRaw = str(f, 'contact_form_theme');
   const empty = emptyContactFormState();
   return {
-    eyebrow: str(f, 'Contact Form Eyebrow'),
-    title: str(f, 'Contact Form Title'),
-    subtitle: str(f, 'Contact Form Subtitle'),
+    eyebrow: str(f, 'contact_form_eyebrow'),
+    title: str(f, 'contact_form_title'),
+    subtitle: str(f, 'contact_form_subtitle'),
     layout: (layoutRaw === 'centered' ? 'centered' : 'split') as ContactFormLayout,
     theme: (themeRaw === 'light' ? 'light' : 'dark') as ContactFormTheme,
-    showCompany: bool(f, 'Contact Form Show Company', empty.showCompany),
-    showPhone: bool(f, 'Contact Form Show Phone', empty.showPhone),
-    showDropdown: bool(f, 'Contact Form Show Dropdown', empty.showDropdown),
-    dropdownLabel: str(f, 'Contact Form Dropdown Label'),
-    options: str(f, 'Contact Form Options'),
-    ctaText: str(f, 'Contact Form CTA Text'),
-    messageLabel: str(f, 'Contact Form Message Label'),
-    trustSignals: str(f, 'Contact Form Trust Signals'),
-    showContactPerson: bool(f, 'Contact Form Show Contact Person', empty.showContactPerson),
+    showCompany: bool(f, 'contact_form_show_company', empty.showCompany),
+    showPhone: bool(f, 'contact_form_show_phone', empty.showPhone),
+    showDropdown: bool(f, 'contact_form_show_dropdown', empty.showDropdown),
+    dropdownLabel: str(f, 'contact_form_dropdown_label'),
+    options: str(f, 'contact_form_options'),
+    ctaText: str(f, 'contact_form_cta_text'),
+    messageLabel: str(f, 'contact_form_message_label'),
+    trustSignals: str(f, 'contact_form_trust_signals'),
+    showContactPerson: bool(f, 'contact_form_show_contact_person', empty.showContactPerson),
   };
 }
 
@@ -270,21 +270,21 @@ export function contactFormToFields(
   state: ContactFormState,
 ): Record<string, unknown> {
   const fields: Record<string, unknown> = {
-    'Show Contact Form': showContactForm,
-    'Contact Form Eyebrow': state.eyebrow || null,
-    'Contact Form Title': state.title || null,
-    'Contact Form Subtitle': state.subtitle || null,
-    'Contact Form Layout': state.layout,
-    'Contact Form Theme': state.theme,
-    'Contact Form Show Company': state.showCompany,
-    'Contact Form Show Phone': state.showPhone,
-    'Contact Form Show Dropdown': state.showDropdown,
-    'Contact Form Dropdown Label': state.dropdownLabel || null,
-    'Contact Form Options': state.options || null,
-    'Contact Form CTA Text': state.ctaText || null,
-    'Contact Form Message Label': state.messageLabel || null,
-    'Contact Form Trust Signals': state.trustSignals || null,
-    'Contact Form Show Contact Person': state.showContactPerson,
+    'show_contact_form': showContactForm,
+    'contact_form_eyebrow': state.eyebrow || null,
+    'contact_form_title': state.title || null,
+    'contact_form_subtitle': state.subtitle || null,
+    'contact_form_layout': state.layout,
+    'contact_form_theme': state.theme,
+    'contact_form_show_company': state.showCompany,
+    'contact_form_show_phone': state.showPhone,
+    'contact_form_show_dropdown': state.showDropdown,
+    'contact_form_dropdown_label': state.dropdownLabel || null,
+    'contact_form_options': state.options || null,
+    'contact_form_cta_text': state.ctaText || null,
+    'contact_form_message_label': state.messageLabel || null,
+    'contact_form_trust_signals': state.trustSignals || null,
+    'contact_form_show_contact_person': state.showContactPerson,
   };
   // Strip null så Airtable inte sätter explicit null.
   const out: Record<string, unknown> = {};

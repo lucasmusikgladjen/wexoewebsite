@@ -15,12 +15,21 @@ import {
   LinkedArticleReadonly,
   generateClientId,
 } from './product-area-types';
-import { AirtableRecord } from './airtable';
+import { AirtableRecord, LEGACY_BASE_ID } from './airtable';
 import { ContactFormState, ContactFormLayout, ContactFormTheme, emptyContactFormState } from './contact-form-types';
 
 type Fields = Record<string, unknown>;
 
 // ─── Table IDs (Product Area family) ───────────────────────────────────────
+//
+// Product Areas, Products, Articles, Solutions och Divisions ligger fortfarande
+// kvar i gamla Wexoe-basen (LEGACY_BASE_ID). Alla `listRecords/createRecord/
+// updateRecord`-anrop måste explicit pass:a `baseId: PA_BASE_ID` — global
+// default (`BASE_ID` i `lib/airtable.ts`) pekar på Wexoe NY. När PA-familjen
+// migreras till `cms_product_pages` + `cms_product_page_sections` i nya basen,
+// byt `PA_BASE_ID` till `BASE_ID` och uppdatera tabell-ID:n nedan.
+
+export const PA_BASE_ID = LEGACY_BASE_ID;
 
 export const PA_TABLE_IDS = {
   productAreas: 'tblgatNFYFMwF4EcQ',

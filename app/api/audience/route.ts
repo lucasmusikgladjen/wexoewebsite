@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { listRecords, createRecord, updateRecord } from '@/lib/airtable';
-import { AUDIENCE_TABLE_IDS, audienceStateToFields } from '@/lib/audience-mapper';
+import { AUDIENCE_TABLE_IDS, AUDIENCE_BASE_ID, audienceStateToFields } from '@/lib/audience-mapper';
 import { loadAudienceState } from '@/lib/audience-loader';
 import { AudienceState } from '@/lib/audience-types';
 import { invalidateWexoeCoreCache, AUDIENCE_ENTITIES } from '@/lib/wexoe-cache';
@@ -22,6 +22,7 @@ export async function GET(request: Request) {
       const records = await listRecords(AIRTABLE_API_KEY, AUDIENCE_TABLE_IDS.audienceHeroes, {
         fields: ['Slug', 'Title', 'Eyebrow'],
         sort: [{ field: 'Slug', direction: 'asc' }],
+        baseId: AUDIENCE_BASE_ID,
       });
       const pages = records.map((r) => ({
         id: r.id,
@@ -86,6 +87,7 @@ async function createAudience(airtableKey: string, state: AudienceState) {
   const existing = await listRecords(airtableKey, AUDIENCE_TABLE_IDS.audienceHeroes, {
     fields: ['Slug'],
     filterByFormula: `{Slug} = "${state.slug.replace(/"/g, '\\"')}"`,
+    baseId: AUDIENCE_BASE_ID,
   });
   if (existing.length > 0) {
     return NextResponse.json(
@@ -95,7 +97,7 @@ async function createAudience(airtableKey: string, state: AudienceState) {
   }
 
   const fields = audienceStateToFields(state, 'create');
-  const created = await createRecord(airtableKey, AUDIENCE_TABLE_IDS.audienceHeroes, fields);
+  const created = await createRecord(airtableKey, AUDIENCE_TABLE_IDS.audienceHeroes, fields, AUDIENCE_BASE_ID);
 
   await invalidateWexoeCoreCache(AUDIENCE_ENTITIES, 'audience:create');
 
@@ -111,7 +113,7 @@ async function updateAudience(airtableKey: string, state: AudienceState) {
   if (!state.recordId) throw new Error('updateAudience called without recordId');
 
   const fields = audienceStateToFields(state, 'update');
-  await updateRecord(airtableKey, AUDIENCE_TABLE_IDS.audienceHeroes, state.recordId, fields);
+  await updateRecord(airtableKey, AUDIENCE_TABLE_IDS.audienceHeroes, state.recordId, fields, AUDIENCE_BASE_ID);
 
   await invalidateWexoeCoreCache(AUDIENCE_ENTITIES, 'audience:update');
 
