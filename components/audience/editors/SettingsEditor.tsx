@@ -1,22 +1,15 @@
 'use client';
 
 import { AudienceState } from '@/lib/audience-types';
-import { FieldCheckbox } from '@/components/editors/FieldInput';
-import EditorSection from '@/components/editors/EditorSection';
+import { Field } from '@/components/shared/fields';
+import type { SectionEditorProps } from '@/lib/page-types/types';
 
-interface Props {
-  state: AudienceState;
-  setField: <K extends keyof AudienceState>(key: K, value: AudienceState[K]) => void;
-}
-
-export default function SettingsEditor({ state, setField }: Props) {
+export default function SettingsEditor({ state, onChange }: SectionEditorProps<AudienceState>) {
   return (
-    <EditorSection title="Inställningar">
-      <FieldCheckbox
-        label="Aktiv (publicerad)"
-        checked={state.active}
-        onChange={(v) => setField('active', v)}
-      />
-    </EditorSection>
+    <Field.Checkbox
+      label="Aktiv (publicerad)"
+      checked={state.active}
+      onChange={(v) => onChange({ ...state, active: v })}
+    />
   );
 }

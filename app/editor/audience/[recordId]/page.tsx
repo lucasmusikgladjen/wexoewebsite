@@ -1,6 +1,7 @@
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
-import AudienceBuilder from '@/components/audience/AudienceBuilder';
+import PageTypeBuilder from '@/components/shared/builder/PageTypeBuilder';
+import { audienceUI } from '@/lib/page-types/audience.ui';
 import { loadAudienceState } from '@/lib/audience-loader';
 import { AudienceState } from '@/lib/audience-types';
 
@@ -32,7 +33,14 @@ export default async function EditAudiencePage({ params }: Props) {
     return <ErrorScreen title="Kunde inte hämta sidan" message={message} />;
   }
 
-  return <AudienceBuilder initialState={state} />;
+  return (
+    <PageTypeBuilder
+      uiDef={audienceUI}
+      initialState={state}
+      mode="edit"
+      recordId={recordId}
+    />
+  );
 }
 
 function ErrorScreen({ title, message }: { title: string; message: string }) {

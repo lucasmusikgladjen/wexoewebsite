@@ -6,7 +6,8 @@
 
 import { AirtableRecord, LEGACY_BASE_ID } from './airtable';
 import { AudienceState } from './audience-types';
-import { ContactFormState, ContactFormLayout, ContactFormTheme, emptyContactFormState } from './contact-form-types';
+import { str, bool } from './airtable-helpers';
+import { contactFormFromFields, contactFormToFields } from './contact-form-mapper';
 
 // Audience Heroes (Customer types-tabellen) ligger fortfarande i gamla Wexoe-
 // basen. `listRecords/createRecord/updateRecord`-anrop måste explicit pass:a
@@ -20,21 +21,16 @@ export const AUDIENCE_TABLE_IDS = {
   audienceHeroes: 'tblvNf1CqAYEFvTpu',
 } as const;
 
-type Fields = Record<string, unknown>;
-
-function str(fields: Fields, key: string): string {
-  const v = fields[key];
-  if (typeof v === 'string') return v;
-  if (typeof v === 'number') return String(v);
-  return '';
-}
-
-function bool(fields: Fields, key: string): boolean {
-  return fields[key] === true;
-}
-
 export function audienceStateFromRecord(record: AirtableRecord): AudienceState {
   const f = record.fields;
+  const valueH2 = str(f, 'Value H2');
+  const valueText1 = str(f, 'Value Text 1');
+  const valueText2 = str(f, 'Value Text 2');
+  const benefit1 = str(f, 'Benefit 1');
+  const benefit2 = str(f, 'Benefit 2');
+  const benefit3 = str(f, 'Benefit 3');
+  const caseTitle = str(f, 'Case Title');
+
   return {
     mode: 'edit',
     recordId: record.id,
@@ -50,44 +46,26 @@ export function audienceStateFromRecord(record: AirtableRecord): AudienceState {
     statNumber: str(f, 'Stat Number'),
     statLabel: str(f, 'Stat Label'),
 
-    valueH2: str(f, 'Value H2'),
-    valueText1: str(f, 'Value Text 1'),
-    valueText2: str(f, 'Value Text 2'),
-    benefit1: str(f, 'Benefit 1'),
-    benefit2: str(f, 'Benefit 2'),
-    benefit3: str(f, 'Benefit 3'),
+    // showValue/showCase persisteras inte i Airtable — defaulta till true
+    // i edit-läge om någon av fälten har innehåll, annars false. Speglar
+    // AudienceBuilder:s legacy-logik.
+    showValue: !!(valueH2 || valueText1 || valueText2 || benefit1 || benefit2 || benefit3),
+    valueH2,
+    valueText1,
+    valueText2,
+    benefit1,
+    benefit2,
+    benefit3,
 
-    caseTitle: str(f, 'Case Title'),
+    showCase: !!caseTitle,
+    caseTitle,
     caseDescription: str(f, 'Case Description'),
     caseResult: str(f, 'Case Result'),
     caseLinkText: str(f, 'Case Link Text'),
     caseLinkUrl: str(f, 'Case Link URL'),
 
     showContactForm: bool(f, 'Show Contact Form'),
-    contactForm: contactFormStateFromRecord(record),
-  };
-}
-
-function contactFormStateFromRecord(record: AirtableRecord): ContactFormState {
-  const f = record.fields;
-  const empty = emptyContactFormState();
-  const layoutRaw = str(f, 'Contact Form Layout');
-  const themeRaw = str(f, 'Contact Form Theme');
-  return {
-    eyebrow: str(f, 'Contact Form Eyebrow'),
-    title: str(f, 'Contact Form Title'),
-    subtitle: str(f, 'Contact Form Subtitle'),
-    layout: (layoutRaw === 'centered' ? 'centered' : 'split') as ContactFormLayout,
-    theme: (themeRaw === 'light' ? 'light' : 'dark') as ContactFormTheme,
-    showCompany: f['Contact Form Show Company'] === true ? true : f['Contact Form Show Company'] === false ? false : empty.showCompany,
-    showPhone: f['Contact Form Show Phone'] === true ? true : f['Contact Form Show Phone'] === false ? false : empty.showPhone,
-    showDropdown: f['Contact Form Show Dropdown'] === true ? true : f['Contact Form Show Dropdown'] === false ? false : empty.showDropdown,
-    dropdownLabel: str(f, 'Contact Form Dropdown Label'),
-    options: str(f, 'Contact Form Options'),
-    ctaText: str(f, 'Contact Form CTA Text'),
-    messageLabel: str(f, 'Contact Form Message Label'),
-    trustSignals: str(f, 'Contact Form Trust Signals'),
-    showContactPerson: f['Contact Form Show Contact Person'] === true ? true : f['Contact Form Show Contact Person'] === false ? false : empty.showContactPerson,
+    contactForm: contactFormFromFields(f),
   };
 }
 
@@ -123,20 +101,7 @@ export function audienceStateToFields(
     'Case Link URL': state.caseLinkUrl,
 
     'Show Contact Form': state.showContactForm,
-    'Contact Form Eyebrow': state.contactForm.eyebrow,
-    'Contact Form Title': state.contactForm.title,
-    'Contact Form Subtitle': state.contactForm.subtitle,
-    'Contact Form Layout': state.contactForm.layout,
-    'Contact Form Theme': state.contactForm.theme,
-    'Contact Form Show Company': state.contactForm.showCompany,
-    'Contact Form Show Phone': state.contactForm.showPhone,
-    'Contact Form Show Dropdown': state.contactForm.showDropdown,
-    'Contact Form Dropdown Label': state.contactForm.dropdownLabel,
-    'Contact Form Options': state.contactForm.options,
-    'Contact Form CTA Text': state.contactForm.ctaText,
-    'Contact Form Message Label': state.contactForm.messageLabel,
-    'Contact Form Trust Signals': state.contactForm.trustSignals,
-    'Contact Form Show Contact Person': state.contactForm.showContactPerson,
+    ...contactFormToFields(state.contactForm),
   };
 
   // Stat Number is an Airtable number field — coerce, treat blank as null.

@@ -1,8 +1,9 @@
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
-import ProductAreaBuilder from '@/components/product-area/ProductAreaBuilder';
-import { loadProductAreaState, loadDivisions } from '@/lib/product-area-loader';
-import { ProductAreaState, Division } from '@/lib/product-area-types';
+import PageTypeBuilder from '@/components/shared/builder/PageTypeBuilder';
+import { productAreaUI } from '@/lib/page-types/product-area.ui';
+import { loadProductAreaState } from '@/lib/product-area-loader';
+import { ProductAreaState } from '@/lib/product-area-types';
 
 export const dynamic = 'force-dynamic';
 
@@ -32,14 +33,14 @@ export default async function EditProductAreaPage({ params }: Props) {
     return <ErrorScreen title="Kunde inte hämta sidan" message={message} />;
   }
 
-  let divisions: Division[] = [];
-  try {
-    divisions = await loadDivisions(apiKey);
-  } catch (err) {
-    console.error('[edit-product-area] Could not load divisions:', err);
-  }
-
-  return <ProductAreaBuilder initialState={state} divisions={divisions} />;
+  return (
+    <PageTypeBuilder
+      uiDef={productAreaUI}
+      initialState={state}
+      mode="edit"
+      recordId={recordId}
+    />
+  );
 }
 
 function ErrorScreen({ title, message }: { title: string; message: string }) {

@@ -3,67 +3,18 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-
-interface PageRow {
-  id: string;
-  name: string;
-  slug: string;
-  h1: string;
-  type: PageType;
-  /** Linked SSOT records (when the page type carries them). Populated from
-   *  the list-endpoint per page type. Absent fields = page type doesn't
-   *  expose that link. */
-  divisionIds?: string[];
-  countryIds?: string[];
-}
+import {
+  PAGE_TYPES,
+  TYPE_LABEL,
+  getPageType,
+  type PageRow,
+  type PageTypeId as PageType,
+} from '@/lib/page-types/registry';
 
 interface SsotOption {
   recordId: string;
   label: string;
 }
-
-type PageType = 'landing' | 'product' | 'audience' | 'unique';
-
-interface TypeDef {
-  id: PageType;
-  label: string;
-  description: string;
-  editPath: (id: string) => string;
-}
-
-const PAGE_TYPES: TypeDef[] = [
-  {
-    id: 'landing',
-    label: 'Landing',
-    description: 'Kampanj- och konverteringssida',
-    editPath: (id) => `/editor/${id}`,
-  },
-  {
-    id: 'product',
-    label: 'Produkt',
-    description: 'Produktområdesida med produkter och lösningar',
-    editPath: (id) => `/editor/product-area/${id}`,
-  },
-  {
-    id: 'audience',
-    label: 'Kundtyp',
-    description: 'Kundtyp-hero + värdeproposition',
-    editPath: (id) => `/editor/audience/${id}`,
-  },
-  {
-    id: 'unique',
-    label: 'Egen',
-    description: 'Tier 2-sida (om-oss, karriär osv.) med fast sektion-struktur',
-    editPath: (id) => `/editor/unique/${id}`,
-  },
-];
-
-const TYPE_LABEL: Record<PageType, string> = {
-  landing: 'Landing',
-  product: 'Produkt',
-  audience: 'Kundtyp',
-  unique: 'Egen',
-};
 
 export default function PageManager() {
   const router = useRouter();
@@ -114,69 +65,26 @@ export default function PageManager() {
   useEffect(() => {
     let cancelled = false;
 
-    // Fetch both page types in parallel. A failure in one doesn't break the other.
-    Promise.all([
-      fetch('/api/read?action=list')
-        .then((r) => r.json())
-        .then((data) => {
-          if (data.error) throw new Error(data.error);
-          return (data.pages ?? []).map((p: Omit<PageRow, 'type'>) => ({ ...p, type: 'landing' as const }));
-        })
-        .catch((err) => {
-          console.error('[page-manager] LP fetch failed:', err);
-          return [] as PageRow[];
-        }),
-      fetch('/api/product-area?action=list')
-        .then((r) => r.json())
-        .then((data) => {
-          if (data.error) throw new Error(data.error);
-          return (data.pages ?? []).map((p: Omit<PageRow, 'type' | 'countryIds'>) => ({
-            ...p,
-            type: 'product' as const,
-          }));
-        })
-        .catch((err) => {
-          console.error('[page-manager] PA fetch failed:', err);
-          return [] as PageRow[];
-        }),
-      fetch('/api/audience?action=list')
-        .then((r) => r.json())
-        .then((data) => {
-          if (data.error) throw new Error(data.error);
-          return (data.pages ?? []).map((p: Omit<PageRow, 'type'>) => ({ ...p, type: 'audience' as const }));
-        })
-        .catch((err) => {
-          console.error('[page-manager] Audience fetch failed:', err);
-          return [] as PageRow[];
-        }),
-      fetch('/api/unique-page?action=list')
-        .then((r) => r.json())
-        .then((data) => {
-          if (data.error) throw new Error(data.error);
-          return (data.pages ?? []).map((p: {
-            id: string;
-            slug: string;
-            h1: string;
-            divisionIds?: string[];
-            countryIds?: string[];
-          }) => ({
-            id: p.id,
-            name: p.h1 || p.slug,
-            slug: p.slug,
-            h1: p.h1,
-            type: 'unique' as const,
-            divisionIds: p.divisionIds,
-            countryIds: p.countryIds,
-          }));
-        })
-        .catch((err) => {
-          console.error('[page-manager] Unique fetch failed:', err);
-          return [] as PageRow[];
-        }),
-    ])
-      .then(([lps, pas, auds, uniques]) => {
+    // Iterera över registry:n — en ny sidtyp behöver bara registreras i
+    // lib/page-types/registry.ts för att dyka upp här. Failure i en typ
+    // bryter inte de andra (per-typ-catch returnerar tom array).
+    Promise.all(
+      PAGE_TYPES.map((type) =>
+        fetch(type.listUrl)
+          .then((r) => r.json())
+          .then((data) => {
+            if (data.error) throw new Error(data.error);
+            return type.mapList(data);
+          })
+          .catch((err) => {
+            console.error(`[page-manager] ${type.id} fetch failed:`, err);
+            return [] as PageRow[];
+          }),
+      ),
+    )
+      .then((perTypeResults) => {
         if (cancelled) return;
-        const merged = [...lps, ...pas, ...auds, ...uniques].sort((a, b) => a.name.localeCompare(b.name, 'sv'));
+        const merged = perTypeResults.flat().sort((a, b) => a.name.localeCompare(b.name, 'sv'));
         setPages(merged);
       })
       .catch((err) => {

@@ -1,66 +1,62 @@
 'use client';
 
 import { AudienceState } from '@/lib/audience-types';
-import { FieldInput, RichTextarea } from '@/components/editors/FieldInput';
-import EditorSection from '@/components/editors/EditorSection';
+import { Field } from '@/components/shared/fields';
+import type { SectionEditorProps } from '@/lib/page-types/types';
 
-interface Props {
-  state: AudienceState;
-  setField: <K extends keyof AudienceState>(key: K, value: AudienceState[K]) => void;
-  visible: boolean;
-  onToggleVisible: (v: boolean) => void;
-}
+export default function ValueEditor({ state, onChange }: SectionEditorProps<AudienceState>) {
+  const set = <K extends keyof AudienceState>(key: K, value: AudienceState[K]) =>
+    onChange({ ...state, [key]: value });
 
-export default function ValueEditor({ state, setField, visible, onToggleVisible }: Props) {
   return (
-    <EditorSection title="Värdeproposition" visible={visible} onToggleVisible={onToggleVisible}>
-      <FieldInput
+    <>
+      <Field.Text
         label="H2"
         value={state.valueH2}
-        onChange={(v) => setField('valueH2', v)}
+        onChange={(v) => set('valueH2', v)}
         placeholder="Därför väljer 250+ tillverkare oss"
       />
 
-      <RichTextarea
+      <Field.RichText
         label="Brödtext 1"
         value={state.valueText1}
-        onChange={(v) => setField('valueText1', v)}
+        onChange={(v) => set('valueText1', v)}
         rows={5}
         placeholder="Längre paragraf om värdet…"
       />
 
-      <RichTextarea
+      <Field.RichText
         label="Brödtext 2"
         value={state.valueText2}
-        onChange={(v) => setField('valueText2', v)}
+        onChange={(v) => set('valueText2', v)}
         rows={5}
         placeholder="Andra paragrafen (valfri)…"
       />
 
-      <RichTextarea
+      <Field.RichText
         label="Benefit 1"
         value={state.benefit1}
-        onChange={(v) => setField('benefit1', v)}
+        onChange={(v) => set('benefit1', v)}
         rows={2}
         hint="**ord** för markerad text"
         placeholder="**Snabb leverans** från lokalt lager"
       />
-      <RichTextarea
+      <Field.RichText
         label="Benefit 2"
         value={state.benefit2}
-        onChange={(v) => setField('benefit2', v)}
+        onChange={(v) => set('benefit2', v)}
         rows={2}
         hint="**ord** för markerad text"
         placeholder="**Personlig support** av automationsexperter"
       />
-      <RichTextarea
+      <Field.RichText
         label="Benefit 3"
         value={state.benefit3}
-        onChange={(v) => setField('benefit3', v)}
+        onChange={(v) => set('benefit3', v)}
         rows={2}
         hint="**ord** för markerad text"
         placeholder="**Lång erfarenhet** av nordisk industri"
       />
-    </EditorSection>
+    </>
   );
 }

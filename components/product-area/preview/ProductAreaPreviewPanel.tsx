@@ -1,7 +1,8 @@
 'use client';
 
-import { useEffect, useRef } from 'react';
+import { useRef } from 'react';
 import { ProductAreaState, ProductAreaSectionId, NormalSection } from '@/lib/product-area-types';
+import { useScrollToActiveSection } from '@/hooks/useScrollToActiveSection';
 import TopBannerPreview from './TopBannerPreview';
 import HeroPreview from './HeroPreview';
 import NormalSectionPreview from './NormalSectionPreview';
@@ -10,24 +11,15 @@ import SolutionsPreview from './SolutionsPreview';
 import ContactPreview from './ContactPreview';
 import ContactFormPreview from '@/components/contact-form/ContactFormPreview';
 
-interface Visibility {
-  content: boolean;
-  products: boolean;
-  solutions: boolean;
-  contact: boolean;
-}
-
 interface Props {
   state: ProductAreaState;
-  activeSection: ProductAreaSectionId | null;
-  onSectionClick: (id: ProductAreaSectionId) => void;
+  /** PageTypeBuilder skickar `string | null` — vi normaliserar internt. */
+  activeSection: ProductAreaSectionId | string | null;
+  onSectionClick: (id: string) => void;
   /** Increments whenever the user focuses an editor field — triggers the
    *  preview to scroll so the active section lands in the centre of the
-   *  visible area. Mirrors the Landing Page editor's behaviour. */
+   *  visible area. */
   scrollTrigger: number;
-  /** Client-only per-section visibility. Sections turned off are hidden
-   *  from the preview regardless of whether they have content. */
-  visibility: Visibility;
 }
 
 /**
@@ -49,21 +41,11 @@ export default function ProductAreaPreviewPanel({
   activeSection,
   onSectionClick,
   scrollTrigger,
-  visibility,
 }: Props) {
   const pageRef = useRef<HTMLDivElement>(null);
-
-  // Scroll the active section into the centre of the preview pane whenever
-  // the active section or scrollTrigger changes. Uses the `data-section`
-  // attribute already applied by PreviewSection, so we don't need to thread
-  // refs through every sub-component.
-  useEffect(() => {
-    if (!activeSection || !pageRef.current) return;
-    const el = pageRef.current.querySelector(`[data-section="${activeSection}"]`);
-    if (el) {
-      (el as HTMLElement).scrollIntoView({ behavior: 'smooth', block: 'center' });
-    }
-  }, [activeSection, scrollTrigger]);
+  useScrollToActiveSection(pageRef, activeSection, scrollTrigger);
+  const activeId = activeSection as ProductAreaSectionId | null;
+  const onSelect = (id: ProductAreaSectionId) => onSectionClick(id);
 
   const normals: Array<{ n: 1 | 2 | 3 | 4; section: NormalSection }> = [
     { n: 1, section: state.normal1 },
@@ -102,45 +84,45 @@ export default function ProductAreaPreviewPanel({
         </div>
 
         <div style={{ fontFamily: 'var(--font-dm-sans)', color: '#11325D' }}>
-          <TopBannerPreview state={state} active={activeSection} onSelect={onSectionClick} />
-          <HeroPreview state={state} active={activeSection} onSelect={onSectionClick} />
+          <TopBannerPreview state={state} active={activeId} onSelect={onSelect} />
+          <HeroPreview state={state} active={activeId} onSelect={onSelect} />
 
-          {visibility.content && early.map(({ n, section }) => (
+          {state.showContent && early.map(({ n, section }) => (
             <NormalSectionPreview
               key={`early-${n}`}
               n={n}
               section={section}
-              active={activeSection}
-              onSelect={onSectionClick}
+              active={activeId}
+              onSelect={onSelect}
             />
           ))}
 
-          {visibility.products && (
-            <ProductsPreview state={state} active={activeSection} onSelect={onSectionClick} />
+          {state.showProducts && (
+            <ProductsPreview state={state} active={activeId} onSelect={onSelect} />
           )}
-          {visibility.solutions && (
-            <SolutionsPreview state={state} active={activeSection} onSelect={onSectionClick} />
+          {state.showSolutions && (
+            <SolutionsPreview state={state} active={activeId} onSelect={onSelect} />
           )}
 
-          {visibility.content && late.map(({ n, section }) => (
+          {state.showContent && late.map(({ n, section }) => (
             <NormalSectionPreview
               key={`late-${n}`}
               n={n}
               section={section}
-              active={activeSection}
-              onSelect={onSectionClick}
+              active={activeId}
+              onSelect={onSelect}
             />
           ))}
 
-          {visibility.contact && (
-            <ContactPreview state={state} active={activeSection} onSelect={onSectionClick} />
+          {state.showContact && (
+            <ContactPreview state={state} active={activeId} onSelect={onSelect} />
           )}
 
           {state.showContactForm && (
             <div
               data-section="contactForm"
-              onClick={() => onSectionClick('contactForm')}
-              className={`relative cursor-pointer ${activeSection === 'contactForm' ? 'ring-2 ring-orange-400 ring-inset' : ''}`}
+              onClick={() => onSelect('contactForm')}
+              className={`relative cursor-pointer ${activeId === 'contactForm' ? 'ring-2 ring-orange-400 ring-inset' : ''}`}
             >
               <ContactFormPreview state={state.contactForm} />
             </div>

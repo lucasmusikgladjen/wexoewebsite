@@ -2,16 +2,9 @@
 
 import { useState } from 'react';
 import { ProductAreaState, NormalSection } from '@/lib/product-area-types';
-import { FieldInput, FieldCheckbox, FieldColor, RichTextarea } from '@/components/editors/FieldInput';
-import EditorSection from '@/components/editors/EditorSection';
-import CollapsibleCard from './CollapsibleCard';
-
-interface Props {
-  state: ProductAreaState;
-  setNormal: (n: 1 | 2 | 3 | 4, patch: Partial<NormalSection>) => void;
-  visible: boolean;
-  onToggleVisible: (v: boolean) => void;
-}
+import { Field } from '@/components/shared/fields';
+import RepeaterCard from '@/components/shared/RepeaterCard';
+import type { SectionEditorProps } from '@/lib/page-types/types';
 
 /** True when a block has *any* content filled in — used to decide whether to
  *  auto-reveal and default-expand it. */
@@ -19,8 +12,13 @@ function hasContent(n: NormalSection): boolean {
   return !!(n.h2.trim() || n.text.trim() || n.bullets.trim() || n.image.trim());
 }
 
-export default function ContentBlocksEditor({ state, setNormal, visible, onToggleVisible }: Props) {
+export default function ContentBlocksEditor({ state, onChange }: SectionEditorProps<ProductAreaState>) {
   const sections = [state.normal1, state.normal2, state.normal3, state.normal4];
+
+  const setNormal = (n: 1 | 2 | 3 | 4, patch: Partial<NormalSection>) => {
+    const key = `normal${n}` as 'normal1' | 'normal2' | 'normal3' | 'normal4';
+    onChange({ ...state, [key]: { ...state[key], ...patch } });
+  };
 
   // Auto-reveal enough slots on mount to cover all filled blocks — even if
   // some middle blocks are empty (mirrors how the PHP plugin skips empty
@@ -38,28 +36,20 @@ export default function ContentBlocksEditor({ state, setNormal, visible, onToggl
   const clearBlock = (index: number) => {
     const n = (index + 1) as 1 | 2 | 3 | 4;
     setNormal(n, {
-      h2: '',
-      text: '',
-      bullets: '',
-      image: '',
-      reversed: false,
-      bg: '',
-      upp: false,
+      h2: '', text: '', bullets: '', image: '', reversed: false, bg: '', upp: false,
     });
-    // If the cleared block was the last visible one, collapse the slot away
-    // so the user can undo an accidental "+ Lägg till" with one click.
     if (index === visibleCount - 1 && visibleCount > 1) {
       setVisibleCount((v) => v - 1);
     }
   };
 
   return (
-    <EditorSection title="Innehåll" visible={visible} onToggleVisible={onToggleVisible}>
+    <>
       {Array.from({ length: visibleCount }).map((_, i) => {
         const n = (i + 1) as 1 | 2 | 3 | 4;
         const section = sections[i];
         return (
-          <CollapsibleCard
+          <RepeaterCard
             key={n}
             index={i}
             title={section.h2}
@@ -69,15 +59,14 @@ export default function ContentBlocksEditor({ state, setNormal, visible, onToggl
             removeTitle="Ta bort sektion"
             defaultOpen={!hasContent(section)}
           >
-            <RichTextarea
+            <Field.RichText
               label="Brödtext"
               value={section.text}
               onChange={(v) => setNormal(n, { text: v })}
               rows={6}
               placeholder="Beskrivande text för sektionen…"
             />
-
-            <RichTextarea
+            <Field.RichText
               label="Punkter"
               value={section.bullets}
               onChange={(v) => setNormal(n, { bullets: v })}
@@ -85,34 +74,31 @@ export default function ContentBlocksEditor({ state, setNormal, visible, onToggl
               hint="en per rad"
               placeholder={'Första punkten\nAndra punkten'}
             />
-
-            <FieldInput
+            <Field.Text
               label="Bild"
               value={section.image}
               onChange={(v) => setNormal(n, { image: v })}
               placeholder="https://..."
             />
-
             <div className="flex items-center gap-5 pt-0.5">
-              <FieldCheckbox
+              <Field.Checkbox
                 label="Bild till vänster"
                 checked={section.reversed}
                 onChange={(v) => setNormal(n, { reversed: v })}
               />
-              <FieldCheckbox
+              <Field.Checkbox
                 label="Före produkter"
                 checked={section.upp}
                 onChange={(v) => setNormal(n, { upp: v })}
               />
             </div>
-
-            <FieldColor
+            <Field.Color
               label="Bakgrundsfärg"
               value={section.bg}
               onChange={(v) => setNormal(n, { bg: v })}
               defaultColor={i % 2 === 1 ? '#F8F9FA' : '#FFFFFF'}
             />
-          </CollapsibleCard>
+          </RepeaterCard>
         );
       })}
 
@@ -125,6 +111,6 @@ export default function ContentBlocksEditor({ state, setNormal, visible, onToggl
           + Lägg till sektion
         </button>
       )}
-    </EditorSection>
+    </>
   );
 }

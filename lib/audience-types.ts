@@ -23,6 +23,10 @@ export interface AudienceState {
   statNumber: string;
   statLabel: string;
 
+  /** UI-state: visa Värdeproposition-sektionen i editorn och i preview.
+   *  Persisteras INTE i Airtable — fromRecord beräknar default från om
+   *  fälten har innehåll. */
+  showValue: boolean;
   // Value proposition
   valueH2: string;
   valueText1: string;
@@ -31,6 +35,8 @@ export interface AudienceState {
   benefit2: string;
   benefit3: string;
 
+  /** UI-state: visa Case-kort-sektionen. Se kommentar på `showValue`. */
+  showCase: boolean;
   // Case card
   caseTitle: string;
   caseDescription: string;
@@ -61,6 +67,7 @@ export function emptyAudienceState(): AudienceState {
     statNumber: '',
     statLabel: '',
 
+    showValue: false,
     valueH2: '',
     valueText1: '',
     valueText2: '',
@@ -68,6 +75,7 @@ export function emptyAudienceState(): AudienceState {
     benefit2: '',
     benefit3: '',
 
+    showCase: false,
     caseTitle: '',
     caseDescription: '',
     caseResult: '',

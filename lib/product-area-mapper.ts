@@ -16,9 +16,8 @@ import {
   generateClientId,
 } from './product-area-types';
 import { AirtableRecord, LEGACY_BASE_ID } from './airtable';
-import { ContactFormState, ContactFormLayout, ContactFormTheme, emptyContactFormState } from './contact-form-types';
-
-type Fields = Record<string, unknown>;
+import { AirtableFields as Fields, str, bool, num } from './airtable-helpers';
+import { contactFormFromFields } from './contact-form-mapper';
 
 // ─── Table IDs (Product Area family) ───────────────────────────────────────
 //
@@ -38,20 +37,6 @@ export const PA_TABLE_IDS = {
   solutions: 'tblc98m9MJcpbWAVU',
   divisions: 'tblKam1tUTlR13atl',
 } as const;
-
-// ─── Helpers ───────────────────────────────────────────────────────────────
-
-function str(fields: Fields, key: string): string {
-  const v = fields[key];
-  return typeof v === 'string' ? v : '';
-}
-function bool(fields: Fields, key: string): boolean {
-  return fields[key] === true;
-}
-function num(fields: Fields, key: string, fallback = 0): number {
-  const v = fields[key];
-  return typeof v === 'number' ? v : fallback;
-}
 
 // ─── Reverse: Airtable → state ─────────────────────────────────────────────
 
@@ -213,33 +198,18 @@ export function productAreaStateFromRecords(args: {
 
     division: ((f['Division'] as string[] | undefined) ?? []).slice(),
 
-    showContactForm: f['Show Contact Form'] === true,
-    contactForm: contactFormFromRecord(productArea),
-  };
-}
+    // show*-flaggor persisteras inte i Airtable — defaulta till "på" om
+    // sektionen har innehåll, annars "av". Speglar legacy ProductAreaBuilder:s
+    // visibility-state.
+    showContent: ([1, 2, 3, 4] as const).some((n) => {
+      const sec = normalFromFields(f, n);
+      return sec.h2.trim() || sec.text.trim();
+    }),
+    showProducts: orderedProducts.length > 0,
+    showSolutions: orderedSolutions.length > 0,
+    showContact: !!str(f, 'Contact Name').trim(),
 
-function contactFormFromRecord(record: AirtableRecord): ContactFormState {
-  const f = record.fields;
-  const empty = emptyContactFormState();
-  const str = (k: string) => (typeof f[k] === 'string' ? (f[k] as string) : '');
-  const boolOr = (k: string, fallback: boolean) =>
-    f[k] === true ? true : f[k] === false ? false : fallback;
-  const layoutRaw = str('Contact Form Layout');
-  const themeRaw = str('Contact Form Theme');
-  return {
-    eyebrow: str('Contact Form Eyebrow'),
-    title: str('Contact Form Title'),
-    subtitle: str('Contact Form Subtitle'),
-    layout: (layoutRaw === 'centered' ? 'centered' : 'split') as ContactFormLayout,
-    theme: (themeRaw === 'light' ? 'light' : 'dark') as ContactFormTheme,
-    showCompany: boolOr('Contact Form Show Company', empty.showCompany),
-    showPhone: boolOr('Contact Form Show Phone', empty.showPhone),
-    showDropdown: boolOr('Contact Form Show Dropdown', empty.showDropdown),
-    dropdownLabel: str('Contact Form Dropdown Label'),
-    options: str('Contact Form Options'),
-    ctaText: str('Contact Form CTA Text'),
-    messageLabel: str('Contact Form Message Label'),
-    trustSignals: str('Contact Form Trust Signals'),
-    showContactPerson: boolOr('Contact Form Show Contact Person', empty.showContactPerson),
+    showContactForm: f['Show Contact Form'] === true,
+    contactForm: contactFormFromFields(productArea.fields),
   };
 }

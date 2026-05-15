@@ -1,28 +1,25 @@
 'use client';
 
 import { TextOnlyState } from '@/lib/unique-page-types';
-import CollapsibleSection, { FieldRow, TextInput, TextareaInput, SelectInput } from './CollapsibleSection';
+import { Field } from '@/components/shared/fields';
 
 interface Props {
   state: TextOnlyState;
   onChange: (s: TextOnlyState) => void;
-  visible: boolean;
-  onToggleVisible: (v: boolean) => void;
 }
 
-export default function TextOnlyEditor({ state, onChange, visible, onToggleVisible }: Props) {
+export default function TextOnlyEditor({ state, onChange }: Props) {
   const set = <K extends keyof TextOnlyState>(k: K, v: TextOnlyState[K]) => onChange({ ...state, [k]: v });
   return (
-    <CollapsibleSection title="Text" visible={visible} onToggleVisible={onToggleVisible}>
-      <FieldRow label="H2"><TextInput value={state.h2} onChange={(v) => set('h2', v)} /></FieldRow>
-      <FieldRow label="Brödtext"><TextareaInput value={state.body} onChange={(v) => set('body', v)} rows={5} /></FieldRow>
-      <FieldRow label="Justering">
-        <SelectInput
-          value={state.align}
-          onChange={(v) => set('align', v)}
-          options={[{ value: 'left', label: 'Vänster' }, { value: 'center', label: 'Centrerat' }]}
-        />
-      </FieldRow>
-    </CollapsibleSection>
+    <>
+      <Field.Text label="H2" value={state.h2} onChange={(v) => set('h2', v)} />
+      <Field.Textarea label="Brödtext" rows={5} value={state.body} onChange={(v) => set('body', v)} />
+      <Field.Select<'left' | 'center'>
+        label="Justering"
+        value={state.align}
+        onChange={(v) => set('align', v)}
+        options={[{ value: 'left', label: 'Vänster' }, { value: 'center', label: 'Centrerat' }]}
+      />
+    </>
   );
 }

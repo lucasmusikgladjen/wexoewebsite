@@ -7,34 +7,20 @@
  */
 
 import { AirtableRecord } from './airtable';
+import { asString, asNumber, asBool, asLinkIds } from './airtable-helpers';
+import { contactFormFromFields, contactFormToFields } from './contact-form-mapper';
 import {
   UniquePageState,
   emptyUniquePageState,
   Theme,
   TextOnlyAlign,
-  ContactFormLayout,
 } from './unique-page-types';
 
-function asString(v: unknown): string {
-  return typeof v === 'string' ? v : (v == null ? '' : String(v));
-}
-function asNumber(v: unknown): number {
-  if (typeof v === 'number') return v;
-  if (typeof v === 'string' && v !== '') { const n = Number(v); if (!Number.isNaN(n)) return n; }
-  return 0;
-}
-function asBool(v: unknown): boolean { return v === true || v === 'true' || v === 1; }
-function asLinkIds(v: unknown): string[] {
-  return Array.isArray(v) ? v.filter((x): x is string => typeof x === 'string') : [];
-}
 function asTheme(v: unknown, def: Theme = 'dark'): Theme {
   return v === 'light' ? 'light' : v === 'dark' ? 'dark' : def;
 }
 function asAlign(v: unknown): TextOnlyAlign {
   return v === 'center' ? 'center' : 'left';
-}
-function asLayout(v: unknown): ContactFormLayout {
-  return v === 'centered' ? 'centered' : 'split';
 }
 
 export function uniquePageStateFromRecord(rec: AirtableRecord): UniquePageState {
@@ -140,24 +126,9 @@ export function uniquePageStateFromRecord(rec: AirtableRecord): UniquePageState 
     theme: asTheme(f['cta_banner_theme']),
   };
 
-  // Contact Form
+  // Contact Form — snake_case-prefixed fält i cms_unique_pages.
   state.showContactForm = asBool(f['show_contact_form']);
-  state.contactForm = {
-    eyebrow: asString(f['contact_form_eyebrow']),
-    title: asString(f['contact_form_title']),
-    subtitle: asString(f['contact_form_subtitle']),
-    layout: asLayout(f['contact_form_layout']),
-    theme: asTheme(f['contact_form_theme']),
-    showCompany: asBool(f['contact_form_show_company']),
-    showPhone: asBool(f['contact_form_show_phone']),
-    showDropdown: asBool(f['contact_form_show_dropdown']),
-    dropdownLabel: asString(f['contact_form_dropdown_label']),
-    options: asString(f['contact_form_options']),
-    ctaText: asString(f['contact_form_cta_text']),
-    messageLabel: asString(f['contact_form_message_label']),
-    trustSignals: asString(f['contact_form_trust_signals']),
-    showContactPerson: asBool(f['contact_form_show_contact_person']),
-  };
+  state.contactForm = contactFormFromFields(f, 'contact_form_');
 
   return state;
 }
@@ -240,20 +211,7 @@ export function uniquePageStateToFields(
     'cta_banner_theme': state.ctaBanner.theme,
 
     'show_contact_form': state.showContactForm,
-    'contact_form_eyebrow': state.contactForm.eyebrow || null,
-    'contact_form_title': state.contactForm.title || null,
-    'contact_form_subtitle': state.contactForm.subtitle || null,
-    'contact_form_layout': state.contactForm.layout,
-    'contact_form_theme': state.contactForm.theme,
-    'contact_form_show_company': state.contactForm.showCompany,
-    'contact_form_show_phone': state.contactForm.showPhone,
-    'contact_form_show_dropdown': state.contactForm.showDropdown,
-    'contact_form_dropdown_label': state.contactForm.dropdownLabel || null,
-    'contact_form_options': state.contactForm.options || null,
-    'contact_form_cta_text': state.contactForm.ctaText || null,
-    'contact_form_message_label': state.contactForm.messageLabel || null,
-    'contact_form_trust_signals': state.contactForm.trustSignals || null,
-    'contact_form_show_contact_person': state.contactForm.showContactPerson,
+    ...contactFormToFields(state.contactForm, { prefix: 'contact_form_', nullForEmpty: true }),
   };
 
   const out: Record<string, unknown> = {};
