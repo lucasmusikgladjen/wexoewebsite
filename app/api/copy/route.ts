@@ -252,7 +252,10 @@ async function copyCustomerType(
 
   const fields: Record<string, unknown> = { ...source.fields };
   fields.slug = newSlug;
-  if (name?.trim()) fields.name = name.trim();
+  // Skriv alltid newName till fields.name — annars ärver kopian källans namn
+  // medan svaret/UI rapporterar default-copy-namnet, och list-vyn slutar
+  // visa två identiska "Installatör"-rader när användaren lämnar Name tomt.
+  fields.name = newName;
   // case_ids ärvs inte — kopian börjar utan länkade cases.
   delete fields.case_ids;
 
