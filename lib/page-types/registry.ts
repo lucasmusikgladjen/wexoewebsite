@@ -30,6 +30,13 @@
  * "Ny sida"-dialogen och list-fetchen drivs alla från registry:n.
  */
 
+import {
+  AUDIENCE_ENTITIES,
+  LP_ENTITIES,
+  PA_ENTITIES,
+  UNIQUE_PAGES_ENTITIES,
+} from '../wexoe-cache-entities';
+
 export type PageTypeId =
   | 'landing'
   | 'product'
@@ -68,6 +75,8 @@ export interface PageTypeMeta {
   createPath: string;
   /** Path till edit-vyn för ett givet record. */
   editPath: (recordId: string) => string;
+  /** Core-entiteter som ska invalidieras när sidtypen muteras. */
+  cacheEntities: readonly string[];
   /** Konvertera ett list-response till homepage:ns PageRow[]. */
   mapList: (data: RawListResponse) => PageRow[];
 }
@@ -85,7 +94,16 @@ function pickStringArray(p: Record<string, unknown>, key: string): string[] | un
   return Array.isArray(v) ? (v.filter((x) => typeof x === 'string') as string[]) : undefined;
 }
 
-export const PAGE_TYPES: readonly PageTypeMeta[] = [
+function definePageTypes<const T extends readonly PageTypeMeta[]>(types: T): T {
+  const seen = new Set<PageTypeId>();
+  for (const type of types) {
+    if (seen.has(type.id)) throw new Error(`Duplicate page type id: ${type.id}`);
+    seen.add(type.id);
+  }
+  return types;
+}
+
+export const PAGE_TYPES = definePageTypes([
   {
     id: 'landing',
     label: 'Landing',
@@ -94,6 +112,7 @@ export const PAGE_TYPES: readonly PageTypeMeta[] = [
     listUrl: '/api/read?action=list',
     createPath: '/editor',
     editPath: (id) => `/editor/${id}`,
+    cacheEntities: LP_ENTITIES,
     mapList: (data) =>
       (data.pages ?? []).map((p) => ({
         id: pickString(p, 'id'),
@@ -113,6 +132,7 @@ export const PAGE_TYPES: readonly PageTypeMeta[] = [
     listUrl: '/api/product-area?action=list',
     createPath: '/editor/product-area',
     editPath: (id) => `/editor/product-area/${id}`,
+    cacheEntities: PA_ENTITIES,
     mapList: (data) =>
       (data.pages ?? []).map((p) => ({
         id: pickString(p, 'id'),
@@ -131,6 +151,7 @@ export const PAGE_TYPES: readonly PageTypeMeta[] = [
     listUrl: '/api/audience?action=list',
     createPath: '/editor/audience',
     editPath: (id) => `/editor/audience/${id}`,
+    cacheEntities: AUDIENCE_ENTITIES,
     mapList: (data) =>
       (data.pages ?? []).map((p) => ({
         id: pickString(p, 'id'),
@@ -148,6 +169,7 @@ export const PAGE_TYPES: readonly PageTypeMeta[] = [
     listUrl: '/api/unique-page?action=list',
     createPath: '/editor/unique',
     editPath: (id) => `/editor/unique/${id}`,
+    cacheEntities: UNIQUE_PAGES_ENTITIES,
     mapList: (data) =>
       (data.pages ?? []).map((p) => ({
         id: pickString(p, 'id'),
@@ -159,7 +181,7 @@ export const PAGE_TYPES: readonly PageTypeMeta[] = [
         countryIds: pickStringArray(p, 'countryIds'),
       })),
   },
-];
+]);
 
 export function getPageType(id: PageTypeId): PageTypeMeta {
   const found = PAGE_TYPES.find((t) => t.id === id);

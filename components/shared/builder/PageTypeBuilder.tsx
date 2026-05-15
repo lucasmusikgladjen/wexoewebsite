@@ -24,11 +24,11 @@
  * och i create/edit-routes per Etapp 3-planen.
  */
 
-import { useCallback, useState } from 'react';
+import { useCallback, useMemo, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import BuilderShell from '@/components/BuilderShell';
-import EditorSection from '@/components/editors/EditorSection';
-import { SaveButton, SaveStatus } from './';
+import SectionEditor from '@/components/shared/SectionEditor';
+import { ErrorToast, SaveBar, UnsavedChangesGuard } from './';
 import type {
   PageTypeUIDef,
   SectionDef,
@@ -47,6 +47,10 @@ export interface PageTypeBuilderProps<TState> {
   mode: 'create' | 'edit';
   /** Befintligt Airtable record-ID — krävs om mode === 'edit'. */
   recordId?: string;
+  /** Explicit API endpoint. Needed because UI ids and route slugs can diverge. */
+  apiPath?: string;
+  /** Edit route template after create, e.g. /editor/audience/:recordId. */
+  editPath?: string;
   /**
    * Hook som körs efter lyckad save. Tar emot save-resultet (inkl.
    * `relations` om sidtypen har sådana) och nuvarande state, returnerar
@@ -75,6 +79,8 @@ export default function PageTypeBuilder<TState>({
   initialState,
   mode,
   recordId,
+  apiPath,
+  editPath,
   onSaved,
 }: PageTypeBuilderProps<TState>) {
   const router = useRouter();
@@ -86,6 +92,9 @@ export default function PageTypeBuilder<TState>({
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [justSaved, setJustSaved] = useState(false);
+  const savedSnapshotRef = useRef(JSON.stringify(initialState));
+  const currentSnapshot = useMemo(() => JSON.stringify(state), [state]);
+  const isDirty = currentSnapshot !== savedSnapshotRef.current;
 
   const isCreate = mode === 'create';
   const canSave = uiDef.canSave ? uiDef.canSave(state) : true;
@@ -105,7 +114,8 @@ export default function PageTypeBuilder<TState>({
     setSaving(true);
     setError(null);
 
-    const url = isCreate ? `/api/${uiDef.id}` : `/api/${uiDef.id}?id=${recordId}`;
+    const endpoint = apiPath ?? `/api/${uiDef.id}`;
+    const url = isCreate ? endpoint : `${endpoint}?id=${recordId}`;
     const method = isCreate ? 'POST' : 'PATCH';
 
     try {
@@ -123,7 +133,9 @@ export default function PageTypeBuilder<TState>({
         // Redirecta så URL:en matchar den nya record:en. State hydreras om
         // från servern via fromRecord på edit-routen — inga relations-IDs
         // behöver smyga in på state här.
-        router.replace(`/editor/${uiDef.id}/${data.recordId}`);
+        savedSnapshotRef.current = JSON.stringify(state);
+        setJustSaved(true);
+        router.replace((editPath ?? `/editor/${uiDef.id}/:recordId`).replace(':recordId', data.recordId));
         return;
       }
 
@@ -135,7 +147,9 @@ export default function PageTypeBuilder<TState>({
             state,
           )
         : undefined;
+      const savedState = next !== undefined ? next : state;
       if (next !== undefined) setState(next);
+      savedSnapshotRef.current = JSON.stringify(savedState);
       setJustSaved(true);
       if (!onSaved) router.refresh();
     } catch (err) {
@@ -178,51 +192,58 @@ export default function PageTypeBuilder<TState>({
     </div>
   ) : undefined;
 
-  const toolbarMiddle = (
-    <SaveStatus
-      error={error}
-      justSaved={justSaved}
-      hint={uiDef.canSaveHint}
-      canSave={canSave}
-    />
-  );
+  const toolbarMiddle = error ? (
+    <span className="text-xs text-red-500 truncate max-w-xs">{error}</span>
+  ) : undefined;
 
   const toolbarRight = (
-    <SaveButton onClick={handleSave} saving={saving} canSave={canSave} isCreate={isCreate} />
+    <SaveBar
+      dirty={isDirty}
+      saving={saving}
+      canSave={canSave}
+      justSaved={justSaved}
+      isCreate={isCreate}
+      onSave={handleSave}
+      hint={uiDef.canSaveHint}
+    />
   );
 
   const PreviewLayout = uiDef.previewLayout;
 
   return (
-    <BuilderShell
-      toolbar={{ left: toolbarLeft, middle: toolbarMiddle, right: toolbarRight }}
-      quickNav={quickNav}
-      activeSection={activeSection}
-      onActiveSectionChange={(id) => setActiveSection(id)}
-      previewPanel={
-        <PreviewLayout
-          state={state}
-          activeSection={activeSection}
-          scrollTrigger={scrollTrigger}
-          onSectionClick={(id) => setActiveSection(id)}
-        />
-      }
-      editorSections={({ sectionRef, onSectionFocus }) =>
-        uiDef.sections.map((section) => (
-          <SectionWrapper
-            key={section.id}
-            section={section}
+    <>
+      <UnsavedChangesGuard active={isDirty && !saving} />
+      <ErrorToast message={error} onClose={() => setError(null)} />
+      <BuilderShell
+        toolbar={{ left: toolbarLeft, middle: toolbarMiddle, right: toolbarRight }}
+        quickNav={quickNav}
+        activeSection={activeSection}
+        onActiveSectionChange={(id) => setActiveSection(id)}
+        previewPanel={
+          <PreviewLayout
             state={state}
-            setState={update}
-            sectionRef={sectionRef(section.id)}
-            onFocus={() => {
-              onSectionFocus(section.id);
-              handleSectionFocus(section.id);
-            }}
+            activeSection={activeSection}
+            scrollTrigger={scrollTrigger}
+            onSectionClick={(id) => setActiveSection(id)}
           />
-        ))
-      }
-    />
+        }
+        editorSections={({ sectionRef, onSectionFocus }) =>
+          uiDef.sections.map((section) => (
+            <SectionWrapper
+              key={section.id}
+              section={section}
+              state={state}
+              setState={update}
+              sectionRef={sectionRef(section.id)}
+              onFocus={() => {
+                onSectionFocus(section.id);
+                handleSectionFocus(section.id);
+              }}
+            />
+          ))
+        }
+      />
+    </>
   );
 }
 
@@ -249,19 +270,20 @@ function SectionWrapper<TState>({
   return (
     <div
       ref={sectionRef}
-      data-section={section.id}
       className="cursor-pointer"
       onClick={onFocus}
       onFocusCapture={onFocus}
     >
-      <EditorSection
+      <SectionEditor
+        id={section.id}
         title={section.label}
-        visible={toggle?.value}
-        onToggleVisible={toggle?.onChange}
+        description={section.description}
+        visibilityToggle={toggle}
         defaultOpen={!section.defaultCollapsed}
+        filledIndicator={section.isFilled?.(state)}
       >
         <Editor state={state} onChange={setState} />
-      </EditorSection>
+      </SectionEditor>
     </div>
   );
 }
