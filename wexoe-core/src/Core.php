@@ -105,23 +105,15 @@ class Core {
      * Returnerar tom sträng om typen är okänd.
      *
      * Användning:
-     *   $class = Core::renderer('team-grid');
-     *   if ($class !== '') echo $class::render(['h2' => 'Team', 'scope' => ['country' => 'SE']]);
+     *   $class = Core::renderer('contact-form');
+     *   if ($class !== '') echo $class::render([...]);
      *
      * @param string $type
      * @return string
      */
     public static function renderer($type) {
         $map = [
-            'hero'             => Renderers\Hero::class,
-            'text-image'       => Renderers\TextImage::class,
-            'text-only'        => Renderers\TextOnly::class,
-            'faq'              => Renderers\Faq::class,
-            'team-grid'        => Renderers\TeamGrid::class,
-            'partners-marquee' => Renderers\PartnersMarquee::class,
-            'testimonial-card' => Renderers\TestimonialCard::class,
-            'cta-banner'       => Renderers\CtaBanner::class,
-            'contact-form'     => Renderers\ContactForm::class,
+            'contact-form' => Renderers\ContactForm::class,
         ];
         return isset($map[$type]) && class_exists($map[$type]) ? $map[$type] : '';
     }
