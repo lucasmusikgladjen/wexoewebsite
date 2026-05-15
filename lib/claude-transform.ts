@@ -884,6 +884,14 @@ export async function transformUniquePage(
     throw new Error('Claude utelämnade uniquePage-objektet.');
   }
 
+  // country_ids/division_ids är ren passthrough — backfilla från state oavsett
+  // vad Claude returnerade. Annars riskerar en utelämnad/non-array-output i
+  // update-läget att lämna gamla länkar i Airtable när användaren tömt fältet
+  // (PATCH med utelämnad nyckel rör inte fältet). I create-läget är det också
+  // korrekt att echo:a state direkt — Claude har inget att tillföra här.
+  parsed.uniquePage.country_ids = state.countryIds;
+  parsed.uniquePage.division_ids = state.divisionIds;
+
   return parsed;
 }
 
