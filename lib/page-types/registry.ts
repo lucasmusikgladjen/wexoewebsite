@@ -33,7 +33,7 @@
 export type PageTypeId =
   | 'landing'
   | 'product'
-  | 'audience'
+  | 'customer-type'
   | 'unique';
 
 export interface PageRow {
@@ -124,20 +124,20 @@ export const PAGE_TYPES: readonly PageTypeMeta[] = [
       })),
   },
   {
-    id: 'audience',
+    id: 'customer-type',
     label: 'Kundtyp',
-    description: 'Kundtyp hero + värdeproposition',
+    description: 'Kundtyp hero + värdeproposition + länkade case',
     creatable: true,
-    listUrl: '/api/audience?action=list',
-    createPath: '/editor/audience',
-    editPath: (id) => `/editor/audience/${id}`,
+    listUrl: '/api/customer-type?action=list',
+    createPath: '/editor/customer-type',
+    editPath: (id) => `/editor/customer-type/${id}`,
     mapList: (data) =>
       (data.pages ?? []).map((p) => ({
         id: pickString(p, 'id'),
         name: pickString(p, 'name', 'slug'),
         slug: pickString(p, 'slug'),
         h1: pickString(p, 'h1'),
-        type: 'audience',
+        type: 'customer-type',
       })),
   },
   {
