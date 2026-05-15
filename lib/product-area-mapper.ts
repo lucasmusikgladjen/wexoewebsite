@@ -225,6 +225,6 @@ export function productAreaStateFromRecords(args: {
     showContact: !!str(f, 'contact_name').trim(),
 
     showContactForm: bool(f, 'show_contact_form'),
-    contactForm: contactFormFromFields(productArea.fields),
+    contactForm: contactFormFromFields(productArea.fields, 'snake_case'),
   };
 }

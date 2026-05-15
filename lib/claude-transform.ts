@@ -441,10 +441,9 @@ function buildPaPayload(state: ProductAreaState, mode: TransformMode): string {
     solutionsBg: state.solutionsBg,
     solutionsCardBg: state.solutionsCardBg,
 
-    normal1: state.normal1,
-    normal2: state.normal2,
-    normal3: state.normal3,
-    normal4: state.normal4,
+    // Normal 1-4 sektioner persisteras deterministiskt i
+    // product-area-actions.ts (egna cms_product_page_sections-records). Skickas
+    // inte till Claude.
 
     contactName: state.contactName,
     contactTitle: state.contactTitle,
