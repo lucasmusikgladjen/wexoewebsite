@@ -8,7 +8,7 @@
 
 import { AirtableRecord } from './airtable';
 import { asString, asNumber, asBool, asLinkIds } from './airtable-helpers';
-import { contactFormFromFields, contactFormToFields } from './contact-form-mapper';
+import { contactFormFromFields } from './contact-form-mapper';
 import {
   UniquePageState,
   emptyUniquePageState,
@@ -131,101 +131,6 @@ export function uniquePageStateFromRecord(rec: AirtableRecord): UniquePageState 
   state.contactForm = contactFormFromFields(f, 'snake_case');
 
   return state;
-}
-
-/**
- * Konvertera UniquePageState → Airtable-fält-map.
- *
- * `mode`:
- *   - 'create' (default): tomma värden tas bort innan POST så Airtable använder
- *     fält-defaults.
- *   - 'update': tomma textfält skickas som tom sträng så Airtable rensar dem.
- */
-export function uniquePageStateToFields(
-  state: UniquePageState,
-  mode: 'create' | 'update' = 'create',
-): Record<string, unknown> {
-  const fields: Record<string, unknown> = {
-    'slug': state.slug || null,
-    'h1': state.h1 || null,
-    'seo_title': state.seoTitle || null,
-    'seo_description': state.seoDescription || null,
-    'og_image_url': state.ogImageUrl || null,
-    'is_published': !!state.published,
-    'country_ids': state.countryIds,
-    'division_ids': state.divisionIds,
-
-    'show_hero': state.showHero,
-    'hero_eyebrow': state.hero.eyebrow || null,
-    'hero_h1_override': state.hero.h1Override || null,
-    'hero_subtitle': state.hero.subtitle || null,
-    'hero_image_url': state.hero.imageUrl || null,
-    'hero_cta_text': state.hero.ctaText || null,
-    'hero_cta_url': state.hero.ctaUrl || null,
-    'hero_theme': state.hero.theme,
-
-    'show_text_image_a': state.showTextImageA,
-    'text_image_a_h2': state.textImageA.h2 || null,
-    'text_image_a_body': state.textImageA.body || null,
-    'text_image_a_image_url': state.textImageA.imageUrl || null,
-    'text_image_a_reversed': state.textImageA.reversed,
-    'text_image_a_theme': state.textImageA.theme,
-
-    'show_text_image_b': state.showTextImageB,
-    'text_image_b_h2': state.textImageB.h2 || null,
-    'text_image_b_body': state.textImageB.body || null,
-    'text_image_b_image_url': state.textImageB.imageUrl || null,
-    'text_image_b_reversed': state.textImageB.reversed,
-    'text_image_b_theme': state.textImageB.theme,
-
-    'show_text_only': state.showTextOnly,
-    'text_only_h2': state.textOnly.h2 || null,
-    'text_only_body': state.textOnly.body || null,
-    'text_only_align': state.textOnly.align,
-
-    'show_faq': state.showFaq,
-    'faq_h2': state.faq.h2 || null,
-    'faq_items': state.faq.items || null,
-
-    'show_team_grid': state.showTeamGrid,
-    'team_grid_h2': state.teamGrid.h2 || null,
-    'team_grid_scope_division': state.teamGrid.scope.division || null,
-    'team_grid_scope_country': state.teamGrid.scope.country || null,
-    'team_grid_limit': state.teamGrid.scope.limit ? Number(state.teamGrid.scope.limit) : null,
-
-    'show_partners_marquee': state.showPartnersMarquee,
-    'partners_marquee_h2': state.partnersMarquee.h2 || null,
-    'partners_marquee_scope_division': state.partnersMarquee.scope.division || null,
-    'partners_marquee_scope_country': state.partnersMarquee.scope.country || null,
-
-    'show_testimonial_card': state.showTestimonialCard,
-    'testimonial_scope_customer_type': state.testimonialCard.scope.customerType || null,
-    'testimonial_scope_division': state.testimonialCard.scope.division || null,
-    'testimonial_scope_country': state.testimonialCard.scope.country || null,
-
-    'show_cta_banner': state.showCtaBanner,
-    'cta_banner_h2': state.ctaBanner.h2 || null,
-    'cta_banner_body': state.ctaBanner.body || null,
-    'cta_banner_cta_text': state.ctaBanner.ctaText || null,
-    'cta_banner_cta_url': state.ctaBanner.ctaUrl || null,
-    'cta_banner_theme': state.ctaBanner.theme,
-
-    'show_contact_form': state.showContactForm,
-    ...contactFormToFields(state.contactForm, { schema: 'snake_case', nullForEmpty: true }),
-  };
-
-  const out: Record<string, unknown> = {};
-  for (const [k, v] of Object.entries(fields)) {
-    if (v === undefined) continue;
-    if (v === null) {
-      if (mode === 'update') {
-        out[k] = null;
-      }
-      continue;
-    }
-    out[k] = v;
-  }
-  return out;
 }
 
 export const UNIQUE_PAGES_TABLE_ID = 'tblpAM1wZWDbrpeai';

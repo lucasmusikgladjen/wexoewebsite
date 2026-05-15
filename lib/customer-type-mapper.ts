@@ -9,7 +9,7 @@
 import { AirtableRecord, BASE_ID } from './airtable';
 import { CustomerTypePageState } from './customer-type-types';
 import { str, bool } from './airtable-helpers';
-import { contactFormFromFields, contactFormToFields } from './contact-form-mapper';
+import { contactFormFromFields } from './contact-form-mapper';
 
 export const CUSTOMER_TYPE_BASE_ID = BASE_ID;
 
@@ -73,55 +73,3 @@ export function customerTypePageStateFromRecord(
   };
 }
 
-/**
- * Build Airtable fields payload from state. On create, empty strings dropped;
- * on update, kept as empty string so removed values clear i Airtable.
- *
- * Linked record `case_ids` skickas inte (builder redigerar inte case-länkning
- * denna runda — hanteras i Airtable UI).
- */
-export function customerTypePageStateToFields(
-  state: CustomerTypePageState,
-  mode: 'create' | 'update',
-): Record<string, unknown> {
-  const all: Record<string, unknown> = {
-    slug: state.slug,
-    is_active: state.isActive,
-    name: state.name,
-    eyebrow: state.eyebrow,
-    title: state.title,
-    description: state.description,
-    cta_text: state.ctaText,
-    cta_url: state.ctaUrl,
-    hero_image_url: state.heroImageUrl,
-    stat_label: state.statLabel,
-    value_h2: state.valueH2,
-    value_text_1: state.valueText1,
-    value_text_2: state.valueText2,
-    benefit_1: state.benefit1,
-    benefit_2: state.benefit2,
-    benefit_3: state.benefit3,
-
-    show_contact_form: state.showContactForm,
-    ...contactFormToFields(state.contactForm, { schema: 'snake_case' }),
-  };
-
-  // stat_number — Airtable number-fält. Tom sträng = null vid update.
-  const trimmed = state.statNumber.trim();
-  if (trimmed) {
-    const n = Number(trimmed);
-    if (Number.isFinite(n)) all.stat_number = n;
-  } else if (mode === 'update') {
-    all.stat_number = null;
-  }
-
-  if (mode === 'create') {
-    const out: Record<string, unknown> = {};
-    for (const [k, v] of Object.entries(all)) {
-      if (v === '' || v === undefined) continue;
-      out[k] = v;
-    }
-    return out;
-  }
-  return all;
-}

@@ -88,10 +88,10 @@ En sidtyp deklareras som två icke-överlappande filer:
 // lib/page-types/<type>.server.ts
 export const <type>Server: PageTypeServerDef<TState, TListItem> = {
   id, label, tableId, baseId,
-  emptyState, fromRecord, stateToFields, validate,
+  emptyState, fromRecord, validate,
   listItemMapper, listFields, listSort,
-  relations: [...],            // Lager 2: deklarativa child-tabeller
-  // create/update/delete:     // Lager 3: bara om Lager 1/2 inte räcker
+  create, update,              // Lager 3 — anropar transform<Type> i claude-transform.ts
+  relations: [...],            // Lager 2: deklarativa child-tabeller (om sidtypen har det)
   cacheEntities, slug,
 };
 
@@ -108,9 +108,9 @@ Splittringen finns för att React-komponenter inte kan korsa Next:s server/clien
 
 **Trelagsmodell för routes** (se `lib/page-types/types.ts` för utförlig kommentar):
 
-- **Lager 1** — vanlig CRUD. Bara `primary` (tableId + fromRecord + stateToFields). Audience och Unique Pages använder detta idag.
+- **Lager 1** — vanlig CRUD. Bara `primary` (tableId + fromRecord + stateToFields). Ramverket stöder modellen men det är inte produktionsvalet — alla sidtyper går via Claude-transform i Lager 3. Lager 1 finns kvar som en implementation-detalj.
 - **Lager 2** — primary + `relations[]`. Ramverket diffar och synkar varje relation (parent-link-array eller child-backlink-modell). För framtida case-sidor med content-blocks i separat tabell.
-- **Lager 3** — full override (`create`/`update`/`delete`). Bara när logik är så udda att det inte passar i ramverket. Product Area använder detta idag (multi-tabell-create i specifik ordning via Claude-transform).
+- **Lager 3** — full override (`create`/`update`/`delete`) som anropar Claude-transform. Detta är **standardvalet** för alla sidtyper — Customer Type, Unique Page, Product Area och Landing Page använder alla detta idag.
 
 **Airtable saknar transaktioner.** Ramverket lovar inte atomär rollback. Vid fel: primary skrivs först (eller stoppas hela operationen om primary failar); därefter en relation i taget; fel ackumuleras i `RelationSyncResult.errors`. Klienten visar fel tydligt och låter användaren retrya.
 
@@ -124,7 +124,7 @@ Filosofiskt det viktigaste mönstret i hela buildern.
 
 **Problem:** Pluginen på WP-sidan förväntar sig data i ett format som passar PHP-rendering — t.ex. en multi-line text-sträng med `Q: fråga\nA: svar\n\nQ: nästa fråga\nA: nästa svar` för ett FAQ-element. Det är effektivt för rendering men ohanterligt som UI-fält. Marknadsföraren ska få ett vanligt formulär: en lista med `{question, answer}`-poster där hen kan dra-och-släppa, ta bort, lägga till. Det är två olika datamodeller för samma sak.
 
-**Lösning:** Buildern håller den enkla modellen i sitt state. Vid spar bygger `lib/claude-transform.ts` en JSON-payload av staten, plus metadata (`_clientIndex`, `_recordId`) för att korrelera nya/befintliga records, och skickar till Claude med en system prompt som innehåller hela Airtable-schemat (från `lib/airtable-schema-{lp,pa}.md`). Claude returnerar färdiga Airtable-fält. Backenden diffar och PATCHar/CREATEar/DELETEar.
+**Lösning:** Buildern håller den enkla modellen i sitt state. Vid spar bygger `lib/claude-transform.ts` en JSON-payload av staten, plus metadata (`_clientIndex`, `_recordId`) för att korrelera nya/befintliga records, och skickar till Claude med en system prompt som innehåller hela Airtable-schemat (från `lib/airtable-schema-*.md` — en per sidtyp). Claude returnerar färdiga Airtable-fält. Backenden diffar och PATCHar/CREATEar/DELETEar.
 
 **Varför Claude och inte ren kod?**
 1. Formatteringsreglerna är många och växer — bullets-splitting, FAQ-prefix, pipe-format för compare-rows, etc. Att hålla en hand-kodad transformer i synk med schemat blir lätt fel.
@@ -133,12 +133,12 @@ Filosofiskt det viktigaste mönstret i hela buildern.
 
 **Trade-off:** Claude måste vara igång, sparet kostar ~1-3 sek + några öre i tokens, och vi har defensiva guards i `transform*` mot tomma arrayer i UPDATE-läget (annars skulle Claude oavsiktligt kunna unlinka allt). Värt det för utvecklingsekvansen.
 
-**När ska Claude-transform användas?** När datamodellen i editorn skiljer sig icke-trivialt från Airtable-formatet, t.ex. när vi har:
+**Alla sidtyper använder Claude transform.** Även sidtyper vars schema är 1-till-1 mellan state och Airtable (Customer Type, Unique Page) går via Claude — en minimal payload-builder + en schema-MD räcker. Det ger enhetlig kod, gör schemaändringar trivialа att rulla ut (uppdatera MD-filen), och håller all skriv-logik på samma ställe.
+
+Exempel på fall där Claude-transform är *särskilt* värdefullt:
 - Polymorfa items (en tab kan vara textimage/faq/compare/...) som ska radas till olika fält
 - Pipe/prefix-baserade text-format som Airtable-fältet kräver
 - Multi-tabell-records med ordning som behöver korreleras
-
-För enkla sidtyper (alla fält 1-till-1 mellan state och Airtable) skip Claude och använd Lager 1 med direkt `stateToFields`. Audience och Unique Pages gör så.
 
 ---
 

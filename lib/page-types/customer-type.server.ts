@@ -1,19 +1,26 @@
 /**
- * Customer-type-page — server-side sidtypsdefinition.
+ * Customer-type-page — server-side sidtypsdefinition (Lager 3).
  *
- * Mappers, validering och list-projektion. Ingen React-kod.
+ * Lager 3 + Claude-transform: state → Airtable-fält går alltid via Claude
+ * (`transformCustomerType`), inte en handskriven mapper. Det matchar
+ * konventionen för alla nya sidtyper.
+ *
+ * Schemat är flatt (en tabell, inga child-records) men Claude-mellanlaget
+ * gör det enkelt att lägga till nya format-regler eller fält utan att
+ * röra TypeScript-mappers.
  */
 
 import { AirtableRecord } from '../airtable';
+import { createRecord, updateRecord } from '../airtable';
 import {
   CUSTOMER_TYPE_TABLE_IDS,
   CUSTOMER_TYPE_BASE_ID,
   customerTypePageStateFromRecord,
-  customerTypePageStateToFields,
 } from '../customer-type-mapper';
 import { loadCustomerTypePageState } from '../customer-type-loader';
 import { CustomerTypePageState, emptyCustomerTypePageState } from '../customer-type-types';
 import { CUSTOMER_TYPE_PAGE_ENTITIES } from '../wexoe-cache';
+import { transformCustomerType } from '../claude-transform';
 import type { PageTypeServerDef } from './types';
 
 export interface CustomerTypePageListItem {
@@ -21,6 +28,44 @@ export interface CustomerTypePageListItem {
   name: string;
   slug: string;
   h1: string;
+}
+
+function requireAnthropicKey(): string {
+  const key = process.env.ANTHROPIC_API_KEY;
+  if (!key) throw new Error('ANTHROPIC_API_KEY ej konfigurerad.');
+  return key;
+}
+
+async function customerTypeCreate(
+  state: CustomerTypePageState,
+  ctx: { apiKey: string },
+): Promise<{ recordId: string }> {
+  const anthropicKey = requireAnthropicKey();
+  const { customerTypePage } = await transformCustomerType(anthropicKey, state, 'create');
+  const created = await createRecord(
+    ctx.apiKey,
+    CUSTOMER_TYPE_TABLE_IDS.customerTypePages,
+    customerTypePage,
+    CUSTOMER_TYPE_BASE_ID,
+  );
+  return { recordId: created.id };
+}
+
+async function customerTypeUpdate(
+  recordId: string,
+  state: CustomerTypePageState,
+  ctx: { apiKey: string },
+): Promise<{ relations: Record<string, never> }> {
+  const anthropicKey = requireAnthropicKey();
+  const { customerTypePage } = await transformCustomerType(anthropicKey, state, 'update');
+  await updateRecord(
+    ctx.apiKey,
+    CUSTOMER_TYPE_TABLE_IDS.customerTypePages,
+    recordId,
+    customerTypePage,
+    CUSTOMER_TYPE_BASE_ID,
+  );
+  return { relations: {} };
 }
 
 export const customerTypeServer: PageTypeServerDef<
@@ -33,7 +78,11 @@ export const customerTypeServer: PageTypeServerDef<
   baseId: CUSTOMER_TYPE_BASE_ID,
   emptyState: emptyCustomerTypePageState,
   fromRecord: customerTypePageStateFromRecord,
-  stateToFields: customerTypePageStateToFields,
+
+  // Lager 3 — skriv-vägen går via Claude-transform.
+  create: customerTypeCreate,
+  update: customerTypeUpdate,
+
   validate: (s) => {
     if (!s.title?.trim()) return { field: 'title', message: 'Title är obligatoriskt.' };
     return null;

@@ -28,7 +28,10 @@
  * ───────────────────────────────────────────────────────────────────────
  *
  *   Lager 1 — Standard CRUD: bara `primary` (tableId + fromRecord + toFields).
- *     Används av: audience, unique-page, basic cases/news/leverantörer.
+ *     Ramverket stöder modellen men den är inte produktionsvalet — alla
+ *     sidtyper går via Claude-transform i Lager 3, även de vars schema
+ *     är 1-till-1 mellan state och Airtable. Lager 1 finns kvar för att
+ *     hålla typen liten och för en eventuell prototyp-skiss.
  *
  *   Lager 2 — Declarative relations: `primary` + `relations[]`. Ramverket
  *     hanterar diff (skapa/uppdatera/ta bort eller unlink) per relation.
@@ -38,9 +41,11 @@
  *     Används av framtida sidtyper med linked records, t.ex. en case-sida
  *     med egna content-blocks i en separat tabell.
  *
- *   Lager 3 — Full override: skriv egen `create`/`update`/`delete` när
- *     ingen av de andra två räcker. Reserverat för verkligt udda fall
- *     (specifik ordning mellan tre tabeller, villkorlig logik, etc).
+ *   Lager 3 — Full override: skriv egen `create`/`update`/`delete` som
+ *     anropar Claude-transform. Det här är standardvalet — alla nuvarande
+ *     sidtyper (customer-type, unique-page, product-area, landing-page)
+ *     använder det. Ger ett enhetligt sätt att transformera state →
+ *     Airtable-fält via en schema-MD som matas in i Claude.
  *
  * ───────────────────────────────────────────────────────────────────────
  *  Failure-semantik
@@ -86,8 +91,13 @@ export interface PageTypeServerDef<TState, TListItem = unknown> {
   fromRecord: (record: AirtableRecord) => TState;
 
   /** State → Airtable-fält. Mode-aware så create kan utelämna tomma
-   *  fält och update kan skriva tomsträng/null för att rensa. */
-  stateToFields: (state: TState, mode: 'create' | 'update') => AirtableFields;
+   *  fält och update kan skriva tomsträng/null för att rensa.
+   *
+   *  Lämnas oexponerad när `create`/`update`-overrides används (Lager 3,
+   *  vilket alla nuvarande sidtyper gör). Fältet finns kvar i typen för
+   *  bakåtkompat — nya sidtyper ska gå via Claude-transform + Lager 3,
+   *  inte hand-skriva en deterministisk mapper här. */
+  stateToFields?: (state: TState, mode: 'create' | 'update') => AirtableFields;
 
   /** Returnerar felmeddelande eller null. Körs på server före skrivning. */
   validate?: (state: TState) => ValidationIssue | null;
