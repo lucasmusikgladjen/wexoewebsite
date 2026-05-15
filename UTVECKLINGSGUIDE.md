@@ -186,30 +186,23 @@ Lines::from_array(['a', 'b', 'c']);        // "a\nb\nc"
 
 ### 3.5 Renderers
 
-Core innehåller delade renderers för komponenter som flera sidtyper använder — hero, FAQ, team-grid, partners-marquee, testimonial-card, CTA-banner, kontaktformulär.
+Core innehåller en delad renderer för kontaktformuläret — det är den enda komponent som faktiskt återanvänds av flera plugins (wexoe-landing-page, wexoe-audience-hero, wexoe-product-area, wexoe-pages).
 
 ```php
-$class = Core::renderer('team-grid');
+$class = Core::renderer('contact-form');
 if ($class !== '') {
     echo $class::render([
-        'h2'    => 'Vårt team',
-        'scope' => ['country' => 'SE'],
+        'title'   => 'Kontakta oss',
+        'layout'  => 'split',
+        'theme'   => 'dark',
     ]);
 }
 ```
 
 Aktuell map (`Core::renderer($type)`):
-- `hero` → `Renderers\Hero`
-- `text-image` → `Renderers\TextImage`
-- `text-only` → `Renderers\TextOnly`
-- `faq` → `Renderers\Faq`
-- `team-grid` → `Renderers\TeamGrid`
-- `partners-marquee` → `Renderers\PartnersMarquee`
-- `testimonial-card` → `Renderers\TestimonialCard`
-- `cta-banner` → `Renderers\CtaBanner`
 - `contact-form` → `Renderers\ContactForm`
 
-**När bör en komponent ligga i Core?** När två eller fler feature-plugins behöver samma rendering. Annars håll den i pluginet. Att flytta in i Core senare är trivialt; att dela ut är mödosamt.
+**När bör en komponent ligga i Core?** När två eller fler feature-plugins behöver exakt samma rendering. Annars håll den i pluginet — varje plugin äger sin egen markup. Att flytta in i Core senare är trivialt; att dela ut är mödosamt.
 
 ### 3.6 Logging
 

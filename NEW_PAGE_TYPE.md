@@ -61,9 +61,10 @@ En statisk HTML-fil som visar slutresultatet, med kommentartaggar som signalerar
    Markerar editor-sektionsgränser. visibility-toggle gör sektionen
    dölj/visa-bar via en checkbox i editor-headern.
 
-<!-- shared: <Renderer> -->
-   Återanvänder en delad Core-renderer (Hero, Faq, TeamGrid, PartnersMarquee,
-   TestimonialCard, CtaBanner, ContactForm). Mappar till Core::renderer($type).
+<!-- shared: ContactForm -->
+   Återanvänder den delade ContactForm-renderern i Core. Övriga sektioner
+   (hero, text+bild, faq, team, etc.) skrivs med plugin-egen markup.
+   Mappar till Core::renderer('contact-form').
 ```
 
 Se `wexoebuilder/NEW_PAGE_TYPE.md` § FAS 0 för exempel.
@@ -237,9 +238,9 @@ Type kan vara: text, richtext, image, url, color, bool, int, float.
 För sektioner som ska kunna döljas via en visibility-toggle i editorn,
 lägg till `visibility:<bool-fält>` i section-taggen.
 
-För komponenter som finns delade i Core (Hero, Faq, TeamGrid, PartnersMarquee,
-TestimonialCard, CtaBanner, ContactForm), markera med <!-- shared: <Namn> -->
-istället för att duplicera markup.
+Den enda komponent som är delad i Core är ContactForm — för den, markera med
+<!-- shared: ContactForm --> istället för att duplicera markup. Övriga sektioner
+(hero, text+bild, faq, team, etc.) renderas med plugin-egen markup.
 
 Vi itererar på prototypen tills jag är nöjd — börja med ett första utkast
 och vänta på feedback.
@@ -324,7 +325,7 @@ Producera under `New plugins/wexoe-<type>/wexoe-<type>.php`:
    - varje <!-- field: --> mappas till motsvarande $data['<key>']
    - varje <!-- conditional: --> branch:as i PHP
    - varje <!-- repeat: --> itereras med foreach
-   - varje <!-- shared: <Type> --> renderas via Core::renderer($type)
+   - varje <!-- shared: ContactForm --> renderas via Core::renderer('contact-form')
 6. CSS scoped via `wexoe-<short>-{uniqid()}`-wrapper. Aldrig global CSS,
    aldrig !important.
 7. Använd Core-helpers där det passar (Markdown, Color, YouTube, Lines).
