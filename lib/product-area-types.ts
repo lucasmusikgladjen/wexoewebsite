@@ -136,6 +136,14 @@ export interface ProductAreaState {
    *  only exposes a single pick, but the state mirrors Airtable shape). */
   division: string[];
 
+  /** UI-state — visa innehållssektionerna i editor/preview. Persisteras
+   *  INTE i Airtable; computed i fromRecord från om fälten har innehåll
+   *  och kan flippas av användaren via Visa-toggle på sektionen. */
+  showContent: boolean;
+  showProducts: boolean;
+  showSolutions: boolean;
+  showContact: boolean;
+
   // Contact Form
   showContactForm: boolean;
   contactForm: ContactFormState;
@@ -274,6 +282,11 @@ export function emptyProductAreaState(): ProductAreaState {
     solutions: [],
 
     division: [],
+
+    showContent: false,
+    showProducts: false,
+    showSolutions: false,
+    showContact: false,
 
     showContactForm: false,
     contactForm: emptyContactFormState(),

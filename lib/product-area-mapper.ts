@@ -198,6 +198,17 @@ export function productAreaStateFromRecords(args: {
 
     division: ((f['Division'] as string[] | undefined) ?? []).slice(),
 
+    // show*-flaggor persisteras inte i Airtable — defaulta till "på" om
+    // sektionen har innehåll, annars "av". Speglar legacy ProductAreaBuilder:s
+    // visibility-state.
+    showContent: ([1, 2, 3, 4] as const).some((n) => {
+      const sec = normalFromFields(f, n);
+      return sec.h2.trim() || sec.text.trim();
+    }),
+    showProducts: orderedProducts.length > 0,
+    showSolutions: orderedSolutions.length > 0,
+    showContact: !!str(f, 'Contact Name').trim(),
+
     showContactForm: f['Show Contact Form'] === true,
     contactForm: contactFormFromFields(productArea.fields),
   };

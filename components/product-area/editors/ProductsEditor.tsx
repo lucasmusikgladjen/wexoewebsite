@@ -1,17 +1,9 @@
 'use client';
 
 import { ProductAreaState, LinkedProduct, emptyLinkedProduct } from '@/lib/product-area-types';
-import { FieldInput, FieldCheckbox, FieldColor, RichTextarea } from '@/components/editors/FieldInput';
-import CollapsibleCard from './CollapsibleCard';
-import ButtonFieldset from '@/components/editors/ButtonFieldset';
-import EditorSection from '@/components/editors/EditorSection';
-
-interface Props {
-  state: ProductAreaState;
-  setField: <K extends keyof ProductAreaState>(key: K, value: ProductAreaState[K]) => void;
-  visible: boolean;
-  onToggleVisible: (v: boolean) => void;
-}
+import { Field } from '@/components/shared/fields';
+import RepeaterCard from '@/components/shared/RepeaterCard';
+import type { SectionEditorProps } from '@/lib/page-types/types';
 
 /** A product is considered "filled" once it has a name — used to decide
  *  whether the card should start collapsed (compact list view). */
@@ -19,12 +11,12 @@ function hasContent(p: LinkedProduct): boolean {
   return !!p.name.trim();
 }
 
-export default function ProductsEditor({ state, setField, visible, onToggleVisible }: Props) {
+export default function ProductsEditor({ state, onChange }: SectionEditorProps<ProductAreaState>) {
+  const set = <K extends keyof ProductAreaState>(key: K, value: ProductAreaState[K]) =>
+    onChange({ ...state, [key]: value });
+
   const patchProduct = (index: number, patch: Partial<LinkedProduct>) => {
-    setField(
-      'products',
-      state.products.map((p, i) => (i === index ? { ...p, ...patch } : p)),
-    );
+    set('products', state.products.map((p, i) => (i === index ? { ...p, ...patch } : p)));
   };
 
   const moveProduct = (index: number, direction: -1 | 1) => {
@@ -33,27 +25,24 @@ export default function ProductsEditor({ state, setField, visible, onToggleVisib
     const next = [...state.products];
     const [moved] = next.splice(index, 1);
     next.splice(newIndex, 0, moved);
-    setField('products', next);
+    set('products', next);
   };
 
   const removeProduct = (index: number) => {
-    setField(
-      'products',
-      state.products.filter((_, i) => i !== index),
-    );
+    set('products', state.products.filter((_, i) => i !== index));
   };
 
   const addProduct = () => {
     const next = emptyLinkedProduct();
     next.order = state.products.length + 1;
     next.name = '';
-    setField('products', [...state.products, next]);
+    set('products', [...state.products, next]);
   };
 
   return (
-    <EditorSection title="Produkter" visible={visible} onToggleVisible={onToggleVisible}>
+    <>
       {state.products.map((product, i) => (
-        <CollapsibleCard
+        <RepeaterCard
           key={product.clientId}
           index={i}
           title={product.name}
@@ -67,83 +56,28 @@ export default function ProductsEditor({ state, setField, visible, onToggleVisib
           removeTitle="Ta bort produkt"
           defaultOpen={!hasContent(product)}
         >
-          <FieldInput
-            label="Underrubrik"
-            value={product.ecosystemDescription}
-            onChange={(v) => patchProduct(i, { ecosystemDescription: v })}
-            placeholder="T.ex. Integrerad arkitektur"
-          />
-
-          <RichTextarea
-            label="Beskrivning"
-            value={product.description}
-            onChange={(v) => patchProduct(i, { description: v })}
-            rows={8}
-            placeholder="Kort beskrivning av produkten…"
-          />
-
-          <RichTextarea
-            label="Punkter"
-            value={product.bullets}
-            onChange={(v) => patchProduct(i, { bullets: v })}
-            rows={6}
-            hint="en per rad"
-            placeholder={'Hög tillgänglighet\nKonsoliderad plattform'}
-          />
-
-          <FieldInput
-            label="Bild"
-            value={product.image}
-            onChange={(v) => patchProduct(i, { image: v })}
-            placeholder="https://..."
-          />
-
-          <ButtonFieldset
+          <Field.Text label="Underrubrik" value={product.ecosystemDescription} onChange={(v) => patchProduct(i, { ecosystemDescription: v })} placeholder="T.ex. Integrerad arkitektur" />
+          <Field.RichText label="Beskrivning" value={product.description} onChange={(v) => patchProduct(i, { description: v })} rows={8} placeholder="Kort beskrivning av produkten…" />
+          <Field.RichText label="Punkter" value={product.bullets} onChange={(v) => patchProduct(i, { bullets: v })} rows={6} hint="en per rad" placeholder={'Hög tillgänglighet\nKonsoliderad plattform'} />
+          <Field.Text label="Bild" value={product.image} onChange={(v) => patchProduct(i, { image: v })} placeholder="https://..." />
+          <Field.Buttons
             label="Knapp 1"
             segments={[
-              {
-                value: product.button2Text,
-                onChange: (v) => patchProduct(i, { button2Text: v }),
-                placeholder: 'Text',
-              },
-              {
-                value: product.button2Url,
-                onChange: (v) => patchProduct(i, { button2Url: v }),
-                placeholder: 'URL',
-              },
+              { value: product.button2Text, onChange: (v) => patchProduct(i, { button2Text: v }), placeholder: 'Text' },
+              { value: product.button2Url, onChange: (v) => patchProduct(i, { button2Url: v }), placeholder: 'URL' },
             ]}
           />
-
-          <ButtonFieldset
+          <Field.Buttons
             label="Knapp 2"
             segments={[
-              {
-                value: product.button1Text,
-                onChange: (v) => patchProduct(i, { button1Text: v }),
-                placeholder: 'Text',
-              },
-              {
-                value: product.button1Url,
-                onChange: (v) => patchProduct(i, { button1Url: v }),
-                placeholder: 'URL',
-              },
+              { value: product.button1Text, onChange: (v) => patchProduct(i, { button1Text: v }), placeholder: 'Text' },
+              { value: product.button1Url, onChange: (v) => patchProduct(i, { button1Url: v }), placeholder: 'URL' },
             ]}
           />
-
           {state.sideMenu && (
-            <FieldInput
-              label="Rubrik i sidomeny"
-              value={product.headerSideMenu}
-              onChange={(v) => patchProduct(i, { headerSideMenu: v })}
-              placeholder="Lämna tom för att använda produktnamnet"
-            />
+            <Field.Text label="Rubrik i sidomeny" value={product.headerSideMenu} onChange={(v) => patchProduct(i, { headerSideMenu: v })} placeholder="Lämna tom för att använda produktnamnet" />
           )}
-
-          <FieldCheckbox
-            label="Visa"
-            checked={product.visa}
-            onChange={(v) => patchProduct(i, { visa: v })}
-          />
+          <Field.Checkbox label="Visa" checked={product.visa} onChange={(v) => patchProduct(i, { visa: v })} />
 
           {/* Read-only linked articles */}
           {product.articles.length > 0 && (
@@ -161,7 +95,7 @@ export default function ProductsEditor({ state, setField, visible, onToggleVisib
               </div>
             </div>
           )}
-        </CollapsibleCard>
+        </RepeaterCard>
       ))}
 
       <button
@@ -173,25 +107,10 @@ export default function ProductsEditor({ state, setField, visible, onToggleVisib
       </button>
 
       <div className="grid grid-cols-3 gap-2">
-        <FieldColor
-          label="Bakgrundsfärg"
-          value={state.toggleBg}
-          onChange={(v) => setField('toggleBg', v)}
-          defaultColor="#11325D"
-        />
-        <FieldColor
-          label="Kortbakgrundsfärg"
-          value={state.toggleHeaderBg}
-          onChange={(v) => setField('toggleHeaderBg', v)}
-          defaultColor="#FFFFFF"
-        />
-        <FieldColor
-          label="Accentfärg"
-          value={state.toggleAccent}
-          onChange={(v) => setField('toggleAccent', v)}
-          defaultColor="#F28C28"
-        />
+        <Field.Color label="Bakgrundsfärg" value={state.toggleBg} onChange={(v) => set('toggleBg', v)} defaultColor="#11325D" />
+        <Field.Color label="Kortbakgrundsfärg" value={state.toggleHeaderBg} onChange={(v) => set('toggleHeaderBg', v)} defaultColor="#FFFFFF" />
+        <Field.Color label="Accentfärg" value={state.toggleAccent} onChange={(v) => set('toggleAccent', v)} defaultColor="#F28C28" />
       </div>
-    </EditorSection>
+    </>
   );
 }
