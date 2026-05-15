@@ -45,11 +45,11 @@ export async function GET(req: NextRequest) {
     const records = await listRecords(apiKey, UNIQUE_PAGES_TABLE_ID, { baseId: SSOT_BASE_ID });
     const pages = records.map((r) => ({
       id: r.id,
-      slug: r.fields['Slug'] ?? '',
-      h1: r.fields['H1'] ?? '',
-      published: r.fields['Published'] === true,
-      divisionIds: (r.fields['Division'] as string[] | undefined) ?? [],
-      countryIds: (r.fields['Country'] as string[] | undefined) ?? [],
+      slug: r.fields['slug'] ?? '',
+      h1: r.fields['h1'] ?? '',
+      published: r.fields['is_published'] === true,
+      divisionIds: (r.fields['division_ids'] as string[] | undefined) ?? [],
+      countryIds: (r.fields['country_ids'] as string[] | undefined) ?? [],
     }));
     return NextResponse.json({ success: true, pages });
   } catch (err) {
@@ -69,7 +69,7 @@ export async function POST(req: NextRequest) {
     // Säkerställ unik slug.
     const existing = await listRecords(apiKey, UNIQUE_PAGES_TABLE_ID, {
       baseId: SSOT_BASE_ID,
-      filterByFormula: `{Slug}="${state.slug.replace(/"/g, '\\"')}"`,
+      filterByFormula: `{slug}="${state.slug.replace(/"/g, '\\"')}"`,
     });
     if (existing.length > 0) {
       return NextResponse.json(
@@ -104,7 +104,7 @@ export async function PATCH(req: NextRequest) {
     // som redan ägs av en annan record och två sidor får samma slug.
     const existing = await listRecords(apiKey, UNIQUE_PAGES_TABLE_ID, {
       baseId: SSOT_BASE_ID,
-      filterByFormula: `{Slug}="${state.slug.replace(/"/g, '\\"')}"`,
+      filterByFormula: `{slug}="${state.slug.replace(/"/g, '\\"')}"`,
     });
     const collision = existing.find((r) => r.id !== recordId);
     if (collision) {
