@@ -1,0 +1,195 @@
+<!doctype html>
+<html lang="sv">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Wexoe Pages – skiss med alla sektioner populerade</title>
+  <style>
+    :root { --blue:#11325D; --dark:#0A1A2E; --orange:#F28C28; --ink:#1A1A1A; --muted:#657184; --line:rgba(17,50,93,.12); --soft:#F5F7FA; }
+    * { box-sizing: border-box; }
+    body { margin: 0; background: #eef2f6; color: var(--ink); font-family: 'DM Sans', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
+    .mock-note { position: sticky; top: 0; z-index: 20; padding: 12px 24px; background: #fff7ed; border-bottom: 1px solid #fed7aa; color: #7c2d12; font-size: 14px; }
+    .mock-note strong { color: #9a3412; }
+    .wxp { max-width: 1440px; margin: 0 auto; background: #fff; box-shadow: 0 20px 70px rgba(10,26,46,.12); }
+    .wxp--dark { color: #fff; background: var(--dark); }
+    .wxp-section { width: 100%; }
+    .wxp-section__inner { max-width: 1100px; margin: 0 auto; padding-left: 24px; padding-right: 24px; }
+    .wxp-section--layout-narrow .wxp-section__inner { max-width: 760px; }
+    .wxp-section--layout-full_bleed .wxp-section__inner { max-width: none; padding-left: 0; padding-right: 0; }
+    .wxp-section--top-none { padding-top: 0; } .wxp-section--top-sm { padding-top: 24px; } .wxp-section--top-md { padding-top: 64px; } .wxp-section--top-lg { padding-top: 96px; }
+    .wxp-section--bot-none { padding-bottom: 0; } .wxp-section--bot-sm { padding-bottom: 24px; } .wxp-section--bot-md { padding-bottom: 64px; } .wxp-section--bot-lg { padding-bottom: 96px; }
+    .wxp-section--theme-light { background: #fff; color: var(--ink); }
+    .wxp-section--theme-dark { background: var(--dark); color: #fff; }
+    .wxp-eyebrow { margin: 0 0 12px; opacity: .75; text-transform: uppercase; letter-spacing: .08em; font-size: 12px; font-weight: 700; }
+    .wxp-h2 { margin: 0 0 16px; font-size: clamp(1.5rem, 3vw, 2rem); font-weight: 700; line-height: 1.18; }
+    .wxp-body { font-size: 16px; line-height: 1.65; color: inherit; }
+    .wxp-body p { margin: 0 0 14px; } .wxp-body p:last-child { margin-bottom: 0; }
+    .wxp-actions { display: flex; flex-wrap: wrap; gap: 12px; }
+    .wxp-btn { display: inline-flex; align-items: center; gap: 8px; padding: 12px 24px; border-radius: 8px; text-decoration: none; font-weight: 700; line-height: 1.2; }
+    .wxp-btn--primary { background: var(--orange); color: #fff; }
+    .wxp-btn--secondary { background: transparent; color: inherit; border: 2px solid currentColor; }
+    .wxp-section--theme-light .wxp-btn--secondary { color: var(--blue); border-color: rgba(17,50,93,.28); }
+    .mock-label { display: inline-flex; margin-bottom: 18px; padding: 5px 9px; border-radius: 999px; background: rgba(242,140,40,.13); color: #9a4d06; font-size: 12px; font-weight: 800; letter-spacing: .04em; }
+    .wxp-section--theme-dark .mock-label { background: rgba(242,140,40,.2); color: #ffd7a8; }
+    .mock-img { min-height: 260px; border-radius: 12px; background: linear-gradient(135deg, rgba(17,50,93,.92), rgba(242,140,40,.75)), radial-gradient(circle at 25% 25%, rgba(255,255,255,.35), transparent 28%); display: grid; place-items: center; color: #fff; overflow: hidden; position: relative; }
+    .mock-img:after { content: ''; position: absolute; inset: 16px; border: 1px solid rgba(255,255,255,.35); border-radius: 10px; }
+    .mock-img span { position: relative; z-index: 1; font-size: 13px; letter-spacing: .08em; text-transform: uppercase; font-weight: 800; }
+
+    .wxp-hero { background: linear-gradient(rgba(10,26,46,.58), rgba(10,26,46,.58)), linear-gradient(120deg, #0A1A2E 0%, #11325D 48%, #F28C28 100%); background-size: cover; background-position: center; color: #fff; }
+    .wxp-hero__inner { min-height: 540px; display: flex; flex-direction: column; justify-content: center; align-items: flex-start; }
+    .wxp-hero__h1 { max-width: 820px; margin: 0 0 18px; font-size: clamp(2.45rem, 6vw, 4.9rem); line-height: .98; letter-spacing: -.04em; }
+    .wxp-hero__subtitle { max-width: 650px; margin: 0 0 30px; font-size: clamp(1.05rem, 2vw, 1.35rem); line-height: 1.55; opacity: .94; }
+
+    .wxp-ti__grid, .wxp-tabs__panel-grid, .wxp-nts__grid, .wxp-cta__grid { display: grid; grid-template-columns: 1fr 1fr; gap: 48px; align-items: center; }
+    .wxp-ti--reversed .wxp-ti__text { order: 2; }
+    .wxp-ti__bullets, .wxp-tabs__bullets { list-style: none; padding: 0; margin: 16px 0 24px; }
+    .wxp-ti__bullets li, .wxp-tabs__bullets li { display: flex; gap: 8px; align-items: baseline; padding: 6px 0; }
+    .wxp-ti__check, .wxp-tabs__bullets span { color: #16A34A; font-weight: 900; }
+    .wxp-to__inner { max-width: 760px; } .wxp-to--center .wxp-to__inner { text-align: center; }
+
+    .wxp-cds__inner { display: grid; grid-template-columns: 1fr 2fr; gap: 32px; align-items: center; }
+    .wxp-cds__items { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
+    .wxp-cds__item { padding: 18px; border-radius: 12px; background: rgba(17,50,93,.05); }
+    .wxp-section--theme-dark .wxp-cds__item { background: rgba(255,255,255,.07); }
+    .wxp-cds__value { display: block; font-size: 1.7rem; font-weight: 800; color: var(--orange); } .wxp-cds__label { display:block; font-size: 13px; opacity:.78; }
+
+    .wxp-nts__cards, .wxp-faq__items { display: grid; gap: 14px; }
+    .wxp-nts__card { display: block; padding: 20px; border: 1px solid var(--line); border-radius: 12px; color: inherit; text-decoration: none; background: #fff; }
+    .wxp-nts__card h3 { margin: 0 0 8px; font-size: 1.06rem; } .wxp-nts__card p { margin:0; color: var(--muted); line-height:1.5; }
+
+    .wxp-cg__header, .wxp-ng__header, .wxp-team__header, .wxp-pl__header { max-width: 720px; margin-bottom: 30px; }
+    .wxp-cg__grid, .wxp-ng__grid { list-style:none; padding:0; margin:0; display:grid; grid-template-columns: repeat(3,1fr); gap:22px; }
+    .wxp-cg__card, .wxp-ng__card { height:100%; overflow:hidden; border:1px solid var(--line); border-radius:14px; background:#fff; box-shadow:0 12px 28px rgba(10,26,46,.06); }
+    .wxp-cg__image, .wxp-ng__image { min-height:170px; border-radius:0; }
+    .wxp-cg__body, .wxp-ng__body { padding:18px; } .wxp-cg__body h3, .wxp-ng__body h3 { margin:0 0 8px; font-size:1.1rem; } .wxp-cg__result { color:var(--orange); font-weight:800; }
+
+    .wxp-cat__intro { margin-bottom: 24px; max-width: 60ch; }
+    .wxp-cat__controls { display:flex; flex-wrap:wrap; gap:16px; align-items:flex-start; margin-bottom:16px; padding:16px; background:rgba(0,0,0,.03); border-radius:12px; }
+    .wxp-cat__search { width:260px; padding:10px 14px; border-radius:8px; border:1px solid rgba(0,0,0,.15); font:inherit; }
+    .wxp-cat__facet { border:0; padding:0; margin:0; } .wxp-cat__facet-label { font-size:12px; text-transform:uppercase; opacity:.7; padding-bottom:6px; font-weight:700; }
+    .wxp-cat__chips { display:flex; flex-wrap:wrap; gap:6px; } .wxp-cat__chip { display:inline-flex; gap:5px; padding:5px 12px; border-radius:999px; background:rgba(0,0,0,.06); font-size:13px; }
+    .wxp-cat__grid { list-style:none; padding:0; margin:0; display:grid; grid-template-columns:repeat(4,1fr); gap:20px; }
+    .wxp-cat__card { height:100%; border:1px solid var(--line); border-radius:10px; overflow:hidden; background:#fff; }
+    .wxp-cat__image-wrap { aspect-ratio:1/1; background:#F5F6F8; display:grid; place-items:center; color:var(--blue); font-weight:800; }
+    .wxp-cat__body-wrap { padding:14px 16px 16px; display:grid; gap:7px; }
+    .wxp-cat__kind { width:max-content; padding:2px 8px; border-radius:4px; background:rgba(0,0,0,.05); font-size:11px; text-transform:uppercase; letter-spacing:.06em; }
+    .wxp-cat__title { margin:0; font-size:15px; } .wxp-cat__desc { margin:0; color:var(--muted); font-size:13px; line-height:1.45; } .wxp-cat__link { color:var(--blue); font-size:13px; font-weight:800; text-decoration:none; }
+
+    .wxp-tabs__intro { margin-bottom:24px; max-width:60ch; } .wxp-tabs__bar { display:flex; flex-wrap:wrap; gap:8px; padding-bottom:16px; border-bottom:1px solid rgba(0,0,0,.1); margin-bottom:32px; }
+    .wxp-tabs__pill { padding:10px 18px; border-radius:999px; border:0; background:rgba(0,0,0,.05); font:inherit; font-weight:800; color:inherit; } .wxp-tabs__pill.is-active { background:var(--blue); color:#fff; }
+    .wxp-tabs__h3 { margin:0 0 12px; font-size:clamp(1.4rem,2.5vw,1.85rem); }
+
+    .wxp-team__grid { list-style:none; padding:0; margin:0; display:grid; grid-template-columns:repeat(4,1fr); gap:18px; }
+    .wxp-team__card { overflow:hidden; border-radius:14px; border:1px solid var(--line); background:#fff; }
+    .wxp-team__photo { min-height:220px; border-radius:0; } .wxp-team__body { padding:16px; } .wxp-team__body h3 { margin:0 0 4px; } .wxp-team__meta { margin:0 0 10px; color:var(--muted); } .wxp-team__links { display:grid; gap:4px; font-size:13px; }
+
+    .wxp-pl__grid { display:grid; grid-template-columns:repeat(5,1fr); gap:14px; }
+    .wxp-pl__item { min-height:110px; padding:18px; display:grid; place-items:center; text-align:center; border:1px solid var(--line); border-radius:12px; background:#fff; font-weight:900; color:var(--blue); }
+    .wxp-faq__item { border:1px solid var(--line); border-radius:12px; background:#fff; padding:18px 20px; } .wxp-faq__item h3 { margin:0 0 8px; font-size:1rem; } .wxp-faq__item p { margin:0; color:var(--muted); line-height:1.55; }
+
+    .wxp-t { text-align:center; } .wxp-t__quote { max-width:850px; margin:0 auto 24px; font-size:clamp(1.45rem,3vw,2rem); line-height:1.4; font-weight:700; } .wxp-t__author { display:inline-flex; align-items:center; gap:12px; } .wxp-t__photo { width:52px; height:52px; border-radius:50%; background:linear-gradient(135deg,var(--blue),var(--orange)); } .wxp-t__byline { text-align:left; }
+
+    .wxp-cta__card { padding:42px; border-radius:20px; background:linear-gradient(135deg,rgba(17,50,93,.98),rgba(10,26,46,.98)); color:#fff; }
+    .wxp-cta__image { min-height:260px; }
+
+    .wxp-cf__wrap { display:grid; grid-template-columns:.9fr 1.1fr; gap:32px; padding:32px; border-radius:20px; background:#fff; color:var(--ink); box-shadow:0 18px 48px rgba(10,26,46,.10); }
+    .wxp-section--theme-dark .wxp-cf__wrap { background:rgba(255,255,255,.06); color:#fff; box-shadow:none; }
+    .wxp-cf__person { display:flex; gap:14px; align-items:center; margin-top:24px; padding:14px; border-radius:14px; background:rgba(17,50,93,.06); }
+    .wxp-cf__avatar { width:58px; height:58px; border-radius:50%; background:linear-gradient(135deg,var(--blue),var(--orange)); }
+    .wxp-cf__form { display:grid; grid-template-columns:1fr 1fr; gap:14px; } .wxp-cf__field { display:grid; gap:6px; font-size:13px; font-weight:800; } .wxp-cf__field--full { grid-column:1/-1; }
+    .wxp-cf__field input, .wxp-cf__field select, .wxp-cf__field textarea { width:100%; padding:11px 12px; border-radius:8px; border:1px solid rgba(0,0,0,.14); font:inherit; } .wxp-cf__field textarea { min-height:120px; resize:vertical; } .wxp-cf__trust { grid-column:1/-1; display:flex; flex-wrap:wrap; gap:10px; color:var(--muted); font-size:13px; }
+
+    @media (max-width: 900px) { .wxp-ti__grid, .wxp-tabs__panel-grid, .wxp-nts__grid, .wxp-cta__grid, .wxp-cds__inner, .wxp-cf__wrap { grid-template-columns:1fr; } .wxp-cg__grid, .wxp-ng__grid, .wxp-cat__grid, .wxp-team__grid, .wxp-pl__grid { grid-template-columns:repeat(2,1fr); } .wxp-ti--reversed .wxp-ti__text { order:0; } }
+    @media (max-width: 560px) { .wxp-cg__grid, .wxp-ng__grid, .wxp-cat__grid, .wxp-team__grid, .wxp-pl__grid, .wxp-cds__items, .wxp-cf__form { grid-template-columns:1fr; } .wxp-hero__inner { min-height:440px; } }
+  </style>
+</head>
+<body>
+  <div class="mock-note"><strong>Statisk skiss:</strong> visar alla section_type i <code>wexoe-pages</code> med exempeldata. Katalog/tabs/filter/formulär är visuellt ifyllda men skickar inte data.</div>
+
+  <article class="wxp wxp--light" id="wxp-all-sections-sketch">
+    <!-- section_type: hero -->
+    <section class="wxp-section wxp-section--hero wxp-section--theme-dark wxp-section--top-none wxp-section--bot-none wxp-section--layout-contained wxp-hero">
+      <div class="wxp-section__inner wxp-hero__inner">
+        <span class="mock-label">hero</span>
+        <p class="wxp-eyebrow wxp-hero__eyebrow">Automation · Sverige</p>
+        <h1 class="wxp-hero__h1">Industrilösningar som håller produktionen i rörelse</h1>
+        <p class="wxp-hero__subtitle">Från komponentval till driftsättning hjälper Wexøe dig att bygga säkrare, smartare och mer skalbara anläggningar.</p>
+        <div class="wxp-actions"><a class="wxp-btn wxp-btn--primary" href="#kontakt">Prata med oss →</a><a class="wxp-btn wxp-btn--secondary" href="#katalog">Utforska produkter</a></div>
+      </div>
+    </section>
+
+    <!-- section_type: text_image -->
+    <section class="wxp-section wxp-section--text_image wxp-section--theme-light wxp-section--top-lg wxp-section--bot-md wxp-section--layout-contained wxp-ti wxp-ti--reversed" id="losning">
+      <div class="wxp-section__inner wxp-ti__grid">
+        <div class="wxp-ti__text"><span class="mock-label">text_image</span><p class="wxp-eyebrow">Komplett stöd</p><h2 class="wxp-h2">Teknik, rådgivning och leverans från samma team</h2><div class="wxp-body"><p>Text/bild-sektionen kombinerar rubrik, brödtext, punktlista, två CTA:er och en visuell yta. Den kan också vändas så bilden ligger till vänster.</p></div><ul class="wxp-ti__bullets"><li><span class="wxp-ti__check">✓</span> Projektsupport från första specifikation</li><li><span class="wxp-ti__check">✓</span> Produkter från ledande partners</li><li><span class="wxp-ti__check">✓</span> Lokal närvaro i Norden</li></ul><div class="wxp-actions wxp-ti__actions"><a class="wxp-btn wxp-btn--primary" href="#">Se arbetssätt →</a><a class="wxp-btn wxp-btn--secondary" href="#">Ladda ner guide</a></div></div>
+        <div class="mock-img"><span>ti_image_url</span></div>
+      </div>
+    </section>
+
+    <!-- section_type: text_only -->
+    <section class="wxp-section wxp-section--text_only wxp-section--theme-light wxp-section--top-md wxp-section--bot-md wxp-section--layout-narrow wxp-to wxp-to--center">
+      <div class="wxp-section__inner wxp-to__inner"><span class="mock-label">text_only</span><p class="wxp-eyebrow">Fördjupning</p><h2 class="wxp-h2">En smal textsektion för förklarande innehåll</h2><div class="wxp-body wxp-to__body"><p>Den här sektionen är tänkt för längre resonemang, SEO-text eller introduktioner där läsbarhet är viktigare än visuella element.</p><p>Med center-alignment får den en lugn landningssidekänsla.</p></div></div>
+    </section>
+
+    <!-- section_type: company_data_strip -->
+    <section class="wxp-section wxp-section--company_data_strip wxp-section--theme-dark wxp-section--top-md wxp-section--bot-md wxp-section--layout-contained wxp-cds">
+      <div class="wxp-section__inner wxp-cds__inner"><div><span class="mock-label">company_data_strip</span><h2 class="wxp-h2">Wexøe i siffror</h2><div class="wxp-body"><p>Kan visa manuella datapunkter eller bolagsdata från core_company.</p></div></div><div class="wxp-cds__items"><div class="wxp-cds__item"><span class="wxp-cds__value">90+</span><span class="wxp-cds__label">års erfarenhet</span></div><div class="wxp-cds__item"><span class="wxp-cds__value">4</span><span class="wxp-cds__label">nordiska marknader</span></div><div class="wxp-cds__item"><span class="wxp-cds__value">24h</span><span class="wxp-cds__label">respons på ärenden</span></div><div class="wxp-cds__item"><span class="wxp-cds__value">1 200</span><span class="wxp-cds__label">aktiva kunder</span></div></div></div>
+    </section>
+
+    <!-- section_type: news_text_split -->
+    <section class="wxp-section wxp-section--news_text_split wxp-section--theme-light wxp-section--top-lg wxp-section--bot-md wxp-section--layout-contained wxp-nts">
+      <div class="wxp-section__inner wxp-nts__grid"><div><span class="mock-label">news_text_split</span><p class="wxp-eyebrow">Aktuellt</p><h2 class="wxp-h2">Kunskap och nyheter bredvid redaktionella kort</h2><div class="wxp-body"><p>Vänsterkolumnen kan beskriva området och högerkolumnen listar exempelvis artiklar eller nyheter från valda records.</p></div><div class="wxp-actions"><a class="wxp-btn wxp-btn--primary" href="#">Alla nyheter →</a></div></div><div class="wxp-nts__cards"><a class="wxp-nts__card" href="#"><h3>Nya säkerhetsreläer för kompakta skåp</h3><p>Kort ingress från artikelns beskrivning visas här.</p></a><a class="wxp-nts__card" href="#"><h3>Så planerar du robust maskinsäkerhet</h3><p>Praktiska råd för kravställning och dokumentation.</p></a><a class="wxp-nts__card" href="#"><h3>Webbinarium: energieffektiv produktion</h3><p>Inbjudan, datum och länk kan drivas av artikeldata.</p></a></div></div>
+    </section>
+
+    <!-- section_type: case_grid -->
+    <section class="wxp-section wxp-section--case_grid wxp-section--theme-light wxp-section--top-md wxp-section--bot-md wxp-section--layout-contained wxp-cg">
+      <div class="wxp-section__inner"><div class="wxp-cg__header"><span class="mock-label">case_grid</span><p class="wxp-eyebrow">Kundcase</p><h2 class="wxp-h2">Tre case-kort med bild, resultat och CTA</h2><div class="wxp-body"><p>Casen kan pinnas manuellt och fyllas på via scope.</p></div></div><ul class="wxp-cg__grid"><li><article class="wxp-cg__card"><div class="mock-img wxp-cg__image"><span>case image</span></div><div class="wxp-cg__body"><h3>Modernisering av packlinje</h3><p>Uppgraderad styrning utan långt produktionsstopp.</p><p class="wxp-cg__result">−18% stillestånd</p><a href="#">Läs caset →</a></div></article></li><li><article class="wxp-cg__card"><div class="mock-img wxp-cg__image"><span>case image</span></div><div class="wxp-cg__body"><h3>Säkerhetslösning för robotcell</h3><p>Riskreducering och snabbare omställning i samma projekt.</p><p class="wxp-cg__result">CE-klart på 6 veckor</p><a href="#">Läs caset →</a></div></article></li><li><article class="wxp-cg__card"><div class="mock-img wxp-cg__image"><span>case image</span></div><div class="wxp-cg__body"><h3>Spårbarhet i processmiljö</h3><p>Sensorik och nätverk som gav bättre datakvalitet.</p><p class="wxp-cg__result">+31% mätpunkter</p><a href="#">Läs caset →</a></div></article></li></ul></div>
+    </section>
+
+    <!-- section_type: news_grid -->
+    <section class="wxp-section wxp-section--news_grid wxp-section--theme-light wxp-section--top-md wxp-section--bot-md wxp-section--layout-contained wxp-ng">
+      <div class="wxp-section__inner"><div class="wxp-ng__header"><span class="mock-label">news_grid</span><p class="wxp-eyebrow">Artiklar</p><h2 class="wxp-h2">Nyhetsgrid med artikelkort</h2></div><ul class="wxp-ng__grid"><li><article class="wxp-ng__card"><div class="mock-img wxp-ng__image"><span>article image</span></div><div class="wxp-ng__body"><h3>Välj rätt IO-Link-master</h3><p>En kort artikelbeskrivning från records.</p><a href="#">Läs mer →</a></div></article></li><li><article class="wxp-ng__card"><div class="mock-img wxp-ng__image"><span>article image</span></div><div class="wxp-ng__body"><h3>Guide till kapslingar</h3><p>Tips för krävande industrimiljöer.</p><a href="#">Läs mer →</a></div></article></li><li><article class="wxp-ng__card"><div class="mock-img wxp-ng__image"><span>article image</span></div><div class="wxp-ng__body"><h3>Fem vanliga fel i skåpdesign</h3><p>Så undviker du värmeproblem.</p><a href="#">Läs mer →</a></div></article></li></ul></div>
+    </section>
+
+    <!-- section_type: catalog -->
+    <section class="wxp-section wxp-section--catalog wxp-section--theme-light wxp-section--top-lg wxp-section--bot-lg wxp-section--layout-contained wxp-cat" id="katalog">
+      <div class="wxp-section__inner"><span class="mock-label">catalog</span><p class="wxp-eyebrow">Katalog</p><h2 class="wxp-h2">Sökbar produkt- och artikelkatalog</h2><div class="wxp-body wxp-cat__intro"><p>Visar sökfält, facet-chips och kort för produkter/artiklar när datakällorna är aktiverade.</p></div><div class="wxp-cat__controls"><input class="wxp-cat__search" type="search" placeholder="Sök i katalogen…" /><fieldset class="wxp-cat__facet"><legend class="wxp-cat__facet-label">Supplier</legend><div class="wxp-cat__chips"><label class="wxp-cat__chip"><input type="checkbox" checked /> Phoenix Contact</label><label class="wxp-cat__chip"><input type="checkbox" /> Rittal</label><label class="wxp-cat__chip"><input type="checkbox" /> Wago</label></div></fieldset></div><p class="wxp-cat__count"><strong>4</strong> av 4 visas</p><ul class="wxp-cat__grid"><li><article class="wxp-cat__card"><div class="wxp-cat__image-wrap">Produktbild</div><div class="wxp-cat__body-wrap"><span class="wxp-cat__kind">Produkt</span><h3 class="wxp-cat__title">AXC F 3152 PLCnext Controller</h3><p class="wxp-cat__desc">Öppen controller för moderna automationslösningar.</p><a class="wxp-cat__link" href="#">Visa produkt →</a></div></article></li><li><article class="wxp-cat__card"><div class="wxp-cat__image-wrap">Produktbild</div><div class="wxp-cat__body-wrap"><span class="wxp-cat__kind">Artikel</span><h3 class="wxp-cat__title">SAC M12-kabel 5 m</h3><p class="wxp-cat__desc">Förmonterad givarkabel för IP67-installation.</p><a class="wxp-cat__link" href="#">Till webbshop →</a></div></article></li><li><article class="wxp-cat__card"><div class="wxp-cat__image-wrap">Produktbild</div><div class="wxp-cat__body-wrap"><span class="wxp-cat__kind">Produkt</span><h3 class="wxp-cat__title">Rittal VX25 kopplingsskåp</h3><p class="wxp-cat__desc">Modulärt skåpsystem för snabb montering.</p><a class="wxp-cat__link" href="#">Läs mer →</a></div></article></li><li><article class="wxp-cat__card"><div class="wxp-cat__image-wrap">Produktbild</div><div class="wxp-cat__body-wrap"><span class="wxp-cat__kind">Artikel</span><h3 class="wxp-cat__title">Wago 221 kopplingsklämma</h3><p class="wxp-cat__desc">Snabb och säker anslutning i fält.</p><a class="wxp-cat__link" href="#">Datasheet →</a></div></article></li></ul></div>
+    </section>
+
+    <!-- section_type: tabs -->
+    <section class="wxp-section wxp-section--tabs wxp-section--theme-light wxp-section--top-md wxp-section--bot-lg wxp-section--layout-contained wxp-tabs">
+      <div class="wxp-section__inner"><span class="mock-label">tabs</span><p class="wxp-eyebrow">Lösningsområden</p><h2 class="wxp-h2">Tabs med paneltext, bullets, CTA och bild</h2><div class="wxp-body wxp-tabs__intro"><p>Första fliken visas aktiv i skissen. I pluginet växlar JS mellan panelerna.</p></div><div class="wxp-tabs__bar" role="tablist"><button class="wxp-tabs__pill is-active">Maskinsäkerhet</button><button class="wxp-tabs__pill">Skåpbyggnad</button><button class="wxp-tabs__pill">Digitalisering</button></div><div class="wxp-tabs__panel is-active"><div class="wxp-tabs__panel-grid"><div><p class="wxp-eyebrow">Aktiv flik</p><h3 class="wxp-tabs__h3">Bygg säkra maskiner med tydlig dokumentation</h3><div class="wxp-body"><p>Panelen kan ha egen brödtext, punktlista och upp till två länkar.</p></div><ul class="wxp-tabs__bullets"><li><span>✓</span> Riskbedömning och komponentval</li><li><span>✓</span> Reläer, brytare och ljusridåer</li><li><span>✓</span> Support vid CE-processen</li></ul><div class="wxp-actions"><a class="wxp-btn wxp-btn--primary" href="#">Se lösning →</a><a class="wxp-btn wxp-btn--secondary" href="#">Kontakta expert</a></div></div><div class="mock-img"><span>tab image</span></div></div></div></div>
+    </section>
+
+    <!-- section_type: team_grid -->
+    <section class="wxp-section wxp-section--team_grid wxp-section--theme-light wxp-section--top-md wxp-section--bot-md wxp-section--layout-contained wxp-team">
+      <div class="wxp-section__inner"><div class="wxp-team__header"><span class="mock-label">team_grid</span><p class="wxp-eyebrow">Team</p><h2 class="wxp-h2">Medarbetarkort från core_coworkers</h2><div class="wxp-body"><p>Kan visas som cards, rack eller compact beroende på variant.</p></div></div><ul class="wxp-team__grid"><li><article class="wxp-team__card"><div class="mock-img wxp-team__photo"><span>photo</span></div><div class="wxp-team__body"><h3>Anna Lind</h3><p class="wxp-team__meta">Automation Specialist</p><div class="wxp-team__links"><a href="mailto:anna@example.com">anna@example.com</a><a href="tel:+461012345">+46 10 123 45</a></div></div></article></li><li><article class="wxp-team__card"><div class="mock-img wxp-team__photo"><span>photo</span></div><div class="wxp-team__body"><h3>Jonas Berg</h3><p class="wxp-team__meta">Product Manager</p><div class="wxp-team__links"><a href="mailto:jonas@example.com">jonas@example.com</a><a href="tel:+461067890">+46 10 678 90</a></div></div></article></li><li><article class="wxp-team__card"><div class="mock-img wxp-team__photo"><span>photo</span></div><div class="wxp-team__body"><h3>Maria Holm</h3><p class="wxp-team__meta">Sales Engineer</p><div class="wxp-team__links"><a href="mailto:maria@example.com">maria@example.com</a><a href="tel:+461011122">+46 10 111 22</a></div></div></article></li><li><article class="wxp-team__card"><div class="mock-img wxp-team__photo"><span>photo</span></div><div class="wxp-team__body"><h3>Erik Nordin</h3><p class="wxp-team__meta">Technical Support</p><div class="wxp-team__links"><a href="mailto:erik@example.com">erik@example.com</a><a href="tel:+461033344">+46 10 333 44</a></div></div></article></li></ul></div>
+    </section>
+
+    <!-- section_type: partner_list -->
+    <section class="wxp-section wxp-section--partner_list wxp-section--theme-light wxp-section--top-md wxp-section--bot-md wxp-section--layout-contained wxp-pl">
+      <div class="wxp-section__inner"><div class="wxp-pl__header"><span class="mock-label">partner_list</span><p class="wxp-eyebrow">Partners</p><h2 class="wxp-h2">Logor i grid/list/marquee-variant</h2><div class="wxp-body"><p>Här visas grid-varianten med fem populerade partnerkort.</p></div></div><div class="wxp-pl__grid"><a class="wxp-pl__item" href="#">Phoenix Contact</a><a class="wxp-pl__item" href="#">Rittal</a><a class="wxp-pl__item" href="#">Wago</a><a class="wxp-pl__item" href="#">Eaton</a><a class="wxp-pl__item" href="#">Weidmüller</a></div></div>
+    </section>
+
+    <!-- section_type: faq -->
+    <section class="wxp-section wxp-section--faq wxp-section--theme-light wxp-section--top-md wxp-section--bot-md wxp-section--layout-narrow wxp-faq">
+      <div class="wxp-section__inner"><span class="mock-label">faq</span><p class="wxp-eyebrow">FAQ</p><h2 class="wxp-h2">Vanliga frågor</h2><div class="wxp-body"><p>FAQ-items kommer från radbaserad data i sektionen.</p></div><div class="wxp-faq__items"><article class="wxp-faq__item"><h3>Kan sektionen ha flera frågor?</h3><p>Ja, varje rad blir ett eget FAQ-kort med fråga och svar.</p></article><article class="wxp-faq__item"><h3>Är layouten smal?</h3><p>Skissen visar narrow layout för bra läsbarhet, men sektionen kan följa normal container.</p></article><article class="wxp-faq__item"><h3>Kan markdown användas?</h3><p>Svaren renderas via Wexøes markdown-helper i pluginet.</p></article></div></div>
+    </section>
+
+    <!-- section_type: testimonial -->
+    <section class="wxp-section wxp-section--testimonial wxp-section--theme-dark wxp-section--top-lg wxp-section--bot-lg wxp-section--layout-contained wxp-t">
+      <div class="wxp-section__inner"><span class="mock-label">testimonial</span><p class="wxp-eyebrow">Kundröst</p><blockquote class="wxp-t__quote">”Wexøe hjälpte oss att gå från idé till driftsatt lösning snabbare än planerat – med rätt komponenter från start.”</blockquote><div class="wxp-t__author"><div class="wxp-t__photo"></div><div class="wxp-t__byline"><strong>Linda Andersson</strong><br><span>Produktionschef, Nordic Manufacturing AB</span></div></div></div>
+    </section>
+
+    <!-- section_type: cta_banner -->
+    <section class="wxp-section wxp-section--cta_banner wxp-section--theme-light wxp-section--top-lg wxp-section--bot-md wxp-section--layout-contained wxp-cta">
+      <div class="wxp-section__inner"><div class="wxp-cta__card"><div class="wxp-cta__grid"><div><span class="mock-label">cta_banner</span><p class="wxp-eyebrow">Nästa steg</p><h2 class="wxp-h2">Redo att gå vidare med din lösning?</h2><div class="wxp-body"><p>CTA-bannern samlar rubrik, text, två länkar och eventuell bild i en tydlig avslutande yta.</p></div><div class="wxp-actions"><a class="wxp-btn wxp-btn--primary" href="#kontakt">Boka rådgivning →</a><a class="wxp-btn wxp-btn--secondary" href="#">Ring oss</a></div></div><div class="mock-img wxp-cta__image"><span>cta image</span></div></div></div></div>
+    </section>
+
+    <!-- section_type: contact_form -->
+    <section class="wxp-section wxp-section--contact_form wxp-section--theme-dark wxp-section--top-md wxp-section--bot-lg wxp-section--layout-contained wxp-cf" id="kontakt">
+      <div class="wxp-section__inner"><span class="mock-label">contact_form</span><div class="wxp-cf__wrap"><div><p class="wxp-eyebrow">Kontakt</p><h2 class="wxp-h2">Berätta om din utmaning</h2><div class="wxp-body"><p>Den riktiga sektionen använder den delade contact-form-renderern i wexoe-core och kan visa företag, telefon, dropdown, trust signals och kontaktperson.</p></div><div class="wxp-cf__person"><div class="wxp-cf__avatar"></div><div><strong>Anna Lind</strong><br><span>Automation Specialist</span><br><small>anna@example.com · +46 10 123 45</small></div></div></div><form class="wxp-cf__form"><label class="wxp-cf__field">Namn<input value="Exempel Kund" /></label><label class="wxp-cf__field">E-post<input value="kund@example.com" /></label><label class="wxp-cf__field">Företag<input value="Exempel AB" /></label><label class="wxp-cf__field">Telefon<input value="+46 70 123 45 67" /></label><label class="wxp-cf__field wxp-cf__field--full">Ämne<select><option>Maskinsäkerhet</option><option>Produktfråga</option><option>Service</option></select></label><label class="wxp-cf__field wxp-cf__field--full">Meddelande<textarea>Vi vill diskutera en kommande modernisering av vår produktionslina.</textarea></label><div class="wxp-cf__trust"><span>✓ Svar inom 24 h</span><span>✓ Lokal teknisk support</span><span>✓ Ingen bindning</span></div><button class="wxp-btn wxp-btn--primary wxp-cf__field--full" type="button">Skicka förfrågan →</button></form></div></div>
+    </section>
+  </article>
+</body>
+</html>
