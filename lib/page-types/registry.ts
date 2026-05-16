@@ -35,13 +35,15 @@ import {
   LP_ENTITIES,
   PA_ENTITIES,
   UNIQUE_PAGES_ENTITIES,
+  CMS_PAGES_ENTITIES,
 } from '../wexoe-cache-entities';
 
 export type PageTypeId =
   | 'landing'
   | 'product'
   | 'customer-type'
-  | 'unique';
+  | 'unique'
+  | 'page';
 
 export interface PageRow {
   id: string;
@@ -177,6 +179,26 @@ export const PAGE_TYPES = definePageTypes([
         slug: pickString(p, 'slug'),
         h1: pickString(p, 'h1'),
         type: 'unique',
+        divisionIds: pickStringArray(p, 'divisionIds'),
+        countryIds: pickStringArray(p, 'countryIds'),
+      })),
+  },
+  {
+    id: 'page',
+    label: 'Sida',
+    description: 'Informationssida (startsida, om-oss, pillar) med polymorfa sektioner',
+    creatable: true,
+    listUrl: '/api/page?action=list',
+    createPath: '/editor/page',
+    editPath: (id) => `/editor/page/${id}`,
+    cacheEntities: CMS_PAGES_ENTITIES,
+    mapList: (data) =>
+      (data.pages ?? []).map((p) => ({
+        id: pickString(p, 'id'),
+        name: pickString(p, 'internalLabel', 'h1', 'slug'),
+        slug: pickString(p, 'slug'),
+        h1: pickString(p, 'h1'),
+        type: 'page',
         divisionIds: pickStringArray(p, 'divisionIds'),
         countryIds: pickStringArray(p, 'countryIds'),
       })),
