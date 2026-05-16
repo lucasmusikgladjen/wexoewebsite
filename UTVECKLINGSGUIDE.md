@@ -457,7 +457,6 @@ wexoe-core/
     cms_pages.php            # One-off-sidor (start, om-oss, pillar)
     cms_page_sections.php    # Polymorfa sektioner för cms_pages
     cms_section_tabs.php     # Sub-records för tabs-sektionen
-    cms_unique_pages.php     # @deprecated — utfasas till cms_pages
     core_partners.php
     ...
   write-entities/          # SKRIV-scheman, en fil per write-target

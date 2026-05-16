@@ -20,7 +20,7 @@ class Plugin {
     const OPTION_WEBHOOK_SECRET = 'wexoe_core_webhook_secret';
 
     /**
-     * Hård-kodad base ID för SSOT (Wexoe NY). Entity-scheman för core_* / cms_unique_pages
+     * Hård-kodad base ID för SSOT (Wexoe NY). Entity-scheman för core_* / cms_*
      * sätter `'base_id' => Plugin::SSOT_BASE_ID` så att de läses från denna bas
      * istället för standardbasen (Wexoe, som håller landing pages / submissions).
      */

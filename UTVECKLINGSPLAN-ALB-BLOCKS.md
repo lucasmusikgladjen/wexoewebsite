@@ -2,7 +2,7 @@
 
 Mål: Ersätta dagens manuella `[wexoe_page slug="..."]`-shortcodes (i Enfold Code Block) med riktiga Avia Layout Builder-element. Redaktören väljer i builder-modalen:
 
-1. **Innehållstyp** — vilken Wexoe-entitet (`landing_pages`, `cms_unique_pages`, `partners`, etc.)
+1. **Innehållstyp** — vilken Wexoe-entitet (`landing_pages`, `cms_pages`, `partners`, etc.)
 2. **Specifik post** — vilken record som ska renderas, listad dynamiskt utifrån vald typ
 
 ---
@@ -55,9 +55,9 @@ En filtrerbar array som mappar Wexoe-entiteter till hur de listas och renderas:
 // includes/content-types.php
 function wexoe_alb_content_types() {
     return apply_filters('wexoe_alb_content_types', [
-        'cms_unique_pages' => [
+        'cms_pages' => [
             'label'   => 'Wexoe Page (meta-sida)',
-            'entity'  => 'cms_unique_pages',
+            'entity'  => 'cms_pages',
             'list'    => 'wexoe_alb_list_unique_pages',   // returnerar [['id'=>slug,'label'=>'Om oss'], ...]
             'render'  => 'wexoe_alb_render_unique_page',  // tar slug, returnerar HTML
         ],
@@ -106,7 +106,7 @@ class Wexoe_Content_Block extends aviaShortcodeTemplate {
                 'desc'    => __('Vilken sorts Wexoe-innehåll', 'wexoe'),
                 'id'      => 'content_type',
                 'type'    => 'select',
-                'std'     => 'cms_unique_pages',
+                'std'     => 'cms_pages',
                 'subtype' => $types,
             ],
             [
@@ -168,7 +168,7 @@ Börja med A → migrera till B om listorna växer.
 
 #### Viktigt: bevara rått ID vid rendering
 
-Enfolds `select`-subtype är en platt `[value => label]`-array, så vi måste prefixa optionernas `value` (`{type}:{raw_id}`) för att (1) JS-filtret ska kunna avgöra vilken option som hör till vilken typ och (2) slug-kollisioner mellan entiteter (t.ex. både `cms_unique_pages` och `landing_pages` kan ha `om-oss`) inte ska dela samma option. Konsekvensen är att det sparade `content_id`-attributet blir prefixat (`cms_unique_pages:om-oss`), men de befintliga render-funktionerna (`wexoe_pages_render()` → `$pages_repo->find_by('slug', $slug)`, `wexoe_landing_page_shortcode()` → `find($slug)` i `New plugins/wexoe-pages/wexoe-pages.php` m.fl.) förväntar sig **rått** slug/ID. Lösning:
+Enfolds `select`-subtype är en platt `[value => label]`-array, så vi måste prefixa optionernas `value` (`{type}:{raw_id}`) för att (1) JS-filtret ska kunna avgöra vilken option som hör till vilken typ och (2) slug-kollisioner mellan entiteter (t.ex. både `cms_pages` och `landing_pages` kan ha `om-oss`) inte ska dela samma option. Konsekvensen är att det sparade `content_id`-attributet blir prefixat (`cms_pages:om-oss`), men de befintliga render-funktionerna (`wexoe_pages_render()` → `$pages_repo->find_by('slug', $slug)`, `wexoe_landing_page_shortcode()` → `find($slug)` i `New plugins/wexoe-pages/wexoe-pages.php` m.fl.) förväntar sig **rått** slug/ID. Lösning:
 
 1. `shortcode_handler()` strippar prefixet innan render-callbacken anropas (se kodexemplet ovan) och verifierar att prefixet matchar `content_type` — detta är platsen där `content_id` översätts till det format som befintliga renderare redan stödjer.
 2. `wexoe_alb_initial_options()` returnerar `["{$type}:{$id}" => $label]` för alla typer plus en första tom rad så att stå-värdet inte renderar fel post.
@@ -197,11 +197,11 @@ add_action('wp_ajax_wexoe_alb_list', function () {
 ### Fas 1 — Skelett (½ dag)
 1. Skapa pluginmappen `New plugins/wexoe-alb-blocks/` med bootstrap-fil och dependency checks (`wexoe-core` + Enfold).
 2. Registrera modulen via `ShortCode_Inserter` så ikonen syns i ALB-modalen.
-3. Hårdkoda en typ (`cms_unique_pages`) och en select med statiska val. Verifiera att shortcode `[wexoe_content content_type="..." content_id="..."]` sparas och renderas.
+3. Hårdkoda en typ (`cms_pages`) och en select med statiska val. Verifiera att shortcode `[wexoe_content content_type="..." content_id="..."]` sparas och renderas.
 
 ### Fas 2 — Content-type registry (½ dag)
 4. Implementera `wexoe_alb_content_types()` med `apply_filters`.
-5. Skriv `list`- och `render`-callbacks för `cms_unique_pages` som delegerar till `wexoe-pages`-render-funktionen.
+5. Skriv `list`- och `render`-callbacks för `cms_pages` som delegerar till `wexoe-pages`-render-funktionen.
 6. Lägg till resterande entiteter: `landing_pages`, `partners`, `audience_hero`, `product_area`, `contact_page`, `automation_pillar`.
 
 ### Fas 3 — Dynamisk dropdown (½–1 dag)

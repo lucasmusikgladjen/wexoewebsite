@@ -127,7 +127,7 @@ function wexoe_alb_collect_all_options() {
 /**
  * Bygger den platta subtype-arrayen som matas till Enfolds select.
  *
- * Format för Enfold select: ['Wexoe Page – Om oss (om-oss)' => 'cms_unique_pages:om-oss', ...]
+ * Format för Enfold select: ['Wexoe Page – Om oss (om-oss)' => 'cms_pages:om-oss', ...]
  * Den första posten är en tom platshållare så att stå-värdet inte
  * råkar mata in en post som redaktören inte valt aktivt.
  */
