@@ -403,3 +403,57 @@ export interface CmsPageListItem {
   divisionIds: string[];
   countryIds: string[];
 }
+
+// ─── Delete (cascade) ──────────────────────────────────────────────────────
+
+/**
+ * Multi-tabell cascade delete: page → sektioner → tabs.
+ *
+ * Lager 3 deklarerar inga `relations[]`, så factory:ns `defaultDelete`
+ * skulle bara radera cms_pages-recorden och lämna sektion- och
+ * tab-records orphana. Vi äger orkestreringen själva.
+ *
+ * Ordning: tabs först (djupast nästade), sen sektioner, sen page. Om en
+ * radering misslyckas avbryter felet kedjan — Airtable saknar transaktioner
+ * så orphans kan finnas kvar; användaren kan retrya delete (det är
+ * idempotent: redan-borttagna records ger inget fel via batch-DELETE).
+ */
+export async function cmsPageDelete(
+  recordId: string,
+  ctx: { apiKey: string },
+): Promise<void> {
+  const apiKey = ctx.apiKey;
+
+  // 1) Läs page för section_ids.
+  const page = await getRecord(apiKey, CMS_PAGES_TABLE_ID, recordId, SSOT_BASE_ID);
+  const sectionIds: string[] =
+    (page.fields['section_ids'] as string[] | undefined) ?? [];
+
+  // 2) Läs sektioner för deras tabs_tab_ids.
+  const allTabIds: string[] = [];
+  if (sectionIds.length > 0) {
+    const formula = `OR(${sectionIds.map((id) => `RECORD_ID()='${id}'`).join(',')})`;
+    const sections = await listRecords(apiKey, CMS_PAGE_SECTIONS_TABLE_ID, {
+      filterByFormula: formula,
+      baseId: SSOT_BASE_ID,
+      fields: ['tabs_tab_ids'],
+    });
+    for (const sec of sections) {
+      const ids = (sec.fields['tabs_tab_ids'] as string[] | undefined) ?? [];
+      allTabIds.push(...ids);
+    }
+  }
+
+  // 3) Radera tabs först (djupast nästade).
+  if (allTabIds.length > 0) {
+    await deleteRecords(apiKey, CMS_SECTION_TABS_TABLE_ID, allTabIds, SSOT_BASE_ID);
+  }
+
+  // 4) Radera sektioner.
+  if (sectionIds.length > 0) {
+    await deleteRecords(apiKey, CMS_PAGE_SECTIONS_TABLE_ID, sectionIds, SSOT_BASE_ID);
+  }
+
+  // 5) Radera page-recorden.
+  await deleteRecords(apiKey, CMS_PAGES_TABLE_ID, [recordId], SSOT_BASE_ID);
+}

@@ -18,6 +18,7 @@ import { AirtableRecord, SSOT_BASE_ID } from '../airtable';
 import {
   cmsPageCreate,
   cmsPageUpdate,
+  cmsPageDelete,
   type CmsPageListItem,
 } from './cms-page-actions';
 import { loadCmsPageState } from '../cms-page-loader';
@@ -35,9 +36,11 @@ export const cmsPageServer: PageTypeServerDef<CmsPageState, CmsPageListItem> = {
   tableId: CMS_PAGES_TABLE_ID,
   baseId: SSOT_BASE_ID,
 
-  // Lager 3 — hela skriv-vägen är override:d.
+  // Lager 3 — hela skriv-vägen är override:d. Delete behöver också override
+  // eftersom defaultDelete bara cascade:ar via `relations[]` (tom här).
   create: cmsPageCreate,
   update: cmsPageUpdate,
+  delete: cmsPageDelete,
 
   // Required-by-type-stubs (se kommentar ovan).
   emptyState: unreachable,

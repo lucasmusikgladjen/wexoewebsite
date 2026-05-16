@@ -1183,6 +1183,12 @@ export async function transformCmsPage(
   parsed.page.country_ids = state.countryIds;
   parsed.page.division_ids = state.divisionIds;
 
+  // internal_notes: redaktörsfält som Claude EJ ska processa (schema-MD säger
+  // utelämna det). Vi skickar inte fältet i payloaden men måste backfilla det
+  // i outputen så att redaktörens ändringar PATCHas till Airtable. Vid CREATE
+  // räcker det också att skicka — tom sträng = ingen anteckning.
+  parsed.page.internal_notes = state.internalNotes;
+
   return parsed;
 }
 
