@@ -20,6 +20,7 @@ import { PageState } from './types';
 import { ProductAreaState } from './product-area-types';
 import { CustomerTypePageState } from './customer-type-types';
 import { UniquePageState } from './unique-page-types';
+import { CmsPageState, PageSection, TabsSection } from './cms-page-types';
 
 // ─── Schemas loaded once at module boot ────────────────────────────────────
 const SCHEMA_LP = readFileSync(
@@ -36,6 +37,10 @@ const SCHEMA_CUSTOMER_TYPE = readFileSync(
 );
 const SCHEMA_UNIQUE_PAGE = readFileSync(
   join(process.cwd(), 'lib', 'airtable-schema-unique-page.md'),
+  'utf-8',
+);
+const SCHEMA_CMS_PAGE = readFileSync(
+  join(process.cwd(), 'lib', 'airtable-schema-cms-page.md'),
   'utf-8',
 );
 
@@ -84,6 +89,25 @@ export interface CustomerTypeTransformResult {
 
 export interface UniquePageTransformResult {
   uniquePage: Record<string, unknown>;
+}
+
+export interface CmsPageTransformSection {
+  _clientIndex: number;
+  _recordId: string | null;
+  fields: Record<string, unknown>;
+}
+
+export interface CmsPageTransformTab {
+  _clientIndex: number;
+  _sectionClientIndex: number;
+  _recordId: string | null;
+  fields: Record<string, unknown>;
+}
+
+export interface CmsPageTransformResult {
+  page: Record<string, unknown>;
+  sections: CmsPageTransformSection[];
+  sectionTabs: CmsPageTransformTab[];
 }
 
 // ─── Low-level Claude call with retry ──────────────────────────────────────
@@ -891,6 +915,273 @@ export async function transformUniquePage(
   // korrekt att echo:a state direkt — Claude har inget att tillföra här.
   parsed.uniquePage.country_ids = state.countryIds;
   parsed.uniquePage.division_ids = state.divisionIds;
+
+  return parsed;
+}
+
+// ─── CMS Page payload builder ─────────────────────────────────────────────
+
+function sectionToPayload(sec: PageSection, index: number): Record<string, unknown> {
+  // Universella fält + typ-diskriminator för Claude.
+  const base: Record<string, unknown> = {
+    _clientIndex: index,
+    _recordId: sec.recordId || null,
+    type: sec.type,
+    internal_label: sec.internalLabel,
+    is_active: sec.isActive,
+    anchor_id: sec.anchorId,
+    layout: sec.layout,
+    theme: sec.theme,
+    top_padding: sec.topPadding,
+    bottom_padding: sec.bottomPadding,
+  };
+
+  switch (sec.type) {
+    case 'hero':
+      return { ...base,
+        hero_eyebrow: sec.eyebrow, hero_h1: sec.h1, hero_subtitle: sec.subtitle,
+        hero_image_url: sec.imageUrl,
+        hero_cta_text: sec.ctaText, hero_cta_url: sec.ctaUrl,
+        hero_cta2_text: sec.cta2Text, hero_cta2_url: sec.cta2Url };
+    case 'text_image':
+      return { ...base,
+        ti_eyebrow: sec.eyebrow, ti_h2: sec.h2, ti_body: sec.body, ti_bullets: sec.bullets,
+        ti_image_url: sec.imageUrl, ti_image_alt: sec.imageAlt, ti_reversed: sec.reversed,
+        ti_cta_text: sec.ctaText, ti_cta_url: sec.ctaUrl,
+        ti_cta2_text: sec.cta2Text, ti_cta2_url: sec.cta2Url };
+    case 'text_only':
+      return { ...base,
+        to_eyebrow: sec.eyebrow, to_h2: sec.h2, to_body: sec.body, to_align: sec.align };
+    case 'company_data_strip':
+      return { ...base,
+        cds_h2: sec.h2, cds_use_company_singleton: sec.useCompanySingleton,
+        cds_country_code: sec.countryCode, cds_items: sec.items };
+    case 'news_text_split':
+      return { ...base,
+        nts_eyebrow: sec.eyebrow, nts_h2: sec.h2, nts_body: sec.body,
+        nts_cta_text: sec.ctaText, nts_cta_url: sec.ctaUrl,
+        nts_news_manual_ids: sec.newsManualIds,
+        nts_scope_division: sec.scopeDivision, nts_scope_country: sec.scopeCountry,
+        nts_limit: sec.limit };
+    case 'case_grid':
+      return { ...base,
+        cg_eyebrow: sec.eyebrow, cg_h2: sec.h2, cg_body: sec.body,
+        cg_case_manual_ids: sec.caseManualIds,
+        cg_scope_country: sec.scopeCountry, cg_scope_division: sec.scopeDivision,
+        cg_scope_customer_type: sec.scopeCustomerType,
+        cg_limit: sec.limit, cg_columns: sec.columns };
+    case 'news_grid':
+      return { ...base,
+        ng_eyebrow: sec.eyebrow, ng_h2: sec.h2,
+        ng_article_manual_ids: sec.articleManualIds,
+        ng_scope_country: sec.scopeCountry, ng_scope_division: sec.scopeDivision,
+        ng_scope_topic: sec.scopeTopic,
+        ng_limit: sec.limit, ng_columns: sec.columns };
+    case 'catalog':
+      return { ...base,
+        cat_eyebrow: sec.eyebrow, cat_h2: sec.h2, cat_intro_body: sec.introBody,
+        cat_include_products: sec.includeProducts, cat_include_articles: sec.includeArticles,
+        cat_scope_division: sec.scopeDivision, cat_scope_country: sec.scopeCountry,
+        cat_facet_fields: sec.facetFields,
+        cat_placeholder: sec.placeholder, cat_empty_text: sec.emptyText };
+    case 'tabs':
+      // Tabs sub-records skickas separat (sectionTabs) — endast container-fälten här.
+      return { ...base,
+        tabs_eyebrow: sec.eyebrow, tabs_h2: sec.h2, tabs_intro_body: sec.introBody };
+    case 'team_grid':
+      return { ...base,
+        tg_eyebrow: sec.eyebrow, tg_h2: sec.h2, tg_body: sec.body, tg_variant: sec.variant,
+        tg_coworker_manual_ids: sec.coworkerManualIds,
+        tg_scope_country: sec.scopeCountry, tg_scope_division: sec.scopeDivision,
+        tg_limit: sec.limit };
+    case 'partner_list':
+      return { ...base,
+        pl_eyebrow: sec.eyebrow, pl_h2: sec.h2, pl_body: sec.body, pl_variant: sec.variant,
+        pl_partner_manual_ids: sec.partnerManualIds,
+        pl_scope_division: sec.scopeDivision, pl_scope_country: sec.scopeCountry,
+        pl_limit: sec.limit };
+    case 'faq':
+      return { ...base,
+        faq_eyebrow: sec.eyebrow, faq_h2: sec.h2, faq_body: sec.body, faq_items: sec.items };
+    case 'testimonial':
+      return { ...base,
+        t_eyebrow: sec.eyebrow, t_quote: sec.quote,
+        t_author_name: sec.authorName, t_author_title: sec.authorTitle,
+        t_author_image_url: sec.authorImageUrl,
+        t_testimonial_manual_ids: sec.testimonialManualIds,
+        t_scope_country: sec.scopeCountry, t_scope_division: sec.scopeDivision,
+        t_scope_customer_type: sec.scopeCustomerType,
+        t_featured_only: sec.featuredOnly };
+    case 'cta_banner':
+      return { ...base,
+        cta_eyebrow: sec.eyebrow, cta_h2: sec.h2, cta_body: sec.body,
+        cta_cta_text: sec.ctaText, cta_cta_url: sec.ctaUrl,
+        cta_cta2_text: sec.cta2Text, cta_cta2_url: sec.cta2Url,
+        cta_image_url: sec.imageUrl };
+    case 'contact_form':
+      return { ...base,
+        cf_eyebrow: sec.eyebrow, cf_title: sec.title, cf_subtitle: sec.subtitle,
+        cf_layout: sec.cfLayout,
+        cf_show_company: sec.showCompany, cf_show_phone: sec.showPhone,
+        cf_show_dropdown: sec.showDropdown, cf_dropdown_label: sec.dropdownLabel,
+        cf_options: sec.options, cf_cta_text: sec.ctaText, cf_message_label: sec.messageLabel,
+        cf_trust_signals: sec.trustSignals, cf_show_contact_person: sec.showContactPerson,
+        cf_contact_scope_country: sec.contactScopeCountry,
+        cf_contact_scope_division: sec.contactScopeDivision };
+  }
+}
+
+function buildCmsPagePayload(state: CmsPageState, mode: TransformMode): string {
+  // Bygg sektion-payloaden + en platt tabs-array med _sectionClientIndex.
+  const sectionsPayload = state.sections.map((sec, i) => sectionToPayload(sec, i));
+
+  const tabsPayload: Array<Record<string, unknown>> = [];
+  state.sections.forEach((sec, sectionIndex) => {
+    if (sec.type !== 'tabs') return;
+    const tabsSection = sec as TabsSection;
+    tabsSection.tabs.forEach((t, tabIndex) => {
+      tabsPayload.push({
+        _clientIndex: tabIndex,
+        _sectionClientIndex: sectionIndex,
+        _recordId: t.recordId || null,
+        name: t.name,
+        is_active: t.isActive,
+        eyebrow: t.eyebrow,
+        h2: t.h2,
+        body: t.body,
+        bullets: t.bullets,
+        image_url: t.imageUrl,
+        image_alt: t.imageAlt,
+        cta_text: t.ctaText,
+        cta_url: t.ctaUrl,
+        cta2_text: t.cta2Text,
+        cta2_url: t.cta2Url,
+      });
+    });
+  });
+
+  const data: Record<string, unknown> = {
+    _mode: mode,
+    _recordId: state.recordId || null,
+    slug: state.slug,
+    internal_label: state.internalLabel,
+    h1: state.h1,
+    seo_title: state.seoTitle,
+    seo_description: state.seoDescription,
+    og_image_url: state.ogImageUrl,
+    is_published: state.isPublished,
+    country_ids: state.countryIds,
+    division_ids: state.divisionIds,
+    page_theme: state.pageTheme,
+    max_width: state.maxWidth,
+    sections: sectionsPayload,
+    sectionTabs: tabsPayload,
+  };
+  return JSON.stringify(data, null, 2);
+}
+
+function buildCmsPageSystemPrompt(mode: TransformMode): string {
+  const common = `Du är en datatransformerare. Du tar emot informationssida-data i JSON-format och konverterar den till Airtable-redo JSON enligt schemat nedan.
+
+${SCHEMA_CMS_PAGE}
+
+Svara med ENBART valid JSON (ingen markdown, ingen förklaring).
+
+Output-format:
+{
+  "page": { <cms_pages-fältnamn>: <värde>, ... },
+  "sections": [
+    {
+      "_clientIndex": <number — ECHA från input>,
+      "_recordId": <string|null — ECHA från input>,
+      "fields": { "section_type": "<typ>", "order": <_clientIndex + 1>, "is_active": <bool>, ... typspecifika fält ... }
+    }
+  ],
+  "sectionTabs": [
+    {
+      "_clientIndex": <number — ECHA från input>,
+      "_sectionClientIndex": <number — ECHA från input — anger vilken parent-tabs-section>,
+      "_recordId": <string|null — ECHA från input>,
+      "fields": { "name": "...", "order": <_clientIndex + 1>, "is_active": <bool>, ... }
+    }
+  ]
+}
+
+KRITISKT:
+- _clientIndex, _sectionClientIndex och _recordId måste echas OFÖRÄNDRADE från input till output. Backend använder dem för att korrelera mot existerande records.
+- Använd exakta Airtable-fältnamn från schemat (snake_case).
+- Inkludera ALDRIG "section_ids" i page.fields — backend länkar.
+- Inkludera ALDRIG "page_ids" eller "tabs_tab_ids" i sections.fields — backend länkar.
+- Inkludera ALDRIG "section_ids" i sectionTabs.fields — backend länkar.
+- Inkludera ALDRIG "internal_notes" i någon output.
+- Varje section.fields måste ha "section_type", "order" (= _clientIndex + 1), "is_active", "layout", "theme", "top_padding", "bottom_padding".
+- För varje section.fields: inkludera ENDAST fält som hör till section_type (samt de universella). Inkludera INTE fält från andra typer.
+- Varje sectionTabs.fields måste ha "name", "order" (= _clientIndex + 1), "is_active".
+- Inkludera ALLTID boolean-fält som schemat markerar "ALLTID inkluderas" (även när false).
+- Inkludera ALLTID singleSelect-fält som schemat markerar "ALLTID inkluderas".
+- Inkludera ALLTID country_ids och division_ids på page (även tom array vid UPDATE).
+- Number-fält (*_limit): skicka number om > 0. Vid CREATE: utelämna när 0. Vid UPDATE: skicka null när 0.
+- Linked-record-fält (*_manual_ids): skicka som array av string rec-IDs. Backend hanterar passthrough.`;
+
+  if (mode === 'create') {
+    return `${common}
+
+MODE: CREATE
+- Utelämna textfält med tomt värde (tomma strängar, null), MEN inkludera ALLTID boolean-fält, singleSelect-fält och linked-record-arrayer.
+- Utelämna number-fält (*_limit) när 0/tom.`;
+  }
+
+  return `${common}
+
+MODE: UPDATE
+- Backend PATCHar records där _recordId finns, CREATEar där _recordId är null, DELETEar records som saknas från din output.
+- Du MÅSTE emittera en post i sections-arrayen för VARJE sektion i input — aldrig utelämna. Backend behöver det för diffen.
+- Du MÅSTE emittera en post i sectionTabs-arrayen för VARJE tab i input.
+- Inkludera ALLA textfält från input (även tomma) som "" så Airtable rensar dem.
+- Inkludera ALLTID country_ids och division_ids — om arrayen tömts, skicka [].
+- Number-fält (*_limit): skicka null när 0/tom så Airtable rensar.
+- Bevara ordningen exakt via _clientIndex.`;
+}
+
+export async function transformCmsPage(
+  apiKey: string,
+  state: CmsPageState,
+  mode: TransformMode,
+): Promise<CmsPageTransformResult> {
+  const userPayload = buildCmsPagePayload(state, mode);
+  const systemPrompt = buildCmsPageSystemPrompt(mode);
+  const userPrompt = `Transformera denna data till Airtable-format:\n\n${userPayload}`;
+
+  const responseText = await callClaude(apiKey, systemPrompt, userPrompt);
+  const parsed = parseJsonOrThrow<CmsPageTransformResult>(responseText);
+
+  if (!parsed || typeof parsed !== 'object') {
+    throw new Error('Claude returnerade oväntat format.');
+  }
+  if (!parsed.page || typeof parsed.page !== 'object') {
+    throw new Error('Claude utelämnade page-objektet.');
+  }
+
+  // Vid UPDATE skulle en utelämnad/non-array sections silent översättas till
+  // "ta bort alla sektioner" när backend diffar — vägra det. CREATE tolererar
+  // tom array (inga existerande sektioner att tappa).
+  if (!Array.isArray(parsed.sections)) {
+    if (mode === 'update') {
+      throw new Error('Claude utelämnade sections-arrayen i update-läget.');
+    }
+    parsed.sections = [];
+  }
+  if (!Array.isArray(parsed.sectionTabs)) {
+    if (mode === 'update') {
+      throw new Error('Claude utelämnade sectionTabs-arrayen i update-läget.');
+    }
+    parsed.sectionTabs = [];
+  }
+
+  // country_ids/division_ids: backfilla från state (samma som unique-page —
+  // skydd mot Claude som glömmer eller returnerar non-array).
+  parsed.page.country_ids = state.countryIds;
+  parsed.page.division_ids = state.divisionIds;
 
   return parsed;
 }
