@@ -36,9 +36,7 @@ return function ($section, $page, $ctx) {
 #<?= esc_attr($wid) ?> .wxp-to__body p:last-child { margin-bottom: 0 !important; }
 #<?= esc_attr($wid) ?> .wxp-to__body h3 { font-size: 1.25rem !important; font-weight: 700 !important; margin: 28px 0 12px !important; color: #11325D !important; }
 #<?= esc_attr($wid) ?> .wxp-section--theme-dark .wxp-to__body h3 { color: #fff !important; }
-#<?= esc_attr($wid) ?> .wxp-to__body ul, #<?= esc_attr($wid) ?> .wxp-to__body ol { padding-left: 1.4em !important; margin: 0 0 16px !important; list-style: revert !important; }
-#<?= esc_attr($wid) ?> .wxp-to__body ul li, #<?= esc_attr($wid) ?> .wxp-to__body ol li { list-style: inherit !important; padding-left: 0 !important; background: none !important; margin: 0 0 6px !important; }
-#<?= esc_attr($wid) ?> .wxp-to__body ul li::before, #<?= esc_attr($wid) ?> .wxp-to__body ol li::before { content: none !important; display: none !important; }
+/* Markdown list styling is inherited from the base .wxp-body ul/ol rules. */
 #<?= esc_attr($wid) ?> .wxp-to__body a { color: #11325D !important; text-decoration: underline !important; }
 #<?= esc_attr($wid) ?> .wxp-section--theme-dark .wxp-to__body a { color: #F28C28 !important; }
     </style>

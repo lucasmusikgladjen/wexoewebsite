@@ -502,9 +502,11 @@ function wexoe_pages_scoped_base_styles($id, $page_theme) {
 /* ============ RESET ============ */
 <?= $w ?> { font-family: 'DM Sans', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif !important; color: <?= $page_fg ?> !important; background: <?= $page_bg ?>; line-height: 1.6 !important; box-sizing: border-box !important; }
 <?= $w ?> *, <?= $w ?> *::before, <?= $w ?> *::after { box-sizing: border-box !important; }
+/* Kill the theme's `li::before` markers (which were bleeding through as ✓ on FAQ/bullet lists).
+   Do NOT touch list-style/padding/margin at this level — Markdown body copy renders <ul>/<ol>
+   inside .wxp-body and needs native bullets. Component lists (.wxp-faq__list, .wxp-tg__grid, …)
+   declare their own list-style:none reset where they want a bare list. */
 <?= $w ?> li::before, <?= $w ?> ul li::before, <?= $w ?> ol li::before { content: none !important; display: none !important; background: none !important; }
-<?= $w ?> ul, <?= $w ?> ol { list-style: none !important; padding: 0 !important; margin: 0 !important; background: none !important; }
-<?= $w ?> ul li, <?= $w ?> ol li { background: none !important; padding-left: 0 !important; list-style: none !important; }
 <?= $w ?> strong, <?= $w ?> b, <?= $w ?> em, <?= $w ?> i { color: inherit !important; }
 <?= $w ?> img { max-width: 100% !important; height: auto !important; }
 <?= $w ?> a { text-decoration: none !important; color: inherit; }
@@ -522,6 +524,10 @@ function wexoe_pages_scoped_base_styles($id, $page_theme) {
 <?= $w ?> .wxp-body p:last-child { margin-bottom: 0 !important; }
 <?= $w ?> .wxp-body a { color: #11325D !important; text-decoration: underline !important; }
 <?= $w ?> .wxp-section--theme-dark .wxp-body a { color: #F28C28 !important; }
+/* Markdown body lists — restore native markers since the reset above is intentionally narrow. */
+<?= $w ?> .wxp-body ul, <?= $w ?> .wxp-body ol { list-style: revert !important; padding-left: 1.4em !important; margin: 0 0 16px !important; }
+<?= $w ?> .wxp-body ul li, <?= $w ?> .wxp-body ol li { list-style: inherit !important; padding-left: 0 !important; margin: 0 0 6px !important; background: none !important; }
+<?= $w ?> .wxp-body ul:last-child, <?= $w ?> .wxp-body ol:last-child { margin-bottom: 0 !important; }
 
 /* ============ SECTION LAYOUT ============ */
 <?= $w ?> .wxp-section { box-sizing: border-box !important; width: 100% !important; position: relative !important; }
