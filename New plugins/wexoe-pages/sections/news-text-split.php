@@ -39,6 +39,7 @@ return function ($section, $page, $ctx) {
 
     if ($h2 === '' && $body === '' && empty($articles)) return '';
 
+    $wid = (string) ($ctx['wrapper_id'] ?? '');
     $attrs = wexoe_pages_section_attrs($section, $ctx, 'wxp-nts');
     ob_start();
     ?>
@@ -78,20 +79,22 @@ return function ($section, $page, $ctx) {
         </div>
     </section>
     <style>
-.wxp-nts__grid { display: grid; grid-template-columns: 1.4fr 1fr; gap: 48px; align-items: start; }
-.wxp-nts__cta-row { margin: 16px 0 0; }
-.wxp-nts__widget { border-left: 3px solid #F28C28; padding: 4px 0 4px 24px; }
-.wxp-section--theme-dark .wxp-nts__widget { border-color: #F28C28; }
-.wxp-nts__widget-h3 { font-size: 14px; text-transform: uppercase; letter-spacing: 0.08em; margin: 0 0 16px; opacity: 0.8; font-weight: 600; }
-.wxp-nts__list { list-style: none; padding: 0; margin: 0; }
-.wxp-nts__item { padding: 12px 0; border-bottom: 1px solid rgba(0,0,0,0.06); }
-.wxp-section--theme-dark .wxp-nts__item { border-color: rgba(255,255,255,0.08); }
-.wxp-nts__item:last-child { border-bottom: 0; }
-.wxp-nts__item-link, .wxp-nts__item-title { font-weight: 500; color: inherit; text-decoration: none; display: block; line-height: 1.35; }
-.wxp-nts__item-link:hover { color: #11325D; text-decoration: underline; }
-.wxp-section--theme-dark .wxp-nts__item-link:hover { color: #F28C28; }
-.wxp-nts__item-excerpt { font-size: 13px; line-height: 1.5; margin: 4px 0 0; opacity: 0.7; }
-@media (max-width: 720px) { .wxp-nts__grid { grid-template-columns: 1fr; gap: 24px; } }
+#<?= esc_attr($wid) ?> .wxp-nts__grid { display: grid !important; grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr) !important; gap: 56px !important; align-items: start !important; }
+#<?= esc_attr($wid) ?> .wxp-nts__text { min-width: 0 !important; }
+#<?= esc_attr($wid) ?> .wxp-nts__cta-row { margin: 24px 0 0 !important; padding: 0 !important; }
+#<?= esc_attr($wid) ?> .wxp-nts__widget { padding: 24px 24px 24px 28px !important; background: #fff !important; border: 1px solid rgba(17,50,93,0.08) !important; border-left: 3px solid #F28C28 !important; border-radius: 12px !important; box-shadow: 0 4px 14px rgba(10,26,46,0.05) !important; }
+#<?= esc_attr($wid) ?> .wxp-section--theme-dark .wxp-nts__widget { background: rgba(255,255,255,0.05) !important; border-color: rgba(255,255,255,0.10) !important; border-left-color: #F28C28 !important; box-shadow: none !important; }
+#<?= esc_attr($wid) ?> .wxp-nts__widget-h3 { font-family: 'DM Sans', system-ui, sans-serif !important; font-size: 12px !important; text-transform: uppercase !important; letter-spacing: 0.1em !important; margin: 0 0 16px !important; padding: 0 !important; opacity: 0.78 !important; font-weight: 700 !important; color: inherit !important; background: none !important; }
+#<?= esc_attr($wid) ?> .wxp-nts__list { list-style: none !important; padding: 0 !important; margin: 0 !important; }
+#<?= esc_attr($wid) ?> .wxp-nts__item { list-style: none !important; padding: 14px 0 !important; margin: 0 !important; border-bottom: 1px solid rgba(17,50,93,0.08) !important; background: none !important; }
+#<?= esc_attr($wid) ?> .wxp-nts__item::before { content: none !important; display: none !important; }
+#<?= esc_attr($wid) ?> .wxp-section--theme-dark .wxp-nts__item { border-color: rgba(255,255,255,0.08) !important; }
+#<?= esc_attr($wid) ?> .wxp-nts__item:last-child { border-bottom: 0 !important; padding-bottom: 0 !important; }
+#<?= esc_attr($wid) ?> .wxp-nts__item:first-child { padding-top: 0 !important; }
+#<?= esc_attr($wid) ?> .wxp-nts__item-link, #<?= esc_attr($wid) ?> .wxp-nts__item-title { font-family: 'DM Sans', system-ui, sans-serif !important; font-weight: 600 !important; color: inherit !important; text-decoration: none !important; display: block !important; line-height: 1.4 !important; font-size: 15px !important; }
+#<?= esc_attr($wid) ?> .wxp-nts__item-link:hover { color: #F28C28 !important; }
+#<?= esc_attr($wid) ?> .wxp-nts__item-excerpt { font-size: 13px !important; line-height: 1.55 !important; margin: 6px 0 0 !important; padding: 0 !important; opacity: 0.72 !important; color: inherit !important; background: none !important; }
+@media (max-width: 900px) { #<?= esc_attr($wid) ?> .wxp-nts__grid { grid-template-columns: 1fr !important; gap: 32px !important; } }
     </style>
     <?php
     return ob_get_clean();

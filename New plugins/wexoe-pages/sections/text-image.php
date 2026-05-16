@@ -23,7 +23,8 @@ return function ($section, $page, $ctx) {
 
     if ($h2 === '' && $body === '' && $image === '' && empty($bullets)) return '';
 
-    $extra = 'wxp-ti' . ($reversed ? ' wxp-ti--reversed' : '');
+    $wid = (string) ($ctx['wrapper_id'] ?? '');
+    $extra = 'wxp-ti' . ($reversed ? ' wxp-ti--reversed' : '') . ($image === '' ? ' wxp-ti--no-image' : '');
     $attrs = wexoe_pages_section_attrs($section, $ctx, $extra);
 
     ob_start();
@@ -37,7 +38,7 @@ return function ($section, $page, $ctx) {
                 <?php if (!empty($bullets)): ?>
                     <ul class="wxp-ti__bullets">
                         <?php foreach ($bullets as $b): ?>
-                            <li><span class="wxp-ti__check" aria-hidden="true">✓</span> <?= wexoe_pages_md_inline($b) ?></li>
+                            <li><span class="wxp-ti__check" aria-hidden="true">✓</span><span class="wxp-ti__bullet-text"><?= wexoe_pages_md_inline($b) ?></span></li>
                         <?php endforeach; ?>
                     </ul>
                 <?php endif; ?>
@@ -60,16 +61,22 @@ return function ($section, $page, $ctx) {
         </div>
     </section>
     <style>
-.wxp-ti__grid { display: grid; grid-template-columns: 1fr 1fr; gap: 48px; align-items: center; }
-.wxp-ti--reversed .wxp-ti__text { order: 2; }
-.wxp-ti__bullets { list-style: none; padding: 0; margin: 16px 0 24px; }
-.wxp-ti__bullets li { display: flex; gap: 8px; align-items: baseline; padding: 6px 0; }
-.wxp-ti__check { color: #16A34A; font-weight: 700; flex-shrink: 0; }
-.wxp-ti__image { width: 100%; height: auto; border-radius: 12px; display: block; }
-.wxp-ti__actions { margin-top: 8px; }
-@media (max-width: 720px) {
-    .wxp-ti__grid { grid-template-columns: 1fr; gap: 24px; }
-    .wxp-ti--reversed .wxp-ti__text { order: 0; }
+#<?= esc_attr($wid) ?> .wxp-ti__grid { display: grid !important; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) !important; gap: 56px !important; align-items: center !important; }
+#<?= esc_attr($wid) ?> .wxp-ti--no-image .wxp-ti__grid { grid-template-columns: 1fr !important; max-width: 760px !important; }
+#<?= esc_attr($wid) ?> .wxp-ti--reversed .wxp-ti__text { order: 2 !important; }
+#<?= esc_attr($wid) ?> .wxp-ti__text { min-width: 0 !important; }
+#<?= esc_attr($wid) ?> .wxp-ti__bullets { list-style: none !important; padding: 0 !important; margin: 20px 0 28px !important; display: flex !important; flex-direction: column !important; gap: 10px !important; }
+#<?= esc_attr($wid) ?> .wxp-ti__bullets li { display: flex !important; gap: 12px !important; align-items: flex-start !important; padding: 0 !important; margin: 0 !important; background: none !important; list-style: none !important; line-height: 1.55 !important; color: inherit !important; }
+#<?= esc_attr($wid) ?> .wxp-ti__bullets li::before { content: none !important; display: none !important; }
+#<?= esc_attr($wid) ?> .wxp-ti__check { flex-shrink: 0 !important; display: inline-flex !important; align-items: center !important; justify-content: center !important; width: 22px !important; height: 22px !important; border-radius: 50% !important; background: #10B981 !important; color: #fff !important; font-size: 13px !important; font-weight: 700 !important; line-height: 1 !important; margin-top: 2px !important; }
+#<?= esc_attr($wid) ?> .wxp-ti__bullet-text { flex: 1 !important; color: inherit !important; }
+#<?= esc_attr($wid) ?> .wxp-ti__image-wrap { position: relative !important; aspect-ratio: 4 / 3 !important; border-radius: 16px !important; overflow: hidden !important; background: #F5F6F8 !important; box-shadow: 0 18px 40px rgba(10,26,46,0.12) !important; }
+#<?= esc_attr($wid) ?> .wxp-ti__image { width: 100% !important; height: 100% !important; object-fit: cover !important; display: block !important; border-radius: 0 !important; }
+#<?= esc_attr($wid) ?> .wxp-ti__actions { margin-top: 4px !important; }
+@media (max-width: 900px) {
+    #<?= esc_attr($wid) ?> .wxp-ti__grid { grid-template-columns: 1fr !important; gap: 32px !important; }
+    #<?= esc_attr($wid) ?> .wxp-ti--reversed .wxp-ti__text { order: 0 !important; }
+    #<?= esc_attr($wid) ?> .wxp-ti__image-wrap { aspect-ratio: 16 / 10 !important; }
 }
     </style>
     <?php

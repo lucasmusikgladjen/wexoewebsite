@@ -55,14 +55,19 @@ return function ($section, $page, $ctx) {
 
     if (empty($coworkers) && $h2 === '') return '';
 
+    $wid = (string) ($ctx['wrapper_id'] ?? '');
     $attrs = wexoe_pages_section_attrs($section, $ctx, 'wxp-tg wxp-tg--' . $variant);
     ob_start();
     ?>
     <section <?= $attrs ?>>
         <div class="wxp-section__inner">
-            <?php if ($eyebrow !== ''): ?><p class="wxp-eyebrow"><?= esc_html($eyebrow) ?></p><?php endif; ?>
-            <?php if ($h2 !== ''): ?><h2 class="wxp-h2"><?= esc_html($h2) ?></h2><?php endif; ?>
-            <?php if ($body !== ''): ?><div class="wxp-body wxp-tg__body"><?= wexoe_pages_md($body) ?></div><?php endif; ?>
+            <?php if ($eyebrow !== '' || $h2 !== '' || $body !== ''): ?>
+                <div class="wxp-tg__header">
+                    <?php if ($eyebrow !== ''): ?><p class="wxp-eyebrow"><?= esc_html($eyebrow) ?></p><?php endif; ?>
+                    <?php if ($h2 !== ''): ?><h2 class="wxp-h2"><?= esc_html($h2) ?></h2><?php endif; ?>
+                    <?php if ($body !== ''): ?><div class="wxp-body wxp-tg__body"><?= wexoe_pages_md($body) ?></div><?php endif; ?>
+                </div>
+            <?php endif; ?>
             <?php if (!empty($coworkers)): ?>
                 <ul class="wxp-tg__grid">
                     <?php foreach ($coworkers as $c):
@@ -85,10 +90,10 @@ return function ($section, $page, $ctx) {
                                 <?php if ($title !== ''): ?><p class="wxp-tg__title"><?= esc_html($title) ?></p><?php endif; ?>
                                 <?php if ($variant !== 'compact'): ?>
                                     <?php if ($email !== '' || $phone !== ''): ?>
-                                        <p class="wxp-tg__contact">
+                                        <div class="wxp-tg__contact">
                                             <?php if ($email !== ''): ?><a href="mailto:<?= esc_attr($email) ?>"><?= esc_html($email) ?></a><?php endif; ?>
                                             <?php if ($phone !== ''): ?><a href="tel:<?= esc_attr(preg_replace('/\s+/', '', $phone)) ?>"><?= esc_html($phone) ?></a><?php endif; ?>
-                                        </p>
+                                        </div>
                                     <?php endif; ?>
                                 <?php endif; ?>
                             </div>
@@ -99,33 +104,44 @@ return function ($section, $page, $ctx) {
         </div>
     </section>
     <style>
-.wxp-tg__body { margin-bottom: 32px; max-width: 60ch; }
-.wxp-tg__grid { list-style: none; padding: 0; margin: 0; }
-.wxp-tg__item { display: flex; }
-.wxp-tg__photo { display: block; object-fit: cover; background: #E5E7EB; color: #6B7280; font-weight: 600; }
-.wxp-tg__photo--initials { display: flex; align-items: center; justify-content: center; }
-.wxp-tg__name { font-weight: 600; margin: 0; }
-.wxp-tg__title { font-size: 13px; opacity: 0.7; margin: 2px 0 0; }
-.wxp-tg__contact { margin: 8px 0 0; display: flex; flex-direction: column; gap: 2px; }
-.wxp-tg__contact a { color: inherit; text-decoration: none; font-size: 13px; }
-.wxp-tg__contact a:hover { text-decoration: underline; }
+#<?= esc_attr($wid) ?> .wxp-tg__header { max-width: 720px !important; margin-bottom: 36px !important; }
+#<?= esc_attr($wid) ?> .wxp-tg__body { margin-top: 12px !important; }
+#<?= esc_attr($wid) ?> .wxp-tg__grid { list-style: none !important; padding: 0 !important; margin: 0 !important; }
+#<?= esc_attr($wid) ?> .wxp-tg__item { list-style: none !important; padding: 0 !important; margin: 0 !important; background: none !important; }
+#<?= esc_attr($wid) ?> .wxp-tg__item::before { content: none !important; display: none !important; }
+#<?= esc_attr($wid) ?> .wxp-tg__photo { display: block !important; object-fit: cover !important; background: linear-gradient(135deg, #11325D, #2d6a9f) !important; color: #fff !important; font-weight: 700 !important; text-align: center !important; }
+#<?= esc_attr($wid) ?> .wxp-tg__photo--initials { display: flex !important; align-items: center !important; justify-content: center !important; letter-spacing: 0.04em !important; }
+#<?= esc_attr($wid) ?> .wxp-tg__meta { min-width: 0 !important; }
+#<?= esc_attr($wid) ?> .wxp-tg__name { font-family: 'DM Sans', system-ui, sans-serif !important; font-weight: 700 !important; font-size: 16px !important; margin: 0 !important; padding: 0 !important; color: #11325D !important; line-height: 1.3 !important; background: none !important; }
+#<?= esc_attr($wid) ?> .wxp-section--theme-dark .wxp-tg__name { color: #fff !important; }
+#<?= esc_attr($wid) ?> .wxp-tg__title { font-size: 13px !important; opacity: 0.72 !important; margin: 4px 0 0 !important; padding: 0 !important; color: inherit !important; background: none !important; }
+#<?= esc_attr($wid) ?> .wxp-tg__contact { margin: 10px 0 0 !important; padding: 0 !important; display: flex !important; flex-direction: column !important; gap: 4px !important; }
+#<?= esc_attr($wid) ?> .wxp-tg__contact a { color: #11325D !important; text-decoration: none !important; font-size: 13px !important; padding: 0 !important; background: none !important; }
+#<?= esc_attr($wid) ?> .wxp-tg__contact a:hover { color: #F28C28 !important; }
+#<?= esc_attr($wid) ?> .wxp-section--theme-dark .wxp-tg__contact a { color: rgba(255,255,255,0.85) !important; }
+#<?= esc_attr($wid) ?> .wxp-section--theme-dark .wxp-tg__contact a:hover { color: #F28C28 !important; }
+
 /* variant: cards */
-.wxp-tg--cards .wxp-tg__grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 24px; }
-.wxp-tg--cards .wxp-tg__item { flex-direction: column; text-align: center; align-items: center; }
-.wxp-tg--cards .wxp-tg__photo { width: 140px; height: 140px; border-radius: 50%; margin: 0 0 12px; font-size: 36px; }
+#<?= esc_attr($wid) ?> .wxp-tg--cards .wxp-tg__grid { display: grid !important; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)) !important; gap: 24px !important; }
+#<?= esc_attr($wid) ?> .wxp-tg--cards .wxp-tg__item { display: flex !important; flex-direction: column !important; text-align: center !important; align-items: center !important; background: #fff !important; border: 1px solid rgba(17,50,93,0.08) !important; border-radius: 16px !important; padding: 28px 20px !important; box-shadow: 0 6px 18px rgba(10,26,46,0.05) !important; transition: transform 0.2s ease, box-shadow 0.2s ease !important; }
+#<?= esc_attr($wid) ?> .wxp-tg--cards .wxp-tg__item:hover { transform: translateY(-3px) !important; box-shadow: 0 16px 36px rgba(10,26,46,0.10) !important; }
+#<?= esc_attr($wid) ?> .wxp-section--theme-dark .wxp-tg--cards .wxp-tg__item { background: rgba(255,255,255,0.04) !important; border-color: rgba(255,255,255,0.10) !important; box-shadow: none !important; }
+#<?= esc_attr($wid) ?> .wxp-tg--cards .wxp-tg__photo { width: 110px !important; height: 110px !important; border-radius: 50% !important; margin: 0 0 16px !important; font-size: 30px !important; }
+
 /* variant: rack */
-.wxp-tg--rack .wxp-tg__grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 16px; }
-.wxp-tg--rack .wxp-tg__item { flex-direction: row; gap: 16px; align-items: center; padding: 12px; background: rgba(0,0,0,0.02); border-radius: 10px; }
-.wxp-section--theme-dark .wxp-tg--rack .wxp-tg__item { background: rgba(255,255,255,0.04); }
-.wxp-tg--rack .wxp-tg__photo { width: 64px; height: 64px; border-radius: 50%; font-size: 20px; flex-shrink: 0; }
-.wxp-tg--rack .wxp-tg__meta { flex: 1; min-width: 0; }
+#<?= esc_attr($wid) ?> .wxp-tg--rack .wxp-tg__grid { display: grid !important; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)) !important; gap: 14px !important; }
+#<?= esc_attr($wid) ?> .wxp-tg--rack .wxp-tg__item { display: flex !important; flex-direction: row !important; gap: 16px !important; align-items: center !important; padding: 16px !important; background: #fff !important; border: 1px solid rgba(17,50,93,0.08) !important; border-radius: 12px !important; }
+#<?= esc_attr($wid) ?> .wxp-section--theme-dark .wxp-tg--rack .wxp-tg__item { background: rgba(255,255,255,0.04) !important; border-color: rgba(255,255,255,0.10) !important; }
+#<?= esc_attr($wid) ?> .wxp-tg--rack .wxp-tg__photo { width: 64px !important; height: 64px !important; border-radius: 50% !important; font-size: 20px !important; flex-shrink: 0 !important; }
+#<?= esc_attr($wid) ?> .wxp-tg--rack .wxp-tg__meta { flex: 1 !important; }
+
 /* variant: compact */
-.wxp-tg--compact .wxp-tg__grid { display: flex; flex-wrap: wrap; gap: 8px; }
-.wxp-tg--compact .wxp-tg__item { flex-direction: row; gap: 8px; align-items: center; padding: 4px 12px 4px 4px; background: rgba(0,0,0,0.04); border-radius: 999px; }
-.wxp-section--theme-dark .wxp-tg--compact .wxp-tg__item { background: rgba(255,255,255,0.08); }
-.wxp-tg--compact .wxp-tg__photo { width: 32px; height: 32px; border-radius: 50%; font-size: 11px; flex-shrink: 0; }
-.wxp-tg--compact .wxp-tg__name { font-size: 13px; }
-.wxp-tg--compact .wxp-tg__title { display: none; }
+#<?= esc_attr($wid) ?> .wxp-tg--compact .wxp-tg__grid { display: flex !important; flex-wrap: wrap !important; gap: 8px !important; }
+#<?= esc_attr($wid) ?> .wxp-tg--compact .wxp-tg__item { display: flex !important; flex-direction: row !important; gap: 8px !important; align-items: center !important; padding: 4px 14px 4px 4px !important; background: rgba(17,50,93,0.06) !important; border-radius: 999px !important; }
+#<?= esc_attr($wid) ?> .wxp-section--theme-dark .wxp-tg--compact .wxp-tg__item { background: rgba(255,255,255,0.08) !important; }
+#<?= esc_attr($wid) ?> .wxp-tg--compact .wxp-tg__photo { width: 32px !important; height: 32px !important; border-radius: 50% !important; font-size: 11px !important; flex-shrink: 0 !important; }
+#<?= esc_attr($wid) ?> .wxp-tg--compact .wxp-tg__name { font-size: 13px !important; }
+#<?= esc_attr($wid) ?> .wxp-tg--compact .wxp-tg__title { display: none !important; }
     </style>
     <?php
     return ob_get_clean();
