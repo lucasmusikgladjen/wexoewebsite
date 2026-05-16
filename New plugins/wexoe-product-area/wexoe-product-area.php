@@ -1111,6 +1111,12 @@ function wexoe_pa_test_render_css($id) {
         content: none !important;
         display: none !important;
     }
+    #'.$id.' strong,
+    #'.$id.' b,
+    #'.$id.' em,
+    #'.$id.' i {
+        color: inherit !important;
+    }
     #'.$id.' img {
         max-width: 100% !important;
         height: auto !important;

@@ -275,6 +275,7 @@ class ContactForm {
         ?>
         <style>
         #<?= esc_attr($uniqid) ?>.wxcf { --wxcf-main: <?= $main ?>; --wxcf-accent: <?= $accent ?>; padding: 64px 24px; font-family: inherit; }
+        #<?= esc_attr($uniqid) ?> strong, #<?= esc_attr($uniqid) ?> b, #<?= esc_attr($uniqid) ?> em, #<?= esc_attr($uniqid) ?> i { color: inherit; }
         #<?= esc_attr($uniqid) ?>.wxcf--dark { background: var(--wxcf-main); color: #fff; }
         #<?= esc_attr($uniqid) ?>.wxcf--light { background: #F5F6F8; color: #1A1A1A; }
         #<?= esc_attr($uniqid) ?> .wxcf__container { max-width: 1100px; margin: 0 auto; display: grid; gap: 48px; }

@@ -168,6 +168,12 @@ class Wexoe_Customer_Type_Page {
                 content: none !important;
                 display: none !important;
             }
+            #<?php echo $id; ?> strong,
+            #<?php echo $id; ?> b,
+            #<?php echo $id; ?> em,
+            #<?php echo $id; ?> i {
+                color: inherit !important;
+            }
 
             /* HERO */
             #<?php echo $id; ?> .wctp-hero {

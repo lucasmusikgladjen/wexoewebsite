@@ -59,6 +59,12 @@ class Wexoe_Hero_Automation_Test {
                 box-sizing: border-box !important;
                 font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, sans-serif !important;
             }
+            {$p} strong,
+            {$p} b,
+            {$p} em,
+            {$p} i {
+                color: inherit !important;
+            }
             
             /* Bakgrundsformer för djup */
             {$p} .wexoe-hero-shape {

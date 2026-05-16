@@ -51,6 +51,12 @@ class Wexoe_Contact_Page_Test {
                 content: none !important;
                 display: none !important;
             }
+            #<?php echo $id; ?> strong,
+            #<?php echo $id; ?> b,
+            #<?php echo $id; ?> em,
+            #<?php echo $id; ?> i {
+                color: inherit !important;
+            }
 
             /* ========================================
                HERO

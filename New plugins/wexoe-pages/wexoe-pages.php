@@ -475,6 +475,7 @@ function wexoe_pages_print_base_styles() {
     ?>
 <style id="wxp-base">
 .wxp { color: #1A1A1A; font-family: 'DM Sans', system-ui, -apple-system, BlinkMacSystemFont, sans-serif; }
+.wxp strong, .wxp b, .wxp em, .wxp i { color: inherit; }
 .wxp--dark { color: #fff; background: #0A1A2E; }
 .wxp__h1 { font-size: clamp(2rem, 4vw, 2.75rem); margin: 0 0 24px; padding: 24px 24px 0; }
 .wxp-section { box-sizing: border-box; width: 100%; }
