@@ -21,6 +21,17 @@ Detta dokument loggar varje konkret åtgärd som tas under implementationen av p
 
 **Resultat:** Sido-menu mode på Product Area (t.ex. Koppar, Fiber) kan nu rendera artikel-tabeller per produkt. Cache i `wexoe-core` måste rensas för att de nya länkarna ska slå igenom på frontend (24 h TTL + 6 h stale grace).
 
+### Fas B — `cms_product_pages.division_ids` (19 länkar)
+
+**Symptom:** 100 % av nya `cms_product_pages` hade tom `division_ids` (fldiGDCr7mHBpb6pL). Gamla `Product Areas.Division` (fldLIbqYkDnM6jB6P) pekade på antingen INDUSTRY eller IT INFRA på alla 19 records.
+
+**Mapping (user-confirmed):**
+- INDUSTRY (gamla `rec39zJoKEAbWCMQ1`) → Automation (`recEjCdWID8v09l0S`)
+- IT INFRA (gamla `recQhHFAQ0ERXWCJv`) → IT Infra (`recOd94pVsu2GPyGw`)
+- POWER, BUILDING INFRASTRUCTURE — *hoppas över* (legacy per användarens beslut)
+
+**Resultat:** 15 PA → Automation, 4 PA → IT Infra (vfd, ibe, robot, hmi, io, onmachine, mjukvara, plc, lagspanning, protokoll, remote, switch, motion, gear, safety → Automation; fiber, koppar, rack, ftto → IT Infra). Skrevs på alla 19 records via en `update_records_for_table`-batch.
+
 ---
 
 ## Wexoe → Wexoe NY-migration (2026-05-14)
