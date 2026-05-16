@@ -280,6 +280,12 @@ class Wexoe_Product_Nav_Test {
                 box-sizing: border-box !important;
                 font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, sans-serif !important;
             }
+            {$p} strong,
+            {$p} b,
+            {$p} em,
+            {$p} i {
+                color: inherit !important;
+            }
 
             {$p} .wexoe-pn-inner {
                 max-width: 1000px !important;

@@ -228,6 +228,12 @@ class WexoeTeamRackTest {
                 padding: 0 !important;
                 box-sizing: border-box !important;
             }
+            {$p} strong,
+            {$p} b,
+            {$p} em,
+            {$p} i {
+                color: inherit !important;
+            }
 
             {$p}.wexoe-team-rack-section {
                 font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, sans-serif !important;

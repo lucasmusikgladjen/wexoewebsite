@@ -531,6 +531,7 @@ function wexoe_lp_test_render_css($id, $main_color, $secondary_color) {
     #'.$id.' li::before { content: none !important; display: none !important; }
     #'.$id.' img { max-width: 100% !important; height: auto !important; border-radius: 0 !important; }
     #'.$id.' a { text-decoration: none !important; color: inherit !important; }
+    #'.$id.' strong, #'.$id.' b, #'.$id.' em, #'.$id.' i { color: inherit !important; }
 
     /* === CONTAINER === */
     #'.$id.' .wexoe-lp-container { max-width: 1100px !important; margin: 0 auto !important; padding: 0 32px !important; }

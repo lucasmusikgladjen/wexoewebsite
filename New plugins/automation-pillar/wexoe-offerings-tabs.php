@@ -260,7 +260,13 @@ class Wexoe_Offerings_Tabs_Test {
                 display: none !important;
                 background: none !important;
             }
-            
+            #' . $id . ' strong,
+            #' . $id . ' b,
+            #' . $id . ' em,
+            #' . $id . ' i {
+                color: inherit !important;
+            }
+
             /* Section */
             #' . $id . ' {
                 font-family: "DM Sans", system-ui, -apple-system, sans-serif !important;
