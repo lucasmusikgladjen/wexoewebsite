@@ -55,14 +55,17 @@ return function ($section, $page, $ctx) {
 
     if (empty($cases) && $h2 === '' && $body === '') return '';
 
+    $wid = (string) ($ctx['wrapper_id'] ?? '');
     $attrs = wexoe_pages_section_attrs($section, $ctx, 'wxp-cg wxp-cg--cols-' . $columns);
     ob_start();
     ?>
     <section <?= $attrs ?>>
         <div class="wxp-section__inner">
-            <?php if ($eyebrow !== ''): ?><p class="wxp-eyebrow"><?= esc_html($eyebrow) ?></p><?php endif; ?>
-            <?php if ($h2 !== ''): ?><h2 class="wxp-h2"><?= esc_html($h2) ?></h2><?php endif; ?>
-            <?php if ($body !== ''): ?><div class="wxp-body wxp-cg__body"><?= wexoe_pages_md($body) ?></div><?php endif; ?>
+            <div class="wxp-cg__header">
+                <?php if ($eyebrow !== ''): ?><p class="wxp-eyebrow"><?= esc_html($eyebrow) ?></p><?php endif; ?>
+                <?php if ($h2 !== ''): ?><h2 class="wxp-h2"><?= esc_html($h2) ?></h2><?php endif; ?>
+                <?php if ($body !== ''): ?><div class="wxp-body wxp-cg__body"><?= wexoe_pages_md($body) ?></div><?php endif; ?>
+            </div>
             <?php if (!empty($cases)): ?>
                 <ul class="wxp-cg__grid">
                     <?php foreach ($cases as $case):
@@ -95,31 +98,33 @@ return function ($section, $page, $ctx) {
         </div>
     </section>
     <style>
-.wxp-cg__body { margin-bottom: 32px; max-width: 60ch; }
-.wxp-cg__grid { list-style: none; padding: 0; margin: 0; display: grid; gap: 24px; }
-.wxp-cg--cols-2 .wxp-cg__grid { grid-template-columns: repeat(2, 1fr); }
-.wxp-cg--cols-3 .wxp-cg__grid { grid-template-columns: repeat(3, 1fr); }
-.wxp-cg--cols-4 .wxp-cg__grid { grid-template-columns: repeat(4, 1fr); }
-.wxp-cg__item { display: flex; }
-.wxp-cg__card { display: flex; flex-direction: column; background: #fff; border-radius: 12px; overflow: hidden; text-decoration: none; color: #1A1A1A; box-shadow: 0 1px 4px rgba(0,0,0,0.06); transition: transform 0.2s, box-shadow 0.2s; width: 100%; }
-.wxp-section--theme-dark .wxp-cg__card { background: rgba(255,255,255,0.04); color: #fff; box-shadow: none; border: 1px solid rgba(255,255,255,0.1); }
-.wxp-cg__card:hover { transform: translateY(-4px); box-shadow: 0 8px 20px rgba(0,0,0,0.1); color: #1A1A1A; }
-.wxp-section--theme-dark .wxp-cg__card:hover { color: #fff; box-shadow: 0 8px 20px rgba(0,0,0,0.3); }
-.wxp-cg__image-wrap { aspect-ratio: 16/9; overflow: hidden; background: #F5F6F8; }
-.wxp-cg__image { width: 100%; height: 100%; object-fit: cover; display: block; }
-.wxp-cg__body-wrap { padding: 20px; display: flex; flex-direction: column; gap: 8px; flex: 1; }
-.wxp-cg__title { font-size: 18px; margin: 0; font-weight: 600; line-height: 1.3; }
-.wxp-cg__desc { font-size: 14px; line-height: 1.5; opacity: 0.85; margin: 0; }
-.wxp-cg__result { font-size: 13px; margin: 0; padding: 8px 12px; background: rgba(16,163,74,0.1); color: #16A34A; border-radius: 6px; }
-.wxp-section--theme-dark .wxp-cg__result { background: rgba(22,163,74,0.15); color: #4ADE80; }
-.wxp-cg__result-label { font-weight: 600; }
-.wxp-cg__cta { font-size: 14px; font-weight: 500; color: #11325D; margin-top: auto; padding-top: 4px; }
-.wxp-section--theme-dark .wxp-cg__cta { color: #F28C28; }
+#<?= esc_attr($wid) ?> .wxp-cg__header { max-width: 720px !important; margin-bottom: 36px !important; }
+#<?= esc_attr($wid) ?> .wxp-cg__body { margin-top: 12px !important; max-width: 60ch !important; }
+#<?= esc_attr($wid) ?> .wxp-cg__grid { list-style: none !important; padding: 0 !important; margin: 0 !important; display: grid !important; gap: 24px !important; }
+#<?= esc_attr($wid) ?> .wxp-cg--cols-2 .wxp-cg__grid { grid-template-columns: repeat(2, 1fr) !important; }
+#<?= esc_attr($wid) ?> .wxp-cg--cols-3 .wxp-cg__grid { grid-template-columns: repeat(3, 1fr) !important; }
+#<?= esc_attr($wid) ?> .wxp-cg--cols-4 .wxp-cg__grid { grid-template-columns: repeat(4, 1fr) !important; }
+#<?= esc_attr($wid) ?> .wxp-cg__item { display: flex !important; list-style: none !important; padding: 0 !important; margin: 0 !important; background: none !important; }
+#<?= esc_attr($wid) ?> .wxp-cg__item::before { content: none !important; display: none !important; }
+#<?= esc_attr($wid) ?> .wxp-cg__card { display: flex !important; flex-direction: column !important; background: #fff !important; border-radius: 14px !important; overflow: hidden !important; text-decoration: none !important; color: #1A1A1A !important; border: 1px solid rgba(17,50,93,0.08) !important; box-shadow: 0 6px 18px rgba(10,26,46,0.06) !important; transition: transform 0.2s ease, box-shadow 0.2s ease !important; width: 100% !important; }
+#<?= esc_attr($wid) ?> .wxp-section--theme-dark .wxp-cg__card { background: rgba(255,255,255,0.04) !important; color: #fff !important; border-color: rgba(255,255,255,0.1) !important; box-shadow: none !important; }
+#<?= esc_attr($wid) ?> .wxp-cg__card:hover { transform: translateY(-4px) !important; box-shadow: 0 18px 36px rgba(10,26,46,0.12) !important; color: #1A1A1A !important; }
+#<?= esc_attr($wid) ?> .wxp-section--theme-dark .wxp-cg__card:hover { color: #fff !important; }
+#<?= esc_attr($wid) ?> .wxp-cg__image-wrap { aspect-ratio: 16 / 9 !important; overflow: hidden !important; background: linear-gradient(135deg, #11325D, #2d6a9f) !important; }
+#<?= esc_attr($wid) ?> .wxp-cg__image { width: 100% !important; height: 100% !important; object-fit: cover !important; display: block !important; }
+#<?= esc_attr($wid) ?> .wxp-cg__body-wrap { padding: 22px !important; display: flex !important; flex-direction: column !important; gap: 10px !important; flex: 1 !important; }
+#<?= esc_attr($wid) ?> .wxp-cg__title { font-family: 'DM Sans', system-ui, sans-serif !important; font-size: 18px !important; margin: 0 !important; padding: 0 !important; font-weight: 700 !important; line-height: 1.3 !important; color: #11325D !important; background: none !important; }
+#<?= esc_attr($wid) ?> .wxp-section--theme-dark .wxp-cg__title { color: #fff !important; }
+#<?= esc_attr($wid) ?> .wxp-cg__desc { font-size: 14px !important; line-height: 1.55 !important; opacity: 0.85 !important; margin: 0 !important; padding: 0 !important; color: inherit !important; background: none !important; }
+#<?= esc_attr($wid) ?> .wxp-cg__result { font-size: 13px !important; margin: 4px 0 0 !important; padding: 8px 14px !important; background: rgba(16,163,74,0.10) !important; color: #15803D !important; border-radius: 6px !important; align-self: flex-start !important; font-weight: 600 !important; }
+#<?= esc_attr($wid) ?> .wxp-section--theme-dark .wxp-cg__result { background: rgba(34,197,94,0.18) !important; color: #4ADE80 !important; }
+#<?= esc_attr($wid) ?> .wxp-cg__result-label { font-weight: 700 !important; margin-right: 4px !important; }
+#<?= esc_attr($wid) ?> .wxp-cg__cta { font-size: 14px !important; font-weight: 600 !important; color: #F28C28 !important; margin-top: auto !important; padding-top: 4px !important; }
 @media (max-width: 900px) {
-    .wxp-cg--cols-3 .wxp-cg__grid, .wxp-cg--cols-4 .wxp-cg__grid { grid-template-columns: repeat(2, 1fr); }
+    #<?= esc_attr($wid) ?> .wxp-cg--cols-3 .wxp-cg__grid, #<?= esc_attr($wid) ?> .wxp-cg--cols-4 .wxp-cg__grid { grid-template-columns: repeat(2, 1fr) !important; }
 }
 @media (max-width: 600px) {
-    .wxp-cg__grid { grid-template-columns: 1fr !important; }
+    #<?= esc_attr($wid) ?> .wxp-cg__grid { grid-template-columns: 1fr !important; }
 }
     </style>
     <?php

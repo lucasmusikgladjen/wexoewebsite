@@ -16,6 +16,7 @@ return function ($section, $page, $ctx) {
 
     if ($h2 === '' && $body === '' && $eyebrow === '') return '';
 
+    $wid = (string) ($ctx['wrapper_id'] ?? '');
     $attrs = wexoe_pages_section_attrs($section, $ctx, 'wxp-to wxp-to--' . $align);
     ob_start();
     ?>
@@ -27,13 +28,17 @@ return function ($section, $page, $ctx) {
         </div>
     </section>
     <style>
-.wxp-to__inner { max-width: 760px; }
-.wxp-to--center .wxp-to__inner { text-align: center; }
-.wxp-to__body p { margin: 0 0 16px; }
-.wxp-to__body h3 { font-size: 1.25rem; margin: 24px 0 12px; }
-.wxp-to__body ul, .wxp-to__body ol { padding-left: 1.4em; margin: 0 0 16px; }
-.wxp-to__body a { color: #11325D; text-decoration: underline; }
-.wxp-section--theme-dark .wxp-to__body a { color: #F28C28; }
+#<?= esc_attr($wid) ?> .wxp-to__inner { max-width: 760px !important; }
+#<?= esc_attr($wid) ?> .wxp-to--center .wxp-to__inner { text-align: center !important; }
+#<?= esc_attr($wid) ?> .wxp-to--center .wxp-eyebrow { justify-content: center !important; }
+#<?= esc_attr($wid) ?> .wxp-to__body { font-size: 16px !important; line-height: 1.75 !important; color: inherit !important; }
+#<?= esc_attr($wid) ?> .wxp-to__body p { margin: 0 0 16px !important; color: inherit !important; }
+#<?= esc_attr($wid) ?> .wxp-to__body p:last-child { margin-bottom: 0 !important; }
+#<?= esc_attr($wid) ?> .wxp-to__body h3 { font-size: 1.25rem !important; font-weight: 700 !important; margin: 28px 0 12px !important; color: #11325D !important; }
+#<?= esc_attr($wid) ?> .wxp-section--theme-dark .wxp-to__body h3 { color: #fff !important; }
+/* Markdown list styling is inherited from the base .wxp-body ul/ol rules. */
+#<?= esc_attr($wid) ?> .wxp-to__body a { color: #11325D !important; text-decoration: underline !important; }
+#<?= esc_attr($wid) ?> .wxp-section--theme-dark .wxp-to__body a { color: #F28C28 !important; }
     </style>
     <?php
     return ob_get_clean();

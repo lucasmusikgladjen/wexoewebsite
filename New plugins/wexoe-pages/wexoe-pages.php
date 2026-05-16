@@ -106,9 +106,16 @@ function wexoe_pages_render($slug) {
     $ctx = wexoe_pages_build_context($page);
 
     $wrapper_id = 'wxp-' . substr(preg_replace('/[^a-z0-9-]/', '', strtolower($slug)), 0, 12) . '-' . wp_generate_password(6, false, false);
+    $ctx['wrapper_id'] = $wrapper_id;
 
     ob_start();
     echo '<article id="' . esc_attr($wrapper_id) . '" class="wxp wxp--' . esc_attr($ctx['page_theme']) . '">';
+
+    // Scoped base styles + theme resets — emitted INSIDE the wrapper so they
+    // come after the theme stylesheet in source order and win at equal
+    // specificity. The `#wrapper_id` prefix gives them a higher specificity
+    // than bare class selectors in the theme.
+    echo wexoe_pages_scoped_base_styles($wrapper_id, $ctx['page_theme']);
 
     // Topp-H1 visas bara om INGEN hero-sektion finns. Hero äger sin egen H1.
     $has_hero = false;
@@ -452,61 +459,19 @@ function wexoe_pages_debug_comment($msg) {
 }
 
 /* ============================================================
-   GLOBAL CSS — emit once per page-render
+   FONT PRELOAD — emit DM Sans link tags once per page
    ============================================================
-   Single inline stylesheet med basklasser som alla sektioner delar:
-   layout-container, theme-färger, padding-skalor, basic typography.
-   Sektion-specifik CSS bor i respektive sections/<type>.php.
+   Other Wexoe plugins (landing, contact, customer-type, product-area)
+   all load DM Sans via Google Fonts. We do the same so typography is
+   consistent across plugins even when this is the only one on the page.
 */
+add_action('wp_head', 'wexoe_pages_print_font_preload', 4);
 
-// Print BEFORE body så att section-inline-styles (i body) override:ar baset
-// vid lika specificitet (source-order wins).
-add_action('wp_head', 'wexoe_pages_print_base_styles', 8);
-
-function wexoe_pages_print_base_styles() {
-    static $printed = false;
-    if ($printed) return;
-    // Heuristik: bara printa om vi rendererat minst en wexoe_page på sidan.
-    // Vi kan inte veta säkert utan att hooka in render-flödet — för
-    // enkelhetens skull skickar vi alltid när shortcode finns någonstans.
-    // Cost: ~2kB extra CSS som ignoreras om inte använt.
+function wexoe_pages_print_font_preload() {
     if (!wexoe_pages_should_print_base_styles()) return;
-    $printed = true;
-    ?>
-<style id="wxp-base">
-.wxp { color: #1A1A1A; font-family: 'DM Sans', system-ui, -apple-system, BlinkMacSystemFont, sans-serif; }
-.wxp strong, .wxp b, .wxp em, .wxp i { color: inherit; }
-.wxp--dark { color: #fff; background: #0A1A2E; }
-.wxp__h1 { font-size: clamp(2rem, 4vw, 2.75rem); margin: 0 0 24px; padding: 24px 24px 0; }
-.wxp-section { box-sizing: border-box; width: 100%; }
-.wxp-section *, .wxp-section *::before, .wxp-section *::after { box-sizing: border-box; }
-.wxp-section__inner { max-width: 1100px; margin: 0 auto; padding-left: 24px; padding-right: 24px; }
-.wxp-section--layout-narrow .wxp-section__inner { max-width: 760px; }
-.wxp-section--layout-full_bleed .wxp-section__inner { max-width: none; padding-left: 0; padding-right: 0; }
-.wxp-section--top-none { padding-top: 0; }
-.wxp-section--top-sm { padding-top: 24px; }
-.wxp-section--top-md { padding-top: 64px; }
-.wxp-section--top-lg { padding-top: 96px; }
-.wxp-section--bot-none { padding-bottom: 0; }
-.wxp-section--bot-sm { padding-bottom: 24px; }
-.wxp-section--bot-md { padding-bottom: 64px; }
-.wxp-section--bot-lg { padding-bottom: 96px; }
-.wxp-section--theme-light { background: #fff; color: #1A1A1A; }
-.wxp-section--theme-dark { background: #0A1A2E; color: #fff; }
-.wxp-eyebrow { text-transform: uppercase; letter-spacing: 0.08em; font-size: 12px; opacity: 0.75; margin: 0 0 12px; font-weight: 500; }
-.wxp-h2 { font-size: clamp(1.5rem, 3vw, 2rem); margin: 0 0 16px; font-weight: 600; line-height: 1.2; }
-.wxp-body { font-size: 16px; line-height: 1.65; }
-.wxp-body p:last-child { margin-bottom: 0; }
-.wxp-btn { display: inline-flex; align-items: center; gap: 8px; padding: 12px 24px; border-radius: 8px; text-decoration: none; font-weight: 500; transition: transform 0.15s; line-height: 1.2; }
-.wxp-btn:hover { transform: translateY(-1px); }
-.wxp-btn--primary { background: #F28C28; color: #fff; }
-.wxp-btn--primary:hover { background: #e07d1f; color: #fff; }
-.wxp-btn--secondary { background: transparent; color: inherit; border: 2px solid currentColor; }
-.wxp-section--theme-light .wxp-btn--secondary { color: #11325D; border-color: rgba(17,50,93,0.3); }
-.wxp-actions { display: flex; flex-wrap: wrap; gap: 12px; }
-@media (max-width: 720px) { .wxp-section--top-md { padding-top: 40px; } .wxp-section--bot-md { padding-bottom: 40px; } .wxp-section--top-lg { padding-top: 56px; } .wxp-section--bot-lg { padding-bottom: 56px; } }
-</style>
-    <?php
+    echo '<link rel="preconnect" href="https://fonts.googleapis.com">' . "\n";
+    echo '<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>' . "\n";
+    echo '<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap">' . "\n";
 }
 
 function wexoe_pages_should_print_base_styles() {
@@ -515,6 +480,98 @@ function wexoe_pages_should_print_base_styles() {
     if (!$post || !is_object($post)) return false;
     return strpos($post->post_content, '[wexoe_page') !== false
         || strpos($post->post_content, '[wexoe_content') !== false; // alb-blocks-wrapper
+}
+
+/* ============================================================
+   SCOPED BASE STYLES — emitted INSIDE the wrapper article
+   ============================================================
+   All rules are scoped to `#<wrapper_id>` so theme styles cannot win on
+   specificity. `!important` is used on properties the theme is known to
+   override (h1/h2 color, list ::before markers, link color, button bg).
+   The wrapper id is unique per render so this stays self-contained even
+   if multiple wexoe_page shortcodes appear on the same WP page.
+*/
+function wexoe_pages_scoped_base_styles($id, $page_theme) {
+    $w = '#' . $id;
+    $page_bg = $page_theme === 'dark' ? '#0A1A2E' : '#fff';
+    $page_fg = $page_theme === 'dark' ? '#fff' : '#1A1A1A';
+
+    ob_start();
+    ?>
+<style id="<?= esc_attr($id) ?>-base">
+/* ============ RESET ============ */
+<?= $w ?> { font-family: 'DM Sans', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif !important; color: <?= $page_fg ?> !important; background: <?= $page_bg ?>; line-height: 1.6 !important; box-sizing: border-box !important; }
+<?= $w ?> *, <?= $w ?> *::before, <?= $w ?> *::after { box-sizing: border-box !important; }
+/* Kill the theme's `li::before` markers (which were bleeding through as ✓ on FAQ/bullet lists).
+   Do NOT touch list-style/padding/margin at this level — Markdown body copy renders <ul>/<ol>
+   inside .wxp-body and needs native bullets. Component lists (.wxp-faq__list, .wxp-tg__grid, …)
+   declare their own list-style:none reset where they want a bare list. */
+<?= $w ?> li::before, <?= $w ?> ul li::before, <?= $w ?> ol li::before { content: none !important; display: none !important; background: none !important; }
+<?= $w ?> strong, <?= $w ?> b, <?= $w ?> em, <?= $w ?> i { color: inherit !important; }
+<?= $w ?> img { max-width: 100% !important; height: auto !important; }
+<?= $w ?> a { text-decoration: none !important; color: inherit; }
+
+/* ============ TYPOGRAPHY ============ */
+<?= $w ?> .wxp__h1 { font-size: clamp(2rem, 4vw, 2.75rem) !important; font-weight: 700 !important; line-height: 1.15 !important; color: inherit !important; margin: 0 0 24px !important; padding: 24px 24px 0 !important; }
+<?= $w ?> .wxp-eyebrow { display: inline-flex !important; align-items: center !important; gap: 10px !important; text-transform: uppercase !important; letter-spacing: 0.12em !important; font-size: 12px !important; font-weight: 700 !important; color: #F28C28 !important; margin: 0 0 16px !important; padding: 0 !important; background: none !important; }
+<?= $w ?> .wxp-eyebrow::before { content: '' !important; display: inline-block !important; width: 22px !important; height: 2px !important; background: #F28C28 !important; flex-shrink: 0 !important; }
+<?= $w ?> .wxp-section--theme-dark .wxp-eyebrow { color: #F28C28 !important; }
+<?= $w ?> .wxp-h2 { font-size: clamp(1.75rem, 3.5vw, 2.4rem) !important; font-weight: 700 !important; line-height: 1.18 !important; color: inherit !important; margin: 0 0 18px !important; padding: 0 !important; letter-spacing: -0.01em !important; background: none !important; }
+<?= $w ?> .wxp-section--theme-light .wxp-h2 { color: #11325D !important; }
+<?= $w ?> .wxp-section--theme-dark .wxp-h2 { color: #fff !important; }
+<?= $w ?> .wxp-body { font-size: 16px !important; line-height: 1.7 !important; color: inherit; }
+<?= $w ?> .wxp-body p { margin: 0 0 14px !important; color: inherit; }
+<?= $w ?> .wxp-body p:last-child { margin-bottom: 0 !important; }
+<?= $w ?> .wxp-body a { color: #11325D !important; text-decoration: underline !important; }
+<?= $w ?> .wxp-section--theme-dark .wxp-body a { color: #F28C28 !important; }
+/* Markdown body lists — restore native markers since the reset above is intentionally narrow. */
+<?= $w ?> .wxp-body ul, <?= $w ?> .wxp-body ol { list-style: revert !important; padding-left: 1.4em !important; margin: 0 0 16px !important; }
+<?= $w ?> .wxp-body ul li, <?= $w ?> .wxp-body ol li { list-style: inherit !important; padding-left: 0 !important; margin: 0 0 6px !important; background: none !important; }
+<?= $w ?> .wxp-body ul:last-child, <?= $w ?> .wxp-body ol:last-child { margin-bottom: 0 !important; }
+
+/* ============ SECTION LAYOUT ============ */
+<?= $w ?> .wxp-section { box-sizing: border-box !important; width: 100% !important; position: relative !important; }
+<?= $w ?> .wxp-section__inner { width: 100% !important; max-width: 1200px !important; margin: 0 auto !important; padding-left: 24px !important; padding-right: 24px !important; }
+<?= $w ?> .wxp-section--layout-narrow .wxp-section__inner { max-width: 820px !important; }
+<?= $w ?> .wxp-section--layout-full_bleed .wxp-section__inner { max-width: none !important; padding-left: 0 !important; padding-right: 0 !important; }
+<?= $w ?> .wxp-section--top-none { padding-top: 0 !important; }
+<?= $w ?> .wxp-section--top-sm { padding-top: 32px !important; }
+<?= $w ?> .wxp-section--top-md { padding-top: 72px !important; }
+<?= $w ?> .wxp-section--top-lg { padding-top: 112px !important; }
+<?= $w ?> .wxp-section--bot-none { padding-bottom: 0 !important; }
+<?= $w ?> .wxp-section--bot-sm { padding-bottom: 32px !important; }
+<?= $w ?> .wxp-section--bot-md { padding-bottom: 72px !important; }
+<?= $w ?> .wxp-section--bot-lg { padding-bottom: 112px !important; }
+<?= $w ?> .wxp-section--theme-light { background: #fff !important; color: #1A1A1A !important; }
+<?= $w ?> .wxp-section--theme-dark { background: #0A1A2E !important; color: #fff !important; }
+
+/* Full-bleed helper — break out of theme containers like the other plugins do. */
+<?= $w ?> .wxp-fullbleed { width: 100vw !important; margin-left: calc(-50vw + 50%) !important; margin-right: calc(-50vw + 50%) !important; }
+
+/* ============ BUTTONS ============ */
+<?= $w ?> .wxp-actions { display: flex !important; flex-wrap: wrap !important; gap: 12px !important; margin: 0 !important; padding: 0 !important; }
+<?= $w ?> .wxp-btn { display: inline-flex !important; align-items: center !important; justify-content: center !important; gap: 8px !important; padding: 14px 28px !important; border-radius: 8px !important; text-decoration: none !important; font-weight: 600 !important; font-size: 15px !important; line-height: 1.2 !important; transition: all 0.2s ease !important; border: 2px solid transparent !important; cursor: pointer !important; white-space: nowrap !important; box-shadow: none !important; text-shadow: none !important; }
+<?= $w ?> .wxp-btn--primary { background: #F28C28 !important; color: #fff !important; border-color: #F28C28 !important; }
+<?= $w ?> .wxp-btn--primary:hover { background: #e07b1a !important; border-color: #e07b1a !important; color: #fff !important; transform: translateY(-1px) !important; box-shadow: 0 6px 16px rgba(242,140,40,0.28) !important; }
+<?= $w ?> .wxp-btn--secondary { background: transparent !important; color: #11325D !important; border-color: rgba(17,50,93,0.28) !important; }
+<?= $w ?> .wxp-btn--secondary:hover { border-color: #11325D !important; color: #11325D !important; transform: translateY(-1px) !important; }
+<?= $w ?> .wxp-section--theme-dark .wxp-btn--secondary { color: #fff !important; border-color: rgba(255,255,255,0.5) !important; }
+<?= $w ?> .wxp-section--theme-dark .wxp-btn--secondary:hover { border-color: #fff !important; background: rgba(255,255,255,0.08) !important; color: #fff !important; }
+
+/* ============ RESPONSIVE ============ */
+@media (max-width: 900px) {
+    <?= $w ?> .wxp-section--top-md { padding-top: 48px !important; }
+    <?= $w ?> .wxp-section--bot-md { padding-bottom: 48px !important; }
+    <?= $w ?> .wxp-section--top-lg { padding-top: 64px !important; }
+    <?= $w ?> .wxp-section--bot-lg { padding-bottom: 64px !important; }
+    <?= $w ?> .wxp-section__inner { padding-left: 20px !important; padding-right: 20px !important; }
+}
+@media (max-width: 600px) {
+    <?= $w ?> .wxp-btn { padding: 13px 22px !important; font-size: 14px !important; }
+}
+</style>
+    <?php
+    return ob_get_clean();
 }
 
 /* ============================================================

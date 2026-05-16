@@ -29,13 +29,18 @@ return function ($section, $page, $ctx) {
 
     if (empty($articles) && $h2 === '') return '';
 
+    $wid = (string) ($ctx['wrapper_id'] ?? '');
     $attrs = wexoe_pages_section_attrs($section, $ctx, 'wxp-ng wxp-ng--cols-' . $columns);
     ob_start();
     ?>
     <section <?= $attrs ?>>
         <div class="wxp-section__inner">
-            <?php if ($eyebrow !== ''): ?><p class="wxp-eyebrow"><?= esc_html($eyebrow) ?></p><?php endif; ?>
-            <?php if ($h2 !== ''): ?><h2 class="wxp-h2"><?= esc_html($h2) ?></h2><?php endif; ?>
+            <?php if ($eyebrow !== '' || $h2 !== ''): ?>
+                <div class="wxp-ng__header">
+                    <?php if ($eyebrow !== ''): ?><p class="wxp-eyebrow"><?= esc_html($eyebrow) ?></p><?php endif; ?>
+                    <?php if ($h2 !== ''): ?><h2 class="wxp-h2"><?= esc_html($h2) ?></h2><?php endif; ?>
+                </div>
+            <?php endif; ?>
             <?php if (!empty($articles)): ?>
                 <ul class="wxp-ng__grid">
                     <?php foreach ($articles as $a):
@@ -49,6 +54,8 @@ return function ($section, $page, $ctx) {
                             <?php if ($link !== ''): ?><a href="<?= esc_url($link) ?>" class="wxp-ng__card"><?php else: ?><div class="wxp-ng__card wxp-ng__card--static"><?php endif; ?>
                                 <?php if ($image !== ''): ?>
                                     <div class="wxp-ng__image-wrap"><img src="<?= esc_url($image) ?>" alt="<?= esc_attr($title) ?>" class="wxp-ng__image" loading="lazy" /></div>
+                                <?php else: ?>
+                                    <div class="wxp-ng__image-wrap wxp-ng__image-wrap--placeholder" aria-hidden="true"></div>
                                 <?php endif; ?>
                                 <div class="wxp-ng__body-wrap">
                                     <h3 class="wxp-ng__title"><?= esc_html($title) ?></h3>
@@ -63,27 +70,33 @@ return function ($section, $page, $ctx) {
         </div>
     </section>
     <style>
-.wxp-ng__grid { list-style: none; padding: 0; margin: 0; display: grid; gap: 20px; }
-.wxp-ng--cols-2 .wxp-ng__grid { grid-template-columns: repeat(2, 1fr); }
-.wxp-ng--cols-3 .wxp-ng__grid { grid-template-columns: repeat(3, 1fr); }
-.wxp-ng--cols-4 .wxp-ng__grid { grid-template-columns: repeat(4, 1fr); }
-.wxp-ng__item { display: flex; }
-.wxp-ng__card { display: flex; flex-direction: column; background: #fff; border-radius: 10px; overflow: hidden; text-decoration: none; color: #1A1A1A; border: 1px solid rgba(0,0,0,0.06); transition: transform 0.15s, border-color 0.15s; width: 100%; }
-.wxp-section--theme-dark .wxp-ng__card { background: rgba(255,255,255,0.04); color: #fff; border-color: rgba(255,255,255,0.1); }
-.wxp-ng__card:hover { transform: translateY(-2px); border-color: rgba(17,50,93,0.2); color: #1A1A1A; }
-.wxp-section--theme-dark .wxp-ng__card:hover { color: #fff; border-color: rgba(255,255,255,0.2); }
-.wxp-ng__card--static { cursor: default; }
-.wxp-ng__image-wrap { aspect-ratio: 16/10; overflow: hidden; background: #F5F6F8; }
-.wxp-ng__image { width: 100%; height: 100%; object-fit: cover; display: block; }
-.wxp-ng__body-wrap { padding: 16px; display: flex; flex-direction: column; gap: 6px; flex: 1; }
-.wxp-ng__title { font-size: 16px; margin: 0; font-weight: 600; line-height: 1.3; }
-.wxp-ng__desc { font-size: 13px; line-height: 1.5; opacity: 0.85; margin: 0; }
-.wxp-ng__cta { font-size: 13px; font-weight: 500; color: #11325D; margin-top: auto; padding-top: 4px; }
-.wxp-section--theme-dark .wxp-ng__cta { color: #F28C28; }
+#<?= esc_attr($wid) ?> .wxp-ng__header { max-width: 720px !important; margin-bottom: 32px !important; }
+#<?= esc_attr($wid) ?> .wxp-ng__grid { list-style: none !important; padding: 0 !important; margin: 0 !important; display: grid !important; gap: 24px !important; }
+#<?= esc_attr($wid) ?> .wxp-ng--cols-2 .wxp-ng__grid { grid-template-columns: repeat(2, 1fr) !important; }
+#<?= esc_attr($wid) ?> .wxp-ng--cols-3 .wxp-ng__grid { grid-template-columns: repeat(3, 1fr) !important; }
+#<?= esc_attr($wid) ?> .wxp-ng--cols-4 .wxp-ng__grid { grid-template-columns: repeat(4, 1fr) !important; }
+#<?= esc_attr($wid) ?> .wxp-ng__item { display: flex !important; list-style: none !important; padding: 0 !important; margin: 0 !important; background: none !important; }
+#<?= esc_attr($wid) ?> .wxp-ng__item::before { content: none !important; display: none !important; }
+#<?= esc_attr($wid) ?> .wxp-ng__card { display: flex !important; flex-direction: column !important; background: #fff !important; border-radius: 14px !important; overflow: hidden !important; text-decoration: none !important; color: #1A1A1A !important; border: 1px solid rgba(17,50,93,0.08) !important; box-shadow: 0 4px 16px rgba(10,26,46,0.05) !important; transition: transform 0.2s ease, box-shadow 0.2s ease !important; width: 100% !important; }
+#<?= esc_attr($wid) ?> .wxp-section--theme-dark .wxp-ng__card { background: rgba(255,255,255,0.04) !important; color: #fff !important; border-color: rgba(255,255,255,0.1) !important; box-shadow: none !important; }
+#<?= esc_attr($wid) ?> .wxp-ng__card:hover { transform: translateY(-3px) !important; box-shadow: 0 16px 36px rgba(10,26,46,0.10) !important; color: #1A1A1A !important; }
+#<?= esc_attr($wid) ?> .wxp-section--theme-dark .wxp-ng__card:hover { color: #fff !important; }
+#<?= esc_attr($wid) ?> .wxp-ng__card--static { cursor: default !important; }
+#<?= esc_attr($wid) ?> .wxp-ng__image-wrap { aspect-ratio: 16 / 10 !important; overflow: hidden !important; background: #F5F6F8 !important; }
+#<?= esc_attr($wid) ?> .wxp-ng__image-wrap--placeholder { background: linear-gradient(135deg, #11325D, #2d6a9f) !important; }
+#<?= esc_attr($wid) ?> .wxp-ng__image { width: 100% !important; height: 100% !important; object-fit: cover !important; display: block !important; }
+#<?= esc_attr($wid) ?> .wxp-ng__body-wrap { padding: 20px !important; display: flex !important; flex-direction: column !important; gap: 8px !important; flex: 1 !important; }
+#<?= esc_attr($wid) ?> .wxp-ng__title { font-family: 'DM Sans', system-ui, sans-serif !important; font-size: 17px !important; margin: 0 !important; padding: 0 !important; font-weight: 700 !important; line-height: 1.3 !important; color: #11325D !important; background: none !important; }
+#<?= esc_attr($wid) ?> .wxp-section--theme-dark .wxp-ng__title { color: #fff !important; }
+#<?= esc_attr($wid) ?> .wxp-ng__desc { font-size: 14px !important; line-height: 1.55 !important; color: #4b5563 !important; margin: 0 !important; padding: 0 !important; background: none !important; }
+#<?= esc_attr($wid) ?> .wxp-section--theme-dark .wxp-ng__desc { color: rgba(255,255,255,0.75) !important; }
+#<?= esc_attr($wid) ?> .wxp-ng__cta { font-size: 14px !important; font-weight: 600 !important; color: #F28C28 !important; margin-top: auto !important; padding-top: 4px !important; }
 @media (max-width: 900px) {
-    .wxp-ng--cols-3 .wxp-ng__grid, .wxp-ng--cols-4 .wxp-ng__grid { grid-template-columns: repeat(2, 1fr); }
+    #<?= esc_attr($wid) ?> .wxp-ng--cols-3 .wxp-ng__grid, #<?= esc_attr($wid) ?> .wxp-ng--cols-4 .wxp-ng__grid { grid-template-columns: repeat(2, 1fr) !important; }
 }
-@media (max-width: 600px) { .wxp-ng__grid { grid-template-columns: 1fr !important; } }
+@media (max-width: 600px) {
+    #<?= esc_attr($wid) ?> .wxp-ng__grid { grid-template-columns: 1fr !important; }
+}
     </style>
     <?php
     return ob_get_clean();

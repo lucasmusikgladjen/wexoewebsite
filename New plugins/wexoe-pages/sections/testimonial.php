@@ -56,19 +56,21 @@ return function ($section, $page, $ctx) {
 
     if ($quote === '') return '';
 
+    $wid = (string) ($ctx['wrapper_id'] ?? '');
     $attrs = wexoe_pages_section_attrs($section, $ctx, 'wxp-t');
     ob_start();
     ?>
     <section <?= $attrs ?>>
         <div class="wxp-section__inner wxp-t__inner">
             <?php if ($eyebrow !== ''): ?><p class="wxp-eyebrow wxp-t__eyebrow"><?= esc_html($eyebrow) ?></p><?php endif; ?>
-            <blockquote class="wxp-t__quote">
-                <span class="wxp-t__mark" aria-hidden="true">"</span><?= esc_html($quote) ?><span class="wxp-t__mark" aria-hidden="true">"</span>
-            </blockquote>
+            <span class="wxp-t__mark" aria-hidden="true">&ldquo;</span>
+            <blockquote class="wxp-t__quote"><?= esc_html($quote) ?></blockquote>
             <?php if ($a_name !== '' || $a_image !== ''): ?>
                 <figcaption class="wxp-t__author">
                     <?php if ($a_image !== ''): ?>
                         <img class="wxp-t__photo" src="<?= esc_url($a_image) ?>" alt="" loading="lazy" />
+                    <?php else: ?>
+                        <span class="wxp-t__photo wxp-t__photo--placeholder" aria-hidden="true"></span>
                     <?php endif; ?>
                     <span class="wxp-t__byline">
                         <?php if ($a_name !== ''): ?><strong><?= esc_html($a_name) ?></strong><?php endif; ?>
@@ -79,17 +81,19 @@ return function ($section, $page, $ctx) {
         </div>
     </section>
     <style>
-.wxp-t { background-color: #11325D; color: #fff; }
-.wxp-t.wxp-section--theme-light { background-color: #F5F6F8; color: #1A1A1A; }
-.wxp-t__inner { max-width: 760px; text-align: center; }
-.wxp-t__eyebrow { color: #F28C28; opacity: 1; }
-.wxp-t__quote { font-size: clamp(1.25rem, 2.4vw, 1.75rem); line-height: 1.45; font-style: normal; font-weight: 500; margin: 0 0 24px; }
-.wxp-t__mark { opacity: 0.4; }
-.wxp-t__author { display: inline-flex; align-items: center; gap: 12px; }
-.wxp-t__photo { width: 48px; height: 48px; border-radius: 50%; object-fit: cover; }
-.wxp-t__byline { text-align: left; display: flex; flex-direction: column; }
-.wxp-t__byline strong { font-weight: 600; }
-.wxp-t__byline span { font-size: 13px; opacity: 0.8; }
+#<?= esc_attr($wid) ?> .wxp-t.wxp-section--theme-dark { background: linear-gradient(135deg, #0A1A2E 0%, #11325D 100%) !important; }
+#<?= esc_attr($wid) ?> .wxp-t.wxp-section--theme-light { background: #F5F6F8 !important; }
+#<?= esc_attr($wid) ?> .wxp-t__inner { max-width: 860px !important; text-align: center !important; position: relative !important; }
+#<?= esc_attr($wid) ?> .wxp-t__eyebrow { justify-content: center !important; }
+#<?= esc_attr($wid) ?> .wxp-t__mark { display: block !important; font-family: Georgia, 'Times New Roman', serif !important; font-size: 6rem !important; line-height: 0.6 !important; color: #F28C28 !important; opacity: 0.55 !important; margin: 0 0 12px !important; padding: 0 !important; background: none !important; }
+#<?= esc_attr($wid) ?> .wxp-t__quote { font-family: 'DM Sans', system-ui, sans-serif !important; font-size: clamp(1.25rem, 2.6vw, 1.9rem) !important; line-height: 1.5 !important; font-style: normal !important; font-weight: 500 !important; margin: 0 0 32px !important; padding: 0 !important; color: inherit !important; background: none !important; border: none !important; quotes: none !important; }
+#<?= esc_attr($wid) ?> .wxp-t__quote::before, #<?= esc_attr($wid) ?> .wxp-t__quote::after { content: none !important; }
+#<?= esc_attr($wid) ?> .wxp-t__author { display: inline-flex !important; align-items: center !important; gap: 14px !important; }
+#<?= esc_attr($wid) ?> .wxp-t__photo { width: 54px !important; height: 54px !important; border-radius: 50% !important; object-fit: cover !important; flex-shrink: 0 !important; display: block !important; }
+#<?= esc_attr($wid) ?> .wxp-t__photo--placeholder { background: linear-gradient(135deg, #F28C28, #11325D) !important; }
+#<?= esc_attr($wid) ?> .wxp-t__byline { text-align: left !important; display: flex !important; flex-direction: column !important; gap: 2px !important; }
+#<?= esc_attr($wid) ?> .wxp-t__byline strong { font-weight: 700 !important; font-size: 15px !important; color: inherit !important; }
+#<?= esc_attr($wid) ?> .wxp-t__byline span { font-size: 13px !important; opacity: 0.78 !important; color: inherit !important; }
     </style>
     <?php
     return ob_get_clean();
