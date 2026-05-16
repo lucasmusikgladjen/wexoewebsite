@@ -304,8 +304,7 @@ Läs `CLAUDE.md` och `NEW_PAGE_TYPE.md` i denna repo. Studera Audience
 (`lib/page-types/audience.*`, `components/audience/`) som referens för
 enkla sidtyper, eller Product Area för komplexa.
 
-Avgör först vilket lager sidtypen behöver (1, 2 eller 3) baserat på
-prototypen. Motivera valet.
+Kom ihåg att alla sidor ska ha en Claude transformator, inga sidor ska skriva direkt till airtable utan Claude mellansteg oavsett hur simpel sidan är.
 
 Visa förslag på state-struktur + section-uppdelning INNAN du implementerar.
 Invänta godkännande.
