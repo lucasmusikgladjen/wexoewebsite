@@ -51,6 +51,7 @@ return [
         'anchor_id' => 'anchor_id',
         'layout' => 'layout',
         'theme' => 'theme',
+        'background_color' => 'background_color',
         'top_padding' => 'top_padding',
         'bottom_padding' => 'bottom_padding',
         'page_ids' => ['source' => 'page_ids', 'type' => 'link', 'entity' => 'cms_pages'],

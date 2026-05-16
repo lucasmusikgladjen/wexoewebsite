@@ -37,7 +37,6 @@ return [
         'country_ids' => ['source' => 'country_ids', 'type' => 'link', 'entity' => 'core_countries'],
         'division_ids' => ['source' => 'division_ids', 'type' => 'link', 'entity' => 'core_divisions'],
         'page_theme' => 'page_theme',
-        'max_width' => 'max_width',
         'section_ids' => ['source' => 'section_ids', 'type' => 'link', 'entity' => 'cms_page_sections'],
     ],
 ];

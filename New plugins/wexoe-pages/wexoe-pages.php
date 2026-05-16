@@ -239,16 +239,12 @@ function wexoe_pages_load_sections($page) {
  *   page_country_code  string|null  — kortkod (SE, NO, ...) eller null
  *   page_division_slug string|null
  *   page_theme         string       — 'light' (default) eller 'dark'
- *   page_max_width     string       — 'narrow'|'normal'|'wide'|'full'
  */
 function wexoe_pages_build_context($page) {
     $ctx = [
         'page_country_code'  => null,
         'page_division_slug' => null,
         'page_theme'         => (($page['page_theme'] ?? 'light') === 'dark') ? 'dark' : 'light',
-        'page_max_width'     => in_array(($page['max_width'] ?? 'normal'), ['narrow', 'normal', 'wide', 'full'], true)
-            ? $page['max_width']
-            : 'normal',
     ];
 
     if (!empty($page['country_ids'])) {
@@ -365,6 +361,18 @@ function wexoe_pages_section_attrs($section, $ctx, $extra_class = '') {
     $bot = in_array(($section['bottom_padding'] ?? ''), ['none', 'sm', 'md', 'lg'], true) ? $section['bottom_padding'] : 'md';
     $layout = in_array(($section['layout'] ?? ''), ['contained', 'full_bleed', 'narrow'], true) ? $section['layout'] : 'contained';
 
+    // background_color: överstyr theme-klassen baserat på luminance så att text/bullets/etc.
+    // automatiskt blir läsbara. Sektioner som hero/cta_banner har egna gradient-bakgrunder
+    // (i sin egen CSS) och påverkas inte av denna.
+    $bg_color = null;
+    $bg_raw = trim((string) ($section['background_color'] ?? ''));
+    if ($bg_raw !== '' && class_exists('\\Wexoe\\Core\\Helpers\\Color')) {
+        $bg_color = \Wexoe\Core\Helpers\Color::normalize_hex($bg_raw);
+        if ($bg_color !== null) {
+            $theme = \Wexoe\Core\Helpers\Color::is_dark($bg_color) ? 'dark' : 'light';
+        }
+    }
+
     $classes = [
         'wxp-section',
         'wxp-section--' . $type,
@@ -373,9 +381,13 @@ function wexoe_pages_section_attrs($section, $ctx, $extra_class = '') {
         'wxp-section--bot-' . $bot,
         'wxp-section--layout-' . $layout,
     ];
+    if ($bg_color !== null) $classes[] = 'wxp-section--custom-bg';
     if ($extra_class !== '') $classes[] = $extra_class;
 
     $attrs = 'class="' . esc_attr(implode(' ', $classes)) . '"';
+    if ($bg_color !== null) {
+        $attrs .= ' style="background-color: ' . esc_attr($bg_color) . ';"';
+    }
     if (!empty($section['anchor_id'])) {
         $attrs .= ' id="' . esc_attr($section['anchor_id']) . '"';
     }
