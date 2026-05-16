@@ -12,11 +12,11 @@
  *   - DELETE-endpoint
  *   - Wexoe Core cache-invalidering
  *
- * `emptyState` / `fromRecord` / `stateToFields` lämnas oexponerade här
- * eftersom (a) factory:n behöver dem inte när create/update är override:de,
- * (b) `loadProductAreaState()` är den enda korrekta load-vägen (den hämtar
- * PA + products + articles + solutions i en sweep), och (c) `emptyProductAreaState`
- * importeras direkt av create-page:n.
+ * `emptyState` / `fromRecord` lämnas oexponerade här eftersom (a) factory:n
+ * behöver dem inte när create/update är override:de, (b) `loadProductAreaState()`
+ * är den enda korrekta load-vägen (den hämtar PA + products + articles +
+ * solutions i en sweep), och (c) `emptyProductAreaState` importeras direkt
+ * av create-page:n.
  */
 
 import { AirtableRecord } from '../airtable';
@@ -31,19 +31,10 @@ import { ProductAreaState } from '../product-area-types';
 import { PA_ENTITIES } from '../wexoe-cache';
 import type { PageTypeServerDef } from './types';
 
-// stateToFields är obligatorisk i typen även om create/update overridar den.
-// Faktor:n anropar den aldrig när override:s är satta — men TS kräver att
-// fältet finns. En dedikerad throw klargör om någon framtida ändring råkar
-// kalla den.
-function unreachableStateToFields(): never {
-  throw new Error(
-    'product-area: stateToFields ska inte anropas (Lager 3 — create/update är override:de).',
-  );
-}
-
-// fromRecord och emptyState är optionella i typen och utelämnas eftersom
-// product-area inte använder factory:ns ?action=get-väg eller create-default-
-// flödet — server-pages hanterar båda direkt.
+// fromRecord och emptyState är obligatoriska i typen men anropas inte i
+// product-area:s flöde — `loadProductAreaState()` är den enda korrekta
+// load-vägen (den hämtar PA + products + articles + solutions i en sweep)
+// och `emptyProductAreaState` importeras direkt av create-page:n.
 function unreachableFromRecord(): never {
   throw new Error('product-area: använd loadProductAreaState() istället för fromRecord.');
 }
@@ -61,7 +52,6 @@ export const productAreaServer: PageTypeServerDef<ProductAreaState, ProductAreaL
   // Required-by-type-stubs (se kommentarer ovan).
   emptyState: unreachableFromRecord,
   fromRecord: unreachableFromRecord,
-  stateToFields: unreachableStateToFields,
 
   validate: (s) => {
     if (!s.h1?.trim()) return { field: 'h1', message: 'H1 är obligatoriskt.' };

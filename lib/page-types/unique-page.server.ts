@@ -1,19 +1,21 @@
 /**
- * Unique-page — server-side sidtypsdefinition.
+ * Unique-page — server-side sidtypsdefinition (Lager 3).
  *
- * Ren Lager 1 — inga relations. Country/Division är linked-record-FÄLT
- * direkt på record:en (multipleRecordLinks som arrayer av IDs), inte
- * separata child-records. Field.LinkedRecords hanterar dem via /api/core.
+ * Lager 3 + Claude-transform: state → Airtable-fält går alltid via Claude
+ * (`transformUniquePage`), inte en handskriven mapper. Country/Division är
+ * linked-record-fält direkt på record:en (multipleRecordLinks som arrayer
+ * av IDs); arrayerna echas igenom Claude och skrivs som vanliga fält.
  */
 
 import { AirtableRecord, SSOT_BASE_ID } from '../airtable';
+import { createRecord, updateRecord } from '../airtable';
 import {
   UNIQUE_PAGES_TABLE_ID,
   uniquePageStateFromRecord,
-  uniquePageStateToFields,
 } from '../unique-page-mapper';
 import { UniquePageState, emptyUniquePageState } from '../unique-page-types';
 import { UNIQUE_PAGES_ENTITIES } from '../wexoe-cache';
+import { transformUniquePage } from '../claude-transform';
 import type { PageTypeServerDef } from './types';
 
 export interface UniquePageListItem {
@@ -25,6 +27,44 @@ export interface UniquePageListItem {
   countryIds: string[];
 }
 
+function requireAnthropicKey(): string {
+  const key = process.env.ANTHROPIC_API_KEY;
+  if (!key) throw new Error('ANTHROPIC_API_KEY ej konfigurerad.');
+  return key;
+}
+
+async function uniquePageCreate(
+  state: UniquePageState,
+  ctx: { apiKey: string },
+): Promise<{ recordId: string }> {
+  const anthropicKey = requireAnthropicKey();
+  const { uniquePage } = await transformUniquePage(anthropicKey, state, 'create');
+  const created = await createRecord(
+    ctx.apiKey,
+    UNIQUE_PAGES_TABLE_ID,
+    uniquePage,
+    SSOT_BASE_ID,
+  );
+  return { recordId: created.id };
+}
+
+async function uniquePageUpdate(
+  recordId: string,
+  state: UniquePageState,
+  ctx: { apiKey: string },
+): Promise<{ relations: Record<string, never> }> {
+  const anthropicKey = requireAnthropicKey();
+  const { uniquePage } = await transformUniquePage(anthropicKey, state, 'update');
+  await updateRecord(
+    ctx.apiKey,
+    UNIQUE_PAGES_TABLE_ID,
+    recordId,
+    uniquePage,
+    SSOT_BASE_ID,
+  );
+  return { relations: {} };
+}
+
 export const uniquePageServer: PageTypeServerDef<UniquePageState, UniquePageListItem> = {
   id: 'unique-page',
   label: 'Egen sida',
@@ -32,7 +72,11 @@ export const uniquePageServer: PageTypeServerDef<UniquePageState, UniquePageList
   baseId: SSOT_BASE_ID,
   emptyState: emptyUniquePageState,
   fromRecord: uniquePageStateFromRecord,
-  stateToFields: uniquePageStateToFields,
+
+  // Lager 3 — skriv-vägen går via Claude-transform.
+  create: uniquePageCreate,
+  update: uniquePageUpdate,
+
   validate: (s) => {
     if (!s.h1?.trim()) return { field: 'h1', message: 'H1 är obligatorisk.' };
     return null;

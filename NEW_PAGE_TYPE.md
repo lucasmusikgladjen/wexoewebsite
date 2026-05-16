@@ -159,24 +159,20 @@ FAS 1 (schema) och FAS 2 (PHP-plugin) körs först. Denna fas antar att:
 
 ### Trelagsbeslut
 
-Innan du börjar — vilket lager passar:
-- **Lager 1 (vanlig CRUD)** — alla fält bor i samma tabell, 1-till-1 mellan state och Airtable. *Default.* Audience, Unique Pages använder detta.
-- **Lager 2 (relations)** — sidtypen har child-records i separat tabell (t.ex. tabs, downloads, products). Använd `relations[]`-arrayen.
-- **Lager 3 (override)** — udda fall: multi-tabell-create i specifik ordning, Claude-transform-mellanlag, fält som måste split:as till numrerade Airtable-fält. Product Area (PA) använder detta.
+Alla sidtyper använder **Lager 3 + Claude-transform**. Börja alltid där — också för sidtyper vars schema är 1-till-1 mellan state och Airtable. Enhetlig kod över alla sidtyper, schema-ändringar görs i en MD-fil, ingen risk att en handskriven mapper hamnar ur synk.
 
-Om du är osäker, börja med Lager 1 och växla upp först när det inte räcker.
+Lägg till `relations[]` (Lager 2) ovanpå Lager 3 om sidtypen har child-records i separat tabell (t.ex. tabs, downloads, products). Lager 1 (handskriven `stateToFields` utan Claude) stöds av ramverket men används inte i produktionen.
 
-### Claude-transform-beslutet
+### Claude-transform-checklistan
 
-Om någon datamodell i editorn skiljer sig icke-trivialt från Airtable-formatet (polymorfa tabs, pipe-format, FAQ-prefix, multi-tabell-records) → använd Lager 3 + Claude-transform.
+Varje sidtyp behöver:
+- `lib/airtable-schema-<type>.md` — Markdown-spec med komplett fältlista, typer, formateringsregler. Matas in i Claude system prompt.
+- Transform-funktion i `lib/claude-transform.ts` — payload-builder + system-prompt-builder + `transform<Type>()`. Kopiera mönstret från `transformCustomerType` (enklast) eller `transformProductArea` (komplex, multi-tabell).
+- `create` och `update` override-metoder på `PageTypeServerDef` som anropar transform-funktionen och skriver till Airtable.
 
-Då behöver du även:
-- `lib/airtable-schema-<type>.md` — Markdown-spec som matas in i Claude system prompt
-- Lägg till transform-funktion i `lib/claude-transform.ts` (kopiera mönstret från `transformLandingPage` / `transformProductArea`)
+Verifiera schema-MD mot live-records innan du anser den klar — fel fältnamn i schema-MD är det vanligaste felscenariot i hela Claude-transform-flödet. Claude returnerar ett korrekt-utseende svar som ändå PATCHar fel fält.
 
-Annars skip Claude och håll mappers direkta.
-
-### Checklista (Lager 1, "vanlig" sidtyp)
+### Checklista (Lager 3, standardflöde)
 
 1. `lib/<type>-types.ts`:
    ```ts
@@ -190,17 +186,19 @@ Annars skip Claude och håll mappers direkta.
 
 2. `lib/<type>-mapper.ts`:
    ```ts
+   // Bara fromRecord-riktningen. State → Airtable går via Claude-transform i Lager 3.
    export function <type>StateFromRecord(r: AirtableRecord): <Type>State { ... }
-   export function <type>StateToFields(s: <Type>State, mode: 'create' | 'update'): AirtableFields { ... }
    ```
 
-3. `lib/page-types/<type>.server.ts`: instansiera `PageTypeServerDef<<Type>State, <ListItem>>` med id/label/tableId/mappers/listItemMapper/slug.
+3. `lib/airtable-schema-<type>.md` + transform-funktion i `lib/claude-transform.ts` (se Claude-transform-checklistan ovan).
 
-4. `lib/page-types/<type>.ui.tsx`: instansiera `PageTypeUIDef<<Type>State>` med sections (en per `<!-- section -->` i prototypen), `previewLayout`, `slugInput`.
+4. `lib/page-types/<type>.server.ts`: instansiera `PageTypeServerDef<<Type>State, <ListItem>>` med id/label/tableId/fromRecord/listItemMapper/slug och `create`/`update` override:s som anropar `transform<Type>` + skriver via `createRecord`/`updateRecord`.
 
-5. `components/<type>/editors/*` + `components/<type>/preview/*`: en editor-komponent per sektion, en preview-komponent per sektion (eller en monolitisk preview som renderar allt).
+5. `lib/page-types/<type>.ui.tsx`: instansiera `PageTypeUIDef<<Type>State>` med sections (en per `<!-- section -->` i prototypen), `previewLayout`, `slugInput`.
 
-6. `app/api/<type>/route.ts`:
+6. `components/<type>/editors/*` + `components/<type>/preview/*`: en editor-komponent per sektion, en preview-komponent per sektion (eller en monolitisk preview som renderar allt).
+
+7. `app/api/<type>/route.ts`:
    ```ts
    import { createPageRoute, pageTypeToRouteConfig } from '@/lib/route-factory';
    import { <type>Server, load<Type>State } from '@/lib/page-types/<type>.server';
@@ -209,15 +207,15 @@ Annars skip Claude och håll mappers direkta.
    );
    ```
 
-7. `app/editor/<type>/page.tsx` + `app/editor/<type>/[recordId]/page.tsx`: server pages som hydrerar state och renderar `<PageTypeBuilder uiDef={<type>UI} initialState={...} />`.
+8. `app/editor/<type>/page.tsx` + `app/editor/<type>/[recordId]/page.tsx`: server pages som hydrerar state och renderar `<PageTypeBuilder uiDef={<type>UI} initialState={...} />`.
 
-8. `lib/wexoe-cache-entities.ts`: lägg till `export const <TYPE>_ENTITIES = ['<entity_name>', ...] as const;`.
+9. `lib/wexoe-cache-entities.ts`: lägg till `export const <TYPE>_ENTITIES = ['<entity_name>', ...] as const;`.
 
-9. `lib/page-types/registry.ts`:
-   - Utöka `PageTypeId`-unionen med det nya id:t (`'landing' | 'product' | ... | '<type>'`). Annars rejectar TypeScript ditt nya `id`/`type` innan routen ens kan byggas.
-   - Lägg till entry i `PAGE_TYPES` (id, label, description, createPath, editPath, cacheEntities, listUrl, mapList). `mapList` returnerar `PageRow[]` med `type: '<type>'` — samma literal som du la till i unionen.
+10. `lib/page-types/registry.ts`:
+    - Utöka `PageTypeId`-unionen med det nya id:t (`'landing' | 'product' | ... | '<type>'`). Annars rejectar TypeScript ditt nya `id`/`type` innan routen ens kan byggas.
+    - Lägg till entry i `PAGE_TYPES` (id, label, description, createPath, editPath, cacheEntities, listUrl, mapList). `mapList` returnerar `PageRow[]` med `type: '<type>'` — samma literal som du la till i unionen.
 
-10. Testa: `npm run dev`, gå till `/`, klicka "Ny sida" → välj din nya typ → fyll i → spara → ladda om → editera → spara → kolla i Airtable. Aktivera pluginet på WP och verifiera att en publik sida renderas.
+11. Testa: `npm run dev`, gå till `/`, klicka "Ny sida" → välj din nya typ → fyll i → spara → ladda om → editera → spara → kolla i Airtable. Aktivera pluginet på WP och verifiera att en publik sida renderas.
 
 ### Vanliga felskott
 
@@ -337,13 +335,14 @@ Här är Core-schemat (`wexoeplugins/wexoe-core/entities/<name>.php`):
   <bädda in schemafilen>
 
 Läs `wexoebuilder/CLAUDE.md` och `wexoebuilder/NEW_PAGE_TYPE.md`. Studera
-också en existerande sidtyp som referens — Audience (`lib/page-types/audience.*`,
-`components/audience/`) är bra för Lager 1; Product Area för Lager 3.
+också en existerande sidtyp som referens — Customer Type
+(`lib/page-types/customer-type.*`, `components/audience/`) är minsta Lager 3-referensen;
+Product Area är komplex Lager 3 med child-records.
 
-Producera alla filer enligt checklistan i NEW_PAGE_TYPE.md. Använd Lager 1
-om inget i prototypen kräver mer (polymorfa items, child-tabeller,
-pipe-formaterade fält). Annars motivera valet av Lager 2 eller 3 innan
-implementation.
+Producera alla filer enligt checklistan i NEW_PAGE_TYPE.md. Alla sidtyper
+använder Lager 3 + Claude-transform — börja med att skriva schema-MD och
+transform-funktion. Om sidtypen har child-records i separat tabell, lägg
+till `relations[]` (Lager 2) ovanpå.
 
 Krav:
 - snake_case på Airtable-fält i mappers; konsekvent stil i state.
@@ -362,8 +361,9 @@ Visa förslag på state-struktur + section-uppdelning innan du implementerar.
 
 - `lib/page-types/types.ts` — den definitiva spec:en för ramverket
 - `lib/page-types/registry.ts` — toppkommentar med kort checklista
-- `lib/page-types/audience.{server,ui}.ts` — minsta Lager 1-referens
-- `lib/page-types/product-area.{server,ui}.ts` — Lager 3-referens
-- `lib/claude-transform.ts` — Claude-mellanlaget för avancerade transforms
+- `lib/page-types/customer-type.{server,ui}.ts` — minsta Lager 3-referens (en tabell, ingen child-records)
+- `lib/page-types/product-area.{server,ui}.ts` — komplex Lager 3-referens (multi-tabell, child-records)
+- `lib/claude-transform.ts` — Claude-mellanlaget; alla `transform<Type>` lever här
+- `lib/airtable-schema-*.md` — en per sidtyp; specifikationen som matas in i Claude
 - `lib/route-factory.ts` — `createPageRoute()` factory
 - `components/audience/` — kanonisk editor + preview-uppdelning
