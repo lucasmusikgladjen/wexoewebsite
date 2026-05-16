@@ -32,6 +32,19 @@ Detta dokument loggar varje konkret åtgärd som tas under implementationen av p
 
 **Resultat:** 15 PA → Automation, 4 PA → IT Infra (vfd, ibe, robot, hmi, io, onmachine, mjukvara, plc, lagspanning, protokoll, remote, switch, motion, gear, safety → Automation; fiber, koppar, rack, ftto → IT Infra). Skrevs på alla 19 records via en `update_records_for_table`-batch.
 
+### Fas C — `core_partners.division_ids` (14 länkar)
+
+**Symptom:** 100 % av nya `core_partners` (17 records) hade tom `division_ids` (fld5xVFWyWLJZAFFn). Gamla `Partners.Division` (fldaIAV3a79LQVyNv) hade kopplingar på alla 17 partners.
+
+**Mapping:** Samma som Fas B (INDUSTRY → Automation, IT INFRA → IT Infra, POWER/BUILDING INFRASTRUCTURE skippas).
+
+**Resultat per partner:**
+- → Automation: ProSoft, IRINOX, HMS, Rockwell Automation, Wittenstein, Spectrum / AMCI (6 st)
+- → IT Infra: Ekkosense, Microsens (var IT INFRA + BUILDING INFRA — endast IT Infra migrerad), R&M (samma), LBW, Assetspire, Fibrain (samma), TrendNET, nVent Schroff (8 st)
+- → tom (POWER/BUILDING INFRASTRUCTURE-only): Arteche (POWER), Hager (BUILDING), Steinel (BUILDING). 3 records lämnas utan division_ids per användarens beslut att inte migrera dessa divisioner.
+
+**Manuell TODO för användaren:** Om Arteche, Hager, eller Steinel ska visas i partner-marquees/listor som filtrerar per division måste de få en division manuellt i Airtable UI.
+
 ---
 
 ## Wexoe → Wexoe NY-migration (2026-05-14)
