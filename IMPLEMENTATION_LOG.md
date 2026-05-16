@@ -8,6 +8,66 @@ Detta dokument loggar varje konkret åtgärd som tas under implementationen av p
 
 ---
 
+## Wexoe NY: efter-migration link-rewiring (2026-05-16)
+
+**Branch:** `claude/migrate-airtable-wexoe-nv1T5`
+**Bakgrund:** Efter att data kopierats till Wexoe NY upptäcktes att flera linked-record-fält var tomma trots att källdatan i gamla `Wexoe`-basen hade kopplingar. Detta orsakade att Product Area-sidor (t.ex. PLC) renderade utan side-menu/produktlistor och att partner-filter per division gav 0 träffar. Audit-skript jämförde gamla och nya basen post-by-post.
+
+### Fas A — `cms_articles.product_ids` (62 länkar)
+
+**Symptom:** 100 % av nya `cms_articles` (59 records) hade tom `product_ids`. Gamla `Articles.Link to products` (fld7ZUaOseVqIuaZH) hade kopplingar på 16 fiber/koppar-produkter — varje artikel kopplad till 1-2 produkter.
+
+**Åtgärd:** Mappade old article ID → new article ID via primary-name (med 4 manuella overrides för records som omdöptes i nya basen — `Cat7 S/FTP` splittades till `Cat7 S/FTP` + `Cat7 S/FTP Siamese`, `Cat6 U/UTP` splittades till `Dca` + `Fca`). Mappade old product ID → new product ID via name (med 2 manuella overrides för dubbla `Installationskabel`-records — disambiguerade via owning PA: koppar-record → `recXmWh5FeiQ6zthM`, fiber-record → `recLPTNu7jOetSzBP`). Skrev `product_ids` på alla 59 nya artiklar via `update_records_for_table`. Airtable propagerade automatiskt symmetriska länkar till `cms_products.article_ids` — verifierat på 3 stickprov (ODF har nu 7 artiklar, Installationskabel/koppar har 8, Patchkablar SM har 3).
+
+**Resultat:** Sido-menu mode på Product Area (t.ex. Koppar, Fiber) kan nu rendera artikel-tabeller per produkt. Cache i `wexoe-core` måste rensas för att de nya länkarna ska slå igenom på frontend (24 h TTL + 6 h stale grace).
+
+### Fas B — `cms_product_pages.division_ids` (19 länkar)
+
+**Symptom:** 100 % av nya `cms_product_pages` hade tom `division_ids` (fldiGDCr7mHBpb6pL). Gamla `Product Areas.Division` (fldLIbqYkDnM6jB6P) pekade på antingen INDUSTRY eller IT INFRA på alla 19 records.
+
+**Mapping (user-confirmed):**
+- INDUSTRY (gamla `rec39zJoKEAbWCMQ1`) → Automation (`recEjCdWID8v09l0S`)
+- IT INFRA (gamla `recQhHFAQ0ERXWCJv`) → IT Infra (`recOd94pVsu2GPyGw`)
+- POWER, BUILDING INFRASTRUCTURE — *hoppas över* (legacy per användarens beslut)
+
+**Resultat:** 15 PA → Automation, 4 PA → IT Infra (vfd, ibe, robot, hmi, io, onmachine, mjukvara, plc, lagspanning, protokoll, remote, switch, motion, gear, safety → Automation; fiber, koppar, rack, ftto → IT Infra). Skrevs på alla 19 records via en `update_records_for_table`-batch.
+
+### Fas C — `core_partners.division_ids` (14 länkar)
+
+**Symptom:** 100 % av nya `core_partners` (17 records) hade tom `division_ids` (fld5xVFWyWLJZAFFn). Gamla `Partners.Division` (fldaIAV3a79LQVyNv) hade kopplingar på alla 17 partners.
+
+**Mapping:** Samma som Fas B (INDUSTRY → Automation, IT INFRA → IT Infra, POWER/BUILDING INFRASTRUCTURE skippas).
+
+**Resultat per partner:**
+- → Automation: ProSoft, IRINOX, HMS, Rockwell Automation, Wittenstein, Spectrum / AMCI (6 st)
+- → IT Infra: Ekkosense, Microsens (var IT INFRA + BUILDING INFRA — endast IT Infra migrerad), R&M (samma), LBW, Assetspire, Fibrain (samma), TrendNET, nVent Schroff (8 st)
+- → tom (POWER/BUILDING INFRASTRUCTURE-only): Arteche (POWER), Hager (BUILDING), Steinel (BUILDING). 3 records lämnas utan division_ids per användarens beslut att inte migrera dessa divisioner.
+
+**Manuell TODO för användaren:** Om Arteche, Hager, eller Steinel ska visas i partner-marquees/listor som filtrerar per division måste de få en division manuellt i Airtable UI.
+
+### Fas D — Legacy-flaggning av offerings + product_navigation
+
+**Bakgrund:** Audit hittade att två entiteter pekar på tabeller som inte finns i Wexoe NY:
+
+- `wexoe-core/entities/automation_offerings.php` → `cms_offerings` (saknas)
+- `wexoe-core/entities/automation_product_navigation.php` → `cms_product_navigation` (saknas)
+
+Båda har `table_id => null` med kommentaren "Sätts efter MCP-skapande". Konsekvens: `[wexoe_offerings]` och `[wexoe_product_nav]` shortcodes renderar tomma sektioner utan synligt fel (returnerar `[]` från `Core::entity(...)->all()`).
+
+**Användarens beslut:** Lämnas som legacy. Migreras senare (inte i denna omgång).
+
+**Åtgärd:** Lagt prominent `!!! LEGACY — PENDING MIGRATION !!!`-block i:
+- `wexoe-core/entities/automation_offerings.php` (top-of-file docblock)
+- `wexoe-core/entities/automation_product_navigation.php` (samma)
+- `New plugins/automation-pillar/wexoe-offerings-tabs.php` (plugin header + docblock)
+- `New plugins/automation-pillar/wexoe-product-nav.php` (samma)
+
+Varje notis pekar på rätt steg för att avsluta migrationen när det blir aktuellt (skapa tabell via MCP enligt `MIGRATION-PLAN.md`, kopiera N records från specifik gammal tabell-ID, fyll i `table_id`).
+
+**Också `automation_team_members`:** Pekar fortfarande på gamla `Coworkers` (`tblldarIcIpxlZ9GV`) i Wexoe-basen. Redan flaggad `@deprecated` i sin entity-fil. Lämnas oförändrad — migration till `core_coworkers` är dokumenterad där.
+
+---
+
 ## Wexoe → Wexoe NY-migration (2026-05-14)
 
 **Branch:** `claude/migrate-wexoe-database-7KILw` (båda repon)
