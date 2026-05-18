@@ -142,9 +142,13 @@ return function ($section, $page, $ctx) {
     #<?= esc_attr($wid) ?> .wxp-hero__shape--1 { width: 220px !important; height: 220px !important; left: 5% !important; }
     #<?= esc_attr($wid) ?> .wxp-hero__shape--2 { display: none !important; }
     /* diagonal_split: stapla — bild blir bandet ovanför texten med en
-       fade-overlay från botten så texten startar mjukt. */
+       fade-overlay från botten så texten startar mjukt. .wxp-hero är
+       display:flex (row default), så när .wxp-hero__diagonal byter till
+       position:relative måste vi tvinga column-riktning för att inte få
+       bilden + textinnehållet sida-vid-sida. */
+    #<?= esc_attr($wid) ?> .wxp-hero--diagonal_split { flex-direction: column !important; align-items: stretch !important; }
     #<?= esc_attr($wid) ?> .wxp-hero--diagonal_split .wxp-hero__inner { padding-top: 0 !important; }
-    #<?= esc_attr($wid) ?> .wxp-hero__diagonal { position: relative !important; width: 100% !important; height: 240px !important; }
+    #<?= esc_attr($wid) ?> .wxp-hero--diagonal_split .wxp-hero__diagonal { position: relative !important; width: 100% !important; height: 240px !important; flex: 0 0 auto !important; }
     #<?= esc_attr($wid) ?> .wxp-hero__diagonal::before { display: none !important; }
     #<?= esc_attr($wid) ?> .wxp-hero__diagonal::after { width: 100% !important; height: 50% !important; top: auto !important; bottom: 0 !important; left: 0 !important; background: linear-gradient(0deg, #11325D 0%, transparent 100%) !important; }
     #<?= esc_attr($wid) ?> .wxp-hero--diagonal_split .wxp-hero__text { padding: 24px 0 0 !important; max-width: 100% !important; }
