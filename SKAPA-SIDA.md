@@ -95,10 +95,6 @@ Type kan vara: text, richtext, image, url, color, bool, int, float.
 För sektioner som ska kunna döljas via en visibility-toggle i editorn,
 lägg till `visibility:<bool-fält>` i section-taggen.
 
-För komponenter som finns delade i Core (Hero, Faq, TeamGrid, PartnersMarquee,
-TestimonialCard, CtaBanner, ContactForm), markera med <!-- shared: <Namn> -->
-istället för att duplicera markup.
-
 Vi itererar tills jag är nöjd — börja med ett första utkast och vänta på
 feedback.
 ```
