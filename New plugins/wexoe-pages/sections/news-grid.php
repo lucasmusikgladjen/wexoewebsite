@@ -50,12 +50,7 @@ return function ($section, $page, $ctx) {
                         if ($title === '') continue;
                         $link  = get_permalink($post);
                         $image = get_the_post_thumbnail_url($post, 'medium_large') ?: '';
-                        $excerpt = trim(strip_tags(get_the_excerpt($post)));
-                        if ($excerpt === '') {
-                            $excerpt = wp_trim_words(strip_tags($post->post_content), 22);
-                        } else {
-                            $excerpt = wp_trim_words($excerpt, 22);
-                        }
+                        $excerpt = wexoe_pages_post_excerpt($post, 22);
                         $date = get_the_date('j M Y', $post);
                         $cats = get_the_category($post->ID);
                         $cat_name = (!empty($cats) && isset($cats[0])) ? $cats[0]->name : '';

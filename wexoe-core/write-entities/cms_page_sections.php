@@ -76,6 +76,7 @@ return [
 
         // company_data_strip
         'cds_h2' => 'cds_h2',
+        'cds_body' => 'cds_body',
         'cds_use_company_singleton' => 'cds_use_company_singleton',
         'cds_country_code' => 'cds_country_code',
         'cds_items' => 'cds_items',

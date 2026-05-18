@@ -175,7 +175,7 @@ return function ($section, $page, $ctx) {
 
             <p class="wxp-cat__count"><span class="wxp-cat__count-shown"><?= count($items) ?></span> av <?= count($items) ?> visas</p>
 
-            <ul class="wxp-cat__grid">
+            <ul class="wxp-cat__grid" data-initial-limit="12">
                 <?php foreach ($items as $i): ?>
                     <li class="wxp-cat__item" data-search="<?= esc_attr($i['search']) ?>" data-facets='<?= esc_attr(wp_json_encode($i['facets'])) ?>'>
                         <article class="wxp-cat__card">
@@ -194,6 +194,10 @@ return function ($section, $page, $ctx) {
                     </li>
                 <?php endforeach; ?>
             </ul>
+
+            <div class="wxp-cat__more-wrap" hidden>
+                <button type="button" class="wxp-btn wxp-btn--secondary wxp-cat__more">Visa fler</button>
+            </div>
 
             <p class="wxp-cat__empty" hidden><?= esc_html($empty_text) ?></p>
         </div>
@@ -233,6 +237,8 @@ return function ($section, $page, $ctx) {
 #<?= esc_attr($wid) ?> .wxp-cat__desc { font-size: 13px !important; line-height: 1.55 !important; opacity: 0.82 !important; margin: 0 !important; padding: 0 !important; color: inherit !important; background: none !important; }
 #<?= esc_attr($wid) ?> .wxp-cat__link { font-size: 13px !important; font-weight: 600 !important; color: #F28C28 !important; text-decoration: none !important; margin-top: auto !important; padding-top: 4px !important; }
 #<?= esc_attr($wid) ?> .wxp-cat__empty { padding: 48px 24px !important; text-align: center !important; opacity: 0.72 !important; font-size: 16px !important; }
+#<?= esc_attr($wid) ?> .wxp-cat__more-wrap { display: flex !important; justify-content: center !important; margin-top: 28px !important; }
+#<?= esc_attr($wid) ?> .wxp-cat__more-wrap[hidden] { display: none !important; }
     </style>
     <script>
 (function(){
@@ -242,9 +248,14 @@ return function ($section, $page, $ctx) {
     if (!section) return;
     var input = root.querySelector('.wxp-cat__search');
     var facetGroups = Array.prototype.slice.call(root.querySelectorAll('.wxp-cat__facet'));
+    var grid = section.querySelector('.wxp-cat__grid');
     var items = Array.prototype.slice.call(section.querySelectorAll('.wxp-cat__item'));
     var emptyEl = section.querySelector('.wxp-cat__empty');
     var countEl = section.querySelector('.wxp-cat__count-shown');
+    var moreWrap = section.querySelector('.wxp-cat__more-wrap');
+    var moreBtn = section.querySelector('.wxp-cat__more');
+    var initialLimit = parseInt(grid && grid.getAttribute('data-initial-limit'), 10) || 12;
+    var visibleLimit = initialLimit;
     var total = items.length;
 
     function activeFacets() {
@@ -292,23 +303,56 @@ return function ($section, $page, $ctx) {
     function apply() {
         var tokens = tokenize(input ? input.value : '');
         var facets = activeFacets();
-        var shown = 0;
+        var matchCount = 0; // antal items som passar filter (oavsett limit)
+        var shown = 0;      // antal items som faktiskt visas
         items.forEach(function(it){
-            var visible = matchesSearch(it, tokens) && matchesFacets(it, facets);
-            if (visible) { it.removeAttribute('hidden'); shown++; }
-            else it.setAttribute('hidden', '');
+            var matched = matchesSearch(it, tokens) && matchesFacets(it, facets);
+            if (matched) {
+                if (matchCount < visibleLimit) {
+                    it.removeAttribute('hidden');
+                    shown++;
+                } else {
+                    it.setAttribute('hidden', '');
+                }
+                matchCount++;
+            } else {
+                it.setAttribute('hidden', '');
+            }
         });
         if (countEl) countEl.textContent = String(shown);
         if (emptyEl) {
-            if (shown === 0) emptyEl.removeAttribute('hidden');
+            if (matchCount === 0) emptyEl.removeAttribute('hidden');
             else emptyEl.setAttribute('hidden', '');
+        }
+        if (moreWrap && moreBtn) {
+            var remaining = matchCount - shown;
+            if (remaining > 0) {
+                moreBtn.textContent = 'Visa fler (' + remaining + ' till)';
+                moreWrap.removeAttribute('hidden');
+            } else {
+                moreWrap.setAttribute('hidden', '');
+            }
         }
     }
 
-    if (input) input.addEventListener('input', apply);
-    facetGroups.forEach(function(g){
-        g.addEventListener('change', apply);
+    if (input) input.addEventListener('input', function() {
+        // Återställ limit när användaren ändrar filter — nytt sökresultat
+        // ska börja om från första batchen istället för att ärva en stor
+        // visible-limit från ett tidigare "Visa alla"-klick.
+        visibleLimit = initialLimit;
+        apply();
     });
+    facetGroups.forEach(function(g){
+        g.addEventListener('change', function() {
+            visibleLimit = initialLimit;
+            apply();
+        });
+    });
+    if (moreBtn) moreBtn.addEventListener('click', function() {
+        visibleLimit += initialLimit;
+        apply();
+    });
+    apply();
 })();
     </script>
     <?php
