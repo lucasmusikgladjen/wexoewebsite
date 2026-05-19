@@ -88,6 +88,7 @@ return [
 
         // company_data_strip
         'cds_h2' => 'cds_h2',
+        'cds_body' => 'cds_body',
         'cds_use_company_singleton' => ['source' => 'cds_use_company_singleton', 'type' => 'bool'],
         'cds_country_code' => 'cds_country_code',
         'cds_items' => ['source' => 'cds_items', 'type' => 'lines'],

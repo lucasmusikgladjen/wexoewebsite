@@ -57,8 +57,6 @@ return function ($section, $page, $ctx) {
 #<?= esc_attr($wid) ?> .wxp-cta__body { max-width: 60ch !important; margin: 0 auto 28px !important; opacity: 0.92 !important; color: #fff !important; }
 #<?= esc_attr($wid) ?> .wxp-cta__body p { color: #fff !important; }
 #<?= esc_attr($wid) ?> .wxp-cta__actions { justify-content: center !important; margin: 0 !important; }
-#<?= esc_attr($wid) ?> .wxp-cta__card .wxp-btn--secondary { color: #fff !important; border-color: rgba(255,255,255,0.5) !important; }
-#<?= esc_attr($wid) ?> .wxp-cta__card .wxp-btn--secondary:hover { background: rgba(255,255,255,0.1) !important; border-color: #fff !important; color: #fff !important; }
 
 @media (max-width: 700px) {
     #<?= esc_attr($wid) ?> .wxp-cta__card { padding: 40px 24px !important; border-radius: 16px !important; }

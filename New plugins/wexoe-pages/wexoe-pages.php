@@ -463,6 +463,48 @@ function wexoe_pages_md_inline($text) {
 }
 
 /**
+ * Plocka ut en preview-text för en WP post. Letar i ordning:
+ *   1. Custom field "manchet" eller "ingress" (svensk journalistik-term)
+ *      eller andra vanliga intro-fält.
+ *   2. SEO-plugin meta description (Yoast / AIOSEO / Rank Math).
+ *   3. WP-postens egna excerpt (post_excerpt), om manuellt satt.
+ *   4. Sista fallback: strip-shortcodes + strip_tags på post_content
+ *      och trunka till N ord. (the_excerpt-filtren undviker vi eftersom
+ *      Enfold/Avia injicerar `[av_textblock …]`-shortcodes som inte
+ *      expanderas i ren the_content-strängen.)
+ */
+function wexoe_pages_post_excerpt($post, $words = 22) {
+    if (!$post || !is_object($post) || empty($post->ID)) return '';
+
+    // 1. Custom field "manchet" / "ingress" / "intro".
+    foreach (['manchet', 'ingress', 'intro', 'summary', 'preview_text', 'lead'] as $key) {
+        $val = get_post_meta($post->ID, $key, true);
+        if (is_string($val) && trim($val) !== '') {
+            return wp_trim_words(strip_tags($val), $words);
+        }
+    }
+
+    // 2. SEO-plugin meta description.
+    foreach (['_yoast_wpseo_metadesc', '_aioseo_description', 'rank_math_description'] as $key) {
+        $val = get_post_meta($post->ID, $key, true);
+        if (is_string($val) && trim($val) !== '') {
+            return wp_trim_words(strip_tags($val), $words);
+        }
+    }
+
+    // 3. Manuellt satt WP post_excerpt (skiljer sig från get_the_excerpt
+    //    eftersom det senare faller tillbaka till content via filter och
+    //    blir spammad med Avia-shortcodes).
+    if (!empty($post->post_excerpt)) {
+        return wp_trim_words(strip_tags($post->post_excerpt), $words);
+    }
+
+    // 4. post_content med shortcodes strippade.
+    $content = strip_shortcodes((string) $post->post_content);
+    return wp_trim_words(strip_tags($content), $words);
+}
+
+/**
  * I WP_DEBUG-läge: returnera HTML-kommentar. Production: tom sträng.
  */
 function wexoe_pages_debug_comment($msg) {
@@ -540,7 +582,10 @@ function wexoe_pages_scoped_base_styles($id) {
 <?= $w ?> .wxp-body ul:last-child, <?= $w ?> .wxp-body ol:last-child { margin-bottom: 0 !important; }
 
 /* ============ SECTION LAYOUT ============ */
-<?= $w ?> .wxp-section { box-sizing: border-box !important; width: 100% !important; position: relative !important; }
+/* Alla sektioner sträcker sig 100vw — bryt ut ur WP-themes container så att
+   bg-färger och bg-bilder täcker hela skärmens bredd. Inre content stannar
+   centrerat inom max-width 1200px (eller 820px för narrow). */
+<?= $w ?> .wxp-section { box-sizing: border-box !important; position: relative !important; width: 100vw !important; max-width: 100vw !important; margin-left: calc(50% - 50vw) !important; margin-right: calc(50% - 50vw) !important; }
 <?= $w ?> .wxp-section__inner { width: 100% !important; max-width: 1200px !important; margin: 0 auto !important; padding-left: 24px !important; padding-right: 24px !important; }
 <?= $w ?> .wxp-section--layout-narrow .wxp-section__inner { max-width: 820px !important; }
 <?= $w ?> .wxp-section--layout-full_bleed .wxp-section__inner { max-width: none !important; padding-left: 0 !important; padding-right: 0 !important; }
@@ -553,7 +598,8 @@ function wexoe_pages_scoped_base_styles($id) {
 <?= $w ?> .wxp-section--bot-md { padding-bottom: 72px !important; }
 <?= $w ?> .wxp-section--bot-lg { padding-bottom: 112px !important; }
 
-/* Full-bleed helper — break out of WP-themes containers like the other plugins do. */
+/* Bakåtkompatibel klass — alla sektioner är full-bleed by default sedan ovan,
+   så .wxp-fullbleed är no-op men kvarstår för existerande markup (hero). */
 <?= $w ?> .wxp-fullbleed { width: 100vw !important; margin-left: calc(-50vw + 50%) !important; margin-right: calc(-50vw + 50%) !important; }
 
 /* ============ BUTTONS ============ */
@@ -563,8 +609,15 @@ function wexoe_pages_scoped_base_styles($id) {
 <?= $w ?> .wxp-btn--primary:hover { background: #e07b1a !important; border-color: #e07b1a !important; color: #fff !important; transform: translateY(-1px) !important; box-shadow: 0 6px 16px rgba(242,140,40,0.28) !important; }
 <?= $w ?> .wxp-btn--secondary { background: transparent !important; color: #11325D !important; border-color: rgba(17,50,93,0.28) !important; }
 <?= $w ?> .wxp-btn--secondary:hover { border-color: #11325D !important; color: #11325D !important; transform: translateY(-1px) !important; }
-<?= $w ?> .wxp-section--on-dark .wxp-btn--secondary { color: #fff !important; border-color: rgba(255,255,255,0.5) !important; }
-<?= $w ?> .wxp-section--on-dark .wxp-btn--secondary:hover { border-color: #fff !important; background: rgba(255,255,255,0.08) !important; color: #fff !important; }
+/* Secondary-knapp på mörk bakgrund: vit fyllning med navy text (inte
+   transparent). Gäller alla mörka kontexter — på-mörk-bg-fältet, hero
+   (alla varianter har dark bg) och cta-banner-kortet. */
+<?= $w ?> .wxp-section--on-dark .wxp-btn--secondary,
+<?= $w ?> .wxp-hero .wxp-btn--secondary,
+<?= $w ?> .wxp-cta__card .wxp-btn--secondary { background: #fff !important; color: #11325D !important; border-color: #fff !important; }
+<?= $w ?> .wxp-section--on-dark .wxp-btn--secondary:hover,
+<?= $w ?> .wxp-hero .wxp-btn--secondary:hover,
+<?= $w ?> .wxp-cta__card .wxp-btn--secondary:hover { background: rgba(255,255,255,0.88) !important; color: #11325D !important; border-color: #fff !important; }
 
 /* ============ RESPONSIVE ============ */
 @media (max-width: 900px) {

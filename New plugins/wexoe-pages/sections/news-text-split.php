@@ -55,12 +55,7 @@ return function ($section, $page, $ctx) {
                             $title = get_the_title($post);
                             if ($title === '') continue;
                             $link  = get_permalink($post);
-                            $excerpt = trim(strip_tags(get_the_excerpt($post)));
-                            if ($excerpt === '') {
-                                $excerpt = wp_trim_words(strip_tags($post->post_content), 18);
-                            } else {
-                                $excerpt = wp_trim_words($excerpt, 18);
-                            }
+                            $excerpt = wexoe_pages_post_excerpt($post, 18);
                             $date = get_the_date('j M Y', $post);
                         ?>
                             <li class="wxp-nts__item">
