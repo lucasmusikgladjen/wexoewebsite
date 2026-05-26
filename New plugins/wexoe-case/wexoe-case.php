@@ -1045,14 +1045,20 @@ class Wexoe_Case {
 <?php echo $w; ?> .case-section-body p { margin: 0 0 1.1em; }
 <?php echo $w; ?> .case-section-body p:last-child { margin-bottom: 0; }
 
+<?php echo $w; ?> .case-bullet-list,
 <?php echo $w; ?> .case-section-body ul.case-bullet-list,
-<?php echo $w; ?> .case-section-body ol.case-bullet-list {
+<?php echo $w; ?> .case-section-body ol.case-bullet-list,
+<?php echo $w; ?> .case-section-body + ul.case-bullet-list,
+<?php echo $w; ?> .case-section-body + ol.case-bullet-list {
     list-style: none;
     padding: 0;
     margin: 24px 0 0;
 }
+<?php echo $w; ?> .case-bullet-list li,
 <?php echo $w; ?> .case-section-body ul.case-bullet-list li,
-<?php echo $w; ?> .case-section-body ol.case-bullet-list li {
+<?php echo $w; ?> .case-section-body ol.case-bullet-list li,
+<?php echo $w; ?> .case-section-body + ul.case-bullet-list li,
+<?php echo $w; ?> .case-section-body + ol.case-bullet-list li {
     position: relative;
     padding-left: 30px;
     margin-bottom: 12px;
@@ -1060,8 +1066,11 @@ class Wexoe_Case {
     font-size: 1rem;
     list-style: none;
 }
+<?php echo $w; ?> .case-bullet-list li::before,
 <?php echo $w; ?> .case-section-body ul.case-bullet-list li::before,
-<?php echo $w; ?> .case-section-body ol.case-bullet-list li::before {
+<?php echo $w; ?> .case-section-body ol.case-bullet-list li::before,
+<?php echo $w; ?> .case-section-body + ul.case-bullet-list li::before,
+<?php echo $w; ?> .case-section-body + ol.case-bullet-list li::before {
     content: "✓";
     position: absolute;
     left: 0;
@@ -1069,8 +1078,11 @@ class Wexoe_Case {
     color: var(--case-green);
     font-weight: 700;
 }
+<?php echo $w; ?> .case-bullet-list li::after,
 <?php echo $w; ?> .case-section-body ul.case-bullet-list li::after,
-<?php echo $w; ?> .case-section-body ol.case-bullet-list li::after {
+<?php echo $w; ?> .case-section-body ol.case-bullet-list li::after,
+<?php echo $w; ?> .case-section-body + ul.case-bullet-list li::after,
+<?php echo $w; ?> .case-section-body + ol.case-bullet-list li::after {
     content: none;
 }
 
@@ -1408,7 +1420,6 @@ class Wexoe_Case {
         order: -1;
     }
     <?php echo $w; ?> .case-lead-paragraph { font-size: 1.08rem; }
-    <?php echo $w; ?> .case-lead-paragraph::first-letter { font-size: 3rem; }
     <?php echo $w; ?> .case-products-grid,
     <?php echo $w; ?> .case-products-grid--single { grid-template-columns: 1fr; }
     <?php echo $w; ?> .case-gallery-item:nth-child(n) { grid-column: span 1; }
