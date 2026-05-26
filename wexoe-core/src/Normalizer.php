@@ -27,11 +27,12 @@ if (!defined('ABSPATH')) {
  *   'domain_key' => ['source' => 'Field', 'type' => 'lines']      # multiline text -> array of non-empty lines
  *   'domain_key' => [
  *       'type' => 'pseudo_array',
- *       'prefix' => 'Normal',     # Airtable fields named "Normal 1 H2", "Normal 2 H2", ...
+ *       'prefix' => 'quick_stat', # Airtable fields named "quick_stat_1_value", "quick_stat_2_value", ...
  *       'count' => 4,
+ *       'separator' => '_',       # optional, default '_' (snake_case convention)
  *       'fields' => [
- *           'h2' => 'H2',
- *           'text' => 'Text',
+ *           'value' => 'value',
+ *           'label' => 'label',
  *           ...
  *       ],
  *   ]
@@ -223,6 +224,7 @@ class Normalizer {
     private static function normalize_pseudo_array($fields, $spec) {
         $prefix = isset($spec['prefix']) ? (string) $spec['prefix'] : '';
         $count = isset($spec['count']) ? (int) $spec['count'] : 0;
+        $separator = isset($spec['separator']) ? (string) $spec['separator'] : '_';
         $inner_fields = isset($spec['fields']) && is_array($spec['fields']) ? $spec['fields'] : [];
 
         if ($prefix === '' || $count <= 0 || empty($inner_fields)) {
@@ -236,9 +238,9 @@ class Normalizer {
             $has_content = false;
 
             foreach ($inner_fields as $domain_key => $suffix) {
-                // Airtable field name convention: "{prefix} {index} {suffix}"
-                // Example: "Normal 1 H2", "Normal 2 Text"
-                $airtable_key = $prefix . ' ' . $i . ' ' . $suffix;
+                // Airtable field name convention: "{prefix}{sep}{index}{sep}{suffix}"
+                // Default separator '_' matches snake_case (e.g. "quick_stat_1_value").
+                $airtable_key = $prefix . $separator . $i . $separator . $suffix;
                 $value = array_key_exists($airtable_key, $fields) ? $fields[$airtable_key] : null;
                 $section[$domain_key] = $value;
                 if (self::has_content($value)) {
