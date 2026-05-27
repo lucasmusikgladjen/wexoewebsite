@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * Customer-type-page — UI-side sidtypsdefinition.
  */

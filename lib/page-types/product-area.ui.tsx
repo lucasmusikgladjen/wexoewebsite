@@ -1,5 +1,3 @@
-'use client';
-
 /**
  * Product Area — UI-side sidtypsdefinition.
  *
