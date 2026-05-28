@@ -1,15 +1,8 @@
-import PageTypeBuilder from '@/components/shared/builder/PageTypeBuilder';
-import { partnerUI } from '@/lib/page-types/partner.ui';
+import PartnerBuilder from '@/components/partner/PartnerBuilder';
 import { emptyPartnerPageState } from '@/lib/partner-types';
 
 export const dynamic = 'force-dynamic';
 
 export default function CreatePartnerPage() {
-  return (
-    <PageTypeBuilder
-      uiDef={partnerUI}
-      initialState={emptyPartnerPageState()}
-      mode="create"
-    />
-  );
+  return <PartnerBuilder initialState={emptyPartnerPageState()} mode="create" />;
 }

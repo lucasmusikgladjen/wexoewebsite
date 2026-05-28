@@ -1,7 +1,6 @@
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
-import PageTypeBuilder from '@/components/shared/builder/PageTypeBuilder';
-import { partnerUI } from '@/lib/page-types/partner.ui';
+import PartnerBuilder from '@/components/partner/PartnerBuilder';
 import { loadPartnerPageState } from '@/lib/partner-loader';
 import { PartnerPageState } from '@/lib/partner-types';
 
@@ -33,14 +32,7 @@ export default async function EditPartnerPage({ params }: Props) {
     return <ErrorScreen title="Kunde inte hämta sidan" message={message} />;
   }
 
-  return (
-    <PageTypeBuilder
-      uiDef={partnerUI}
-      initialState={state}
-      mode="edit"
-      recordId={recordId}
-    />
-  );
+  return <PartnerBuilder initialState={state} mode="edit" recordId={recordId} />;
 }
 
 function ErrorScreen({ title, message }: { title: string; message: string }) {
