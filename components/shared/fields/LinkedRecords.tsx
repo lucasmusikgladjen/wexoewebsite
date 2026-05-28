@@ -4,44 +4,44 @@
  * Multi-select field för länkning till core- eller cms-records.
  *
  * Säkerhet/design:
- *   - `source` är en *whitelist*-key. Idag stöds:
- *       - Alla `core_*`-entiteter från `lib/core/registry` (CORE_ENTITIES)
- *       - cms-records `products` / `articles` (via `/api/cms-link/[entity]`)
+ *   - `source` är en *whitelist*-key från `lib/linked-sources.ts`
+ *     (`LinkedSourceName` = `CoreEntityName | CmsLinkedSourceName`).
  *     Komponenten exponerar INTE ett fritt tableId-API — Airtable-nyckeln
  *     stannar därför på servern.
- *   - Datat hämtas via `/api/core/<source>` (för core_*) eller
- *     `/api/cms-link/<source>` (för products/articles) som körs server-side.
+ *   - Datat hämtas via `/api/linked/<source>` som körs server-side och
+ *     dispatchar mellan core-normaliseringen och CMS-passthrough.
  *   - Resultaten cachas på modulnivå per source så sessionsnavigation
- *     mellan editorer inte triggar ny fetch.
+ *     mellan editorer inte triggar ny fetch (delad cache i
+ *     `lib/linked-records-cache.ts`).
  *
  * Ergonomi:
  *   - Selected items visas som chips. Klicka ✕ för att avlänka.
  *   - Sökfält filtrerar dropdown:en. Klick på en option lägger till.
  *   - Visar laddnings- och felstate.
  *   - `max`-prop begränsar antalet samtidiga val (lämpligt för t.ex. ett
- *     ensamt land där 0–1 förväntas).
+ *     ensamt land där 0–1 förväntas, eller en single-pick partner).
+ *
+ * Att lägga till en ny linkbar källa = lägg entry i
+ * `lib/linked-sources.ts::CMS_LINKED_SOURCES` (för cms_*-tabeller) eller
+ * `lib/core/registry.ts::CORE_ENTITIES` (för core_*-tabeller). Lägg sedan
+ * en `defaultLabel`-case nedan.
  */
 
 import { useEffect, useId, useMemo, useRef, useState } from 'react';
-import type { CoreEntityName } from '@/lib/core/registry';
+import {
+  isCmsLinkedSource,
+  type LinkedSourceName,
+} from '@/lib/linked-sources';
 import {
   fetchLinkedRecords,
-  type LinkedRecordSource,
-  type CmsLinkSource,
   type NormalizedLinkedRecord,
 } from '@/lib/linked-records-cache';
 
 type NormalizedRecord = NormalizedLinkedRecord;
 
-export type { LinkedRecordSource, CmsLinkSource };
-
-function isCmsLinkSource(source: LinkedRecordSource): source is CmsLinkSource {
-  return source === 'products' || source === 'articles';
-}
-
 interface Props {
   label: string;
-  source: LinkedRecordSource;
+  source: LinkedSourceName;
   value: string[];
   onChange: (next: string[]) => void;
   description?: string;
@@ -56,16 +56,36 @@ interface Props {
   filter?: (record: NormalizedRecord) => boolean;
 }
 
-// ─── Default labels per entity ─────────────────────────────────────────────
+// ─── Default labels per source ─────────────────────────────────────────────
 
-function defaultLabel(source: LinkedRecordSource, rec: NormalizedRecord): string {
-  // Cms-källor har 'name' (products) eller 'name' + 'article_number' (articles).
-  if (isCmsLinkSource(source)) {
-    const name = (rec.name as string) || '(namnlös)';
-    if (source === 'articles' && rec.article_number) {
-      return `${name} (${rec.article_number as string})`;
+function defaultLabel(source: LinkedSourceName, rec: NormalizedRecord): string {
+  // CMS-källor delar prefix-route men har olika canonical label-fält.
+  if (isCmsLinkedSource(source)) {
+    switch (source) {
+      case 'products': {
+        return (rec.name as string) || '(namnlös)';
+      }
+      case 'articles': {
+        const name = (rec.name as string) || '(namnlös)';
+        return rec.article_number
+          ? `${name} (${rec.article_number as string})`
+          : name;
+      }
+      case 'cases':
+        return (
+          (rec.title as string) ||
+          (rec.customer_name as string) ||
+          (rec.slug as string) ||
+          ''
+        );
+      case 'product_areas':
+        return (
+          (rec.name as string) ||
+          (rec.h1 as string) ||
+          (rec.slug as string) ||
+          ''
+        );
     }
-    return name;
   }
   switch (source) {
     case 'core_countries':

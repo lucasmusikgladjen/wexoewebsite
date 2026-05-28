@@ -13,6 +13,7 @@ import {
   CUSTOMER_TYPE_BASE_ID,
 } from '@/lib/customer-type-mapper';
 import { CASE_TABLE_ID, CASE_BASE_ID } from '@/lib/case-mapper';
+import { PARTNER_TABLE_IDS, PARTNER_BASE_ID } from '@/lib/partner-mapper';
 import {
   CMS_PAGES_TABLE_ID,
   CMS_PAGE_SECTIONS_TABLE_ID,
@@ -23,6 +24,7 @@ import {
   CUSTOMER_TYPE_PAGE_ENTITIES,
   CASE_ENTITIES,
   CMS_PAGES_ENTITIES,
+  PARTNER_ENTITIES,
 } from '@/lib/wexoe-cache';
 
 const AIRTABLE_API_KEY = process.env.AIRTABLE_API_KEY;
@@ -63,6 +65,11 @@ const PA_SECTION_FIELDS_TO_DROP = new Set([
 // pekar tillbaka från cms_partner_pages — Airtable avvisar PATCH/CREATE som
 // skriver till en computed reverse-link.
 const CASE_FIELDS_TO_DROP = new Set(['cms_partner_pages']);
+
+// cms_partner_pages är också flat — länkade fält (partner_ids, country_ids,
+// case_ids, category_ids) är forward-links som vi vill kopiera oförändrade
+// så dubbletten ärver layout + innehåll. Inget att strippa idag.
+const PARTNER_FIELDS_TO_DROP = new Set<string>();
 
 // cms_pages är en deep-tree (page → sections → tabs). Page-recordet har
 // owned section_ids som vi bygger om från färska sections nedan.
@@ -413,6 +420,70 @@ async function copyCase(
   });
 }
 
+// ─── Partner Page (flat copy — single record, no owned children) ──────────
+//
+// cms_partner_pages är ett flat record-schema. Länkade fält
+// (partner_ids, country_ids, case_ids, category_ids) kopieras oförändrade
+// så dubbletten ärver hela layouten + content-strukturen. h1-fältet är
+// listans visningsnamn — vi sätter `${h1} COPY` så list-vyn skiljer på
+// original och dubblett. `is_active` ärvs som false-default? Nej, vi
+// behåller källans tillstånd — en dubblett av en publicerad partner-sida
+// förväntas vara redo att redigeras och publiceras direkt.
+
+async function copyPartner(
+  apiKey: string,
+  sourceId: string,
+  name: string | undefined,
+  slug: string | undefined,
+) {
+  const source = await getRecord(
+    apiKey,
+    PARTNER_TABLE_IDS.partnerPages,
+    sourceId,
+    PARTNER_BASE_ID,
+  );
+  const sourceH1 = (source.fields.h1 as string) || '';
+  const sourceSlug = (source.fields.slug as string) || '';
+
+  const newName = name?.trim() || defaultCopyName(sourceH1);
+  const newSlug = slug?.trim() || defaultCopySlug(sourceSlug);
+
+  if (
+    await isSlugTaken(
+      apiKey,
+      PARTNER_TABLE_IDS.partnerPages,
+      newSlug,
+      'slug',
+      PARTNER_BASE_ID,
+    )
+  ) {
+    return NextResponse.json(
+      { error: `Slug "${newSlug}" finns redan. Välj ett annat.` },
+      { status: 409 },
+    );
+  }
+
+  const fields = strip(source.fields, PARTNER_FIELDS_TO_DROP);
+  fields.slug = newSlug;
+  fields.h1 = newName;
+
+  const created = await createRecord(
+    apiKey,
+    PARTNER_TABLE_IDS.partnerPages,
+    fields,
+    PARTNER_BASE_ID,
+  );
+  await invalidateWexoeCoreCache(PARTNER_ENTITIES, 'partner:copy');
+
+  return NextResponse.json({
+    success: true,
+    id: created.id,
+    name: newName,
+    slug: newSlug,
+    type: 'partner' as const,
+  });
+}
+
 // ─── CMS Page (deep copy — page + owned sections + tabs sub-records) ─────
 //
 // cms_pages-familjen är multi-tabell precis som LP men med polymorfa sektioner.
@@ -567,6 +638,7 @@ const COPY_HANDLERS: Record<string, CopyHandler> = {
   'customer-type': copyCustomerType,
   'case': copyCase,
   'page': copyCmsPage,
+  'partner': copyPartner,
 };
 
 // ─── Handler ───────────────────────────────────────────────────────────────

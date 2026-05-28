@@ -40,6 +40,7 @@ import {
   PA_ENTITIES,
   CMS_PAGES_ENTITIES,
   CASE_ENTITIES,
+  PARTNER_ENTITIES,
 } from '../wexoe-cache-entities';
 
 export type PageTypeId =
@@ -47,7 +48,8 @@ export type PageTypeId =
   | 'product'
   | 'customer-type'
   | 'page'
-  | 'case';
+  | 'case'
+  | 'partner';
 
 export interface PageRow {
   id: string;
@@ -219,6 +221,25 @@ export const PAGE_TYPES = definePageTypes([
         slug: pickString(p, 'slug'),
         h1: pickString(p, 'h1'),
         type: 'case',
+      })),
+  },
+  {
+    id: 'partner',
+    label: 'Leverantörssida',
+    description: 'Partner-/leverantörssida (Rockwell, HMS, …) med hero, snabbfakta, om, varför Wexoe, kategorier, FAQ och kontakt',
+    creatable: true,
+    listUrl: '/api/partner?action=list',
+    createPath: '/editor/partner',
+    editPath: (id) => `/editor/partner/${id}`,
+    cacheEntities: PARTNER_ENTITIES,
+    copy: { apiType: 'partner' },
+    mapList: (data) =>
+      (data.pages ?? []).map((p) => ({
+        id: pickString(p, 'id'),
+        name: pickString(p, 'name', 'h1', 'slug'),
+        slug: pickString(p, 'slug'),
+        h1: pickString(p, 'h1'),
+        type: 'partner',
       })),
   },
 ]);

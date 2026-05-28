@@ -26,3 +26,13 @@ export const CMS_PAGES_ENTITIES = ['cms_pages', 'cms_page_sections', 'cms_sectio
 // som länkas cachas av sina egna sidtyper (PA m.fl.), så ingen anledning att
 // invalidiera dem härifrån.
 export const CASE_ENTITIES = ['cms_cases'] as const;
+// Partner-sidor (leverantörssidor som Rockwell, HMS, Wittenstein, …).
+// Sidan länkar in cms_cases (success cases) och product_areas (kategorier)
+// + core_partners (identitet). Alla fyra invalideras tillsammans när en
+// partner-sida muteras så att ändringar i linked records syns omedelbart.
+export const PARTNER_ENTITIES = [
+  'partner_pages',
+  'cases',
+  'product_areas',
+  'core_partners',
+] as const;
