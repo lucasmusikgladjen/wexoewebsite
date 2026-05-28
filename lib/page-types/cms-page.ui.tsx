@@ -10,7 +10,8 @@
 
 import { CmsPageState } from '../cms-page-types';
 import MetadataPanel from '@/components/cms-page/editors/MetadataPanel';
-import SectionsEditor from '@/components/cms-page/editors/SectionsEditor';
+import AddSectionEditor from '@/components/cms-page/editors/AddSectionEditor';
+import CmsPageSectionEditor from '@/components/cms-page/editors/CmsPageSectionEditor';
 import CmsPagePreview from '@/components/cms-page/preview/CmsPagePreview';
 import type { PageTypeUIDef, SectionDef } from './types';
 
@@ -21,10 +22,9 @@ const sections: SectionDef<CmsPageState>[] = [
     Editor: MetadataPanel,
   },
   {
-    id: 'sections',
-    label: 'Sektioner',
-    description: 'Bygg sidan genom att lägga till och ordna sektioner.',
-    Editor: SectionsEditor,
+    id: 'add-section',
+    label: 'Lägg till sektion',
+    Editor: AddSectionEditor,
   },
 ];
 
@@ -35,6 +35,18 @@ export const cmsPageUI: PageTypeUIDef<CmsPageState> & {
   id: 'cms-page',
   label: 'Sida',
   sections,
+  resolveSections: (state) => [
+    sections[0],
+    ...state.sections.map((section, index) => ({
+      id: section.clientId,
+      label: section.internalLabel?.trim() || `Sektion ${index + 1}`,
+      description: undefined,
+      Editor: ({ state: s, onChange }) => (
+        <CmsPageSectionEditor state={s} onChange={onChange} index={index} />
+      ),
+    })),
+    sections[1],
+  ],
   previewLayout: ({ state, activeSection, scrollTrigger, onSectionClick }) => (
     <CmsPagePreview
       state={state}
