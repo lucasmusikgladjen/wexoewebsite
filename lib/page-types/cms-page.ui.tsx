@@ -13,7 +13,7 @@ import MetadataPanel from '@/components/cms-page/editors/MetadataPanel';
 import AddSectionEditor from '@/components/cms-page/editors/AddSectionEditor';
 import CmsPageSectionEditor from '@/components/cms-page/editors/CmsPageSectionEditor';
 import CmsPagePreview from '@/components/cms-page/preview/CmsPagePreview';
-import type { PageTypeUIDef, SectionDef } from './types';
+import type { PageTypeUIDef, SectionDef, SectionEditorProps } from './types';
 
 const sections: SectionDef<CmsPageState>[] = [
   {
@@ -35,13 +35,13 @@ export const cmsPageUI: PageTypeUIDef<CmsPageState> & {
   id: 'cms-page',
   label: 'Sida',
   sections,
-  resolveSections: (state) => [
+  resolveSections: (state): SectionDef<CmsPageState>[] => [
     sections[0],
     ...state.sections.map((section, index) => ({
       id: section.clientId,
       label: section.internalLabel?.trim() || `Sektion ${index + 1}`,
       description: undefined,
-      Editor: ({ state: s, onChange }) => (
+      Editor: ({ state: s, onChange }: SectionEditorProps<CmsPageState>) => (
         <CmsPageSectionEditor state={s} onChange={onChange} index={index} />
       ),
     })),
