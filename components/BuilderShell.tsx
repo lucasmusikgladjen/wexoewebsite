@@ -57,11 +57,17 @@ export default function BuilderShell({
   previewPanel,
   editorSections,
 }: BuilderShellProps) {
+  const DEFAULT_EDITOR_WIDTH = 640;
+  const MIN_EDITOR_WIDTH = 480;
+  const MAX_EDITOR_WIDTH = 960;
   const sectionRefs = useRef<Record<string, HTMLDivElement | null>>({});
   const scrollContainerRef = useRef<HTMLDivElement | null>(null);
+  const layoutRef = useRef<HTMLDivElement | null>(null);
   const scrollDetectedRef = useRef(false);
   const isProgrammaticScroll = useRef(false);
   const activeSectionRef = useRef(activeSection);
+  const [editorWidth, setEditorWidth] = useState(DEFAULT_EDITOR_WIDTH);
+  const [isResizing, setIsResizing] = useState(false);
 
   useEffect(() => {
     activeSectionRef.current = activeSection;
@@ -157,6 +163,32 @@ export default function BuilderShell({
 
   const backHref = toolbar.backHref ?? '/';
   const backLabel = toolbar.backLabel ?? 'Sidor';
+  const handleResizeStart = useCallback((event: React.PointerEvent<HTMLDivElement>) => {
+    if (window.innerWidth < 1024) return;
+    event.preventDefault();
+    const pointerId = event.pointerId;
+    const layout = layoutRef.current;
+    if (!layout) return;
+    event.currentTarget.setPointerCapture(pointerId);
+    setIsResizing(true);
+
+    const onPointerMove = (moveEvent: PointerEvent) => {
+      const bounds = layout.getBoundingClientRect();
+      const wanted = bounds.right - moveEvent.clientX;
+      const maxAllowed = Math.max(MIN_EDITOR_WIDTH, bounds.width - 360);
+      const next = Math.min(Math.max(wanted, MIN_EDITOR_WIDTH), Math.min(MAX_EDITOR_WIDTH, maxAllowed));
+      setEditorWidth(next);
+    };
+
+    const onPointerUp = () => {
+      setIsResizing(false);
+      window.removeEventListener('pointermove', onPointerMove);
+      window.removeEventListener('pointerup', onPointerUp);
+    };
+
+    window.addEventListener('pointermove', onPointerMove);
+    window.addEventListener('pointerup', onPointerUp);
+  }, []);
 
   return (
     <div className="h-screen flex flex-col" style={{ fontFamily: 'var(--font-dm-sans)' }}>
@@ -182,10 +214,22 @@ export default function BuilderShell({
         {toolbar.right}
       </header>
 
-      <div className="flex-1 min-h-0 grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_clamp(30rem,35vw,48rem)]">
+      <div
+        ref={layoutRef}
+        className="flex-1 min-h-0 grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_var(--editor-width)]"
+        style={{ ['--editor-width' as string]: `${editorWidth}px` }}
+      >
         <div className="min-w-0 min-h-0">{previewPanel}</div>
 
-        <div className="min-w-0 min-h-0 lg:min-w-[30rem] h-full flex flex-col bg-white border-t lg:border-t-0 lg:border-l border-gray-100">
+        <div className="relative min-w-0 min-h-0 lg:min-w-[30rem] h-full flex flex-col bg-white border-t lg:border-t-0 lg:border-l border-gray-100">
+          <div
+            role="separator"
+            aria-label="Ändra bredd mellan preview och editor"
+            aria-orientation="vertical"
+            onPointerDown={handleResizeStart}
+            className={`hidden lg:block absolute inset-y-0 -left-1.5 w-3 cursor-col-resize z-20 ${isResizing ? 'bg-blue-200/50' : ''}`}
+            title="Dra för att ändra panelbredd"
+          />
           {quickNav && quickNav.length > 0 && (
             <div className="flex flex-wrap px-3 py-2 gap-x-0.5 gap-y-1 flex-shrink-0 border-b border-gray-100">
               {quickNav.map((s) => (
