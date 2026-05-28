@@ -29,7 +29,7 @@ export interface BuilderShellProps {
   activeSection?: string | null;
   /** Called when user clicks a quick-nav pill or one of the section refs in the editor. */
   onActiveSectionChange?: (id: string) => void;
-  /** The preview pane (left column, ~65% width). */
+  /** The preview pane (left column, flexar efter tillgänglig bredd). */
   previewPanel: ReactNode;
   /** Render the editor sections. Receives ref-setter so BuilderShell can do scroll-sync. */
   editorSections: (helpers: {
@@ -42,7 +42,7 @@ export interface BuilderShellProps {
  * BuilderShell — shared layout for builder pages (CustomerType, LP, PA, CmsPage,
  * /globals/*). Owns:
  *   - Top toolbar (back link, slug input slot, status, save button)
- *   - Split layout (65% preview, 35% editor)
+ *   - Split layout (responsiv: preview + editor som båda växer med viewport)
  *   - Quick-nav pills row above editor
  *   - Scroll-sync between editor section refs and active-section state
  *
@@ -182,10 +182,10 @@ export default function BuilderShell({
         {toolbar.right}
       </header>
 
-      <div className="flex-1 flex min-h-0">
-        <div className="flex-[65] min-w-0">{previewPanel}</div>
+      <div className="flex-1 min-h-0 grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_clamp(30rem,35vw,48rem)]">
+        <div className="min-w-0">{previewPanel}</div>
 
-        <div className="flex-[35] min-w-[380px] max-w-[520px] h-full flex flex-col bg-white border-l border-gray-100">
+        <div className="min-w-0 lg:min-w-[30rem] h-full flex flex-col bg-white border-t lg:border-t-0 lg:border-l border-gray-100">
           {quickNav && quickNav.length > 0 && (
             <div className="flex flex-wrap px-3 py-2 gap-x-0.5 gap-y-1 flex-shrink-0 border-b border-gray-100">
               {quickNav.map((s) => (
