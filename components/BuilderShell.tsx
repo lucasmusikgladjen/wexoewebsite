@@ -183,9 +183,9 @@ export default function BuilderShell({
       </header>
 
       <div className="flex-1 min-h-0 grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_clamp(30rem,35vw,48rem)]">
-        <div className="min-w-0">{previewPanel}</div>
+        <div className="min-w-0 min-h-0">{previewPanel}</div>
 
-        <div className="min-w-0 lg:min-w-[30rem] h-full flex flex-col bg-white border-t lg:border-t-0 lg:border-l border-gray-100">
+        <div className="min-w-0 min-h-0 lg:min-w-[30rem] h-full flex flex-col bg-white border-t lg:border-t-0 lg:border-l border-gray-100">
           {quickNav && quickNav.length > 0 && (
             <div className="flex flex-wrap px-3 py-2 gap-x-0.5 gap-y-1 flex-shrink-0 border-b border-gray-100">
               {quickNav.map((s) => (
