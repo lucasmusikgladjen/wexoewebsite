@@ -5,9 +5,9 @@
 export const LP_ENTITIES = ['landing_pages', 'lp_tabs', 'lp_downloads'] as const;
 export const PA_ENTITIES = ['product_areas', 'products', 'solutions'] as const;
 // Customer-type-pages (tidigare audience_heroes) migrerades till Wexoe NY
-// och länkar nu case_pages — båda entiteterna invalideras tillsammans när
-// en kundtyp-sida muteras.
-export const CUSTOMER_TYPE_PAGE_ENTITIES = ['customer_type_pages', 'case_pages'] as const;
+// och länkar nu cms_cases (case-strippens kort) — båda entiteterna invalideras
+// tillsammans när en kundtyp-sida muteras.
+export const CUSTOMER_TYPE_PAGE_ENTITIES = ['customer_type_pages', 'cms_cases'] as const;
 export const SSOT_ENTITIES = [
   'core_company',
   'core_graphic_profile',
@@ -32,7 +32,7 @@ export const CASE_ENTITIES = ['cms_cases'] as const;
 // partner-sida muteras så att ändringar i linked records syns omedelbart.
 export const PARTNER_ENTITIES = [
   'partner_pages',
-  'cases',
+  'cms_cases',
   'product_areas',
   'core_partners',
 ] as const;

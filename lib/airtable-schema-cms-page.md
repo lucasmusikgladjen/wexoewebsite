@@ -127,7 +127,7 @@ sektionen och en ny skapas).
 | cg_eyebrow | singleLineText |
 | cg_h2 | singleLineText |
 | cg_body | multilineText |
-| cg_case_manual_ids | multipleRecordLinks (case_pages) |
+| cg_case_manual_ids | multipleRecordLinks (cms_cases) |
 | cg_scope_country | singleLineText |
 | cg_scope_division | singleLineText |
 | cg_scope_customer_type | singleLineText |

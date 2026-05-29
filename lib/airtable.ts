@@ -2,7 +2,7 @@
  * Airtable REST client.
  *
  * Default-basen är Wexoe NY (appokKSTaBdCa8YiW) för alla nya tabeller
- * (cms_landing_pages, cms_customer_type_pages, cms_case_pages, cms_articles,
+ * (cms_landing_pages, cms_customer_type_pages, cms_cases, cms_articles,
  * core_*, etc.).
  *
  * `LEGACY_BASE_ID` (Wexoe, appXoUcK68dQwASjF) finns kvar för automation-

@@ -39,7 +39,7 @@ Huvudrecorden. Flatt schema med hero + värdeproposition + contact-form-fält.
 | **benefit_3** | singleLineText | Bullet #3. |
 | **country_ids** | multipleRecordLinks | core_countries-länk. **Inkludera ej — backend rör inte fältet.** |
 | **customer_type_ids** | multipleRecordLinks | Self-/cross-länk. **Inkludera ej.** |
-| **case_ids** | multipleRecordLinks | cms_case_pages-länk. Read-only i buildern — **inkludera ej.** |
+| **case_ids** | multipleRecordLinks | cms_cases-länk. Read-only i buildern — **inkludera ej.** |
 
 ---
 

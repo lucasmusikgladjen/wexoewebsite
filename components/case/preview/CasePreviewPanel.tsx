@@ -29,6 +29,7 @@ import {
   type NormalizedLinkedRecord,
 } from '@/lib/linked-records-cache';
 import ContactFormPreview from '@/components/contact-form/ContactFormPreview';
+import { caseUrl } from '@/lib/permalink';
 
 interface Props {
   state: CaseState;
@@ -197,7 +198,7 @@ export default function CasePreviewPanel({
             <div className="w-2.5 h-2.5 rounded-full bg-green-400" />
           </div>
           <span className="text-xs text-gray-400 ml-2">
-            wexoe.se/{state.slug || '...'}/ — Preview
+            wexoe.se{caseUrl(state.slug) || '/case/.../'} — Preview
           </span>
         </div>
 
