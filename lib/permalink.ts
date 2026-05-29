@@ -12,9 +12,9 @@
 
 /** Route-mönster per entitet. {slug} ersätts med en URL-encodad slug. */
 const PATTERNS: Record<string, string> = {
-  cases: '/case/{slug}/',
+  // cms_cases är den kanoniska case-entiteten (aliasen 'cases'/'case_pages'
+  // konsoliderades bort i PR 2 — speglar wexoe-core Permalink.php).
   cms_cases: '/case/{slug}/',
-  case_pages: '/case/{slug}/',
 };
 
 /** Ren slug → publik path. Tom slug eller okänd entitet → ''. */
@@ -46,5 +46,5 @@ export function permalinkForRecord(
 
 /** Bekvämlighet: publik URL för ett case givet dess slug. */
 export function caseUrl(slug: string, urlPrefix = ''): string {
-  return buildPermalink('cases', slug, urlPrefix);
+  return buildPermalink('cms_cases', slug, urlPrefix);
 }

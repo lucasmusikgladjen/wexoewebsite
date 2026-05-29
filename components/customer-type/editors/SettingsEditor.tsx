@@ -20,7 +20,7 @@ export default function SettingsEditor({ state, onChange }: SectionEditorProps<C
           Länkade kundcase: {caseCount}
         </div>
         <p className="mt-1 text-xs text-gray-500">
-          Cases hanteras i Airtable (cms_case_pages) — varje case är en
+          Cases hanteras i Airtable (cms_cases) — varje case är en
           self-contained record som kan länkas från flera kundtyp-sidor. Dedikerad
           case-editor kommer i en senare task.
         </p>
