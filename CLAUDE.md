@@ -52,7 +52,7 @@ Två slags scheman:
 
 SSOT-tabeller (`core_*` / `cms_*`) sätter `'base_id' => Plugin::SSOT_BASE_ID` i schemat för att tvinga Wexoe NY även när plugin-konfigen pekar mot en annan bas.
 
-**Migrationsstatus:** nästan klar. Datat är på plats. *Vissa* entity-filer heter fortfarande sina legacy-namn (`landing_pages.php`, `lp_tabs.php`, `audience_heroes.php`) trots att Airtable-tabellen bytt namn. Det är medvetet — döp inte om filer reflexmässigt; fråga om det är oklart. `MIGRATION-PLAN.md` + `IMPLEMENTATION_LOG.md` kan vara lite efter verkligheten — använd dem som referens men lita på koden/Airtable först.
+**Migrationsstatus:** slutförd (legacy-basen utfasad). Datat är på plats. *Vissa* entity-filer heter fortfarande sina legacy-namn (`landing_pages.php`, `lp_tabs.php`, `audience_heroes.php`) trots att Airtable-tabellen bytt namn. Det är medvetet — döp inte om filer reflexmässigt; fråga om det är oklart. `IMPLEMENTATION_LOG.md` har migrationshistoriken; den framåtblickande arkitekturplanen ligger i `ARKITEKTURPLAN.md`. Lita på koden/Airtable först om något skiljer sig.
 
 ---
 
@@ -130,7 +130,7 @@ Full anatomi av ett plugin: `UTVECKLINGSGUIDE.md` § 6. Dispatcher-mönstret fö
 | `UTVECKLINGSGUIDE.md` | Du ska skriva kod mot Core eller bygga/ändra ett feature-plugin. Auktoritativ teknisk referens. |
 | `SKAPA-SIDA.md` | Användaren vill skapa en ny sidtyp och behöver flow-instruktioner (4 faser, en LLM-session per fas). |
 | `NEW_PAGE_TYPE.md` | Du är LLM:en i en av faserna i SKAPA-SIDA-flowet och behöver tekniska detaljer. |
-| `MIGRATION-PLAN.md` | Du undrar vad ett legacy-tabellnamn motsvarar i Wexoe NY, eller behöver tabell-mappning. Kan vara lite efter. |
+| `ARKITEKTURPLAN.md` | Den kanoniska, framåtblickande arkitektur-refaktorn (modularisering). Spegelidentisk i båda repona. Arbeta mot den och bocka av progress. |
 | `IMPLEMENTATION_LOG.md` | Du vill veta om en datafix redan gjorts, eller du själv ska logga en migration. |
 | `wexoe-core/src/Core.php` | Doc-kommentarerna är auktoritativa när dokumentation och kod skiljer sig åt. |
 
