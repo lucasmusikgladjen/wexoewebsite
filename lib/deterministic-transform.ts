@@ -23,8 +23,10 @@ import {
   CASE_RESULTS_MAX,
   CASE_GALLERY_MAX,
 } from './case-types';
+import { ProductAreaState, LinkedProduct, LinkedSolution } from './product-area-types';
 import { contactFormToFields } from './contact-form-mapper';
 import type { WriteMode } from './schema/to-fields';
+import type { PaTransformResult } from './claude-transform';
 
 type Out = Record<string, unknown>;
 
@@ -288,4 +290,113 @@ export function buildCaseFields(state: CaseState, mode: WriteMode): Out {
   );
 
   return out;
+}
+
+// ─── Product Area (multi-record: products + solutions) ─────────────────────
+//
+// Returnerar samma shape som `transformProductArea` (PaTransformResult) så att
+// orchestreringen i `product-area-actions.ts` (child-record-diff, link-arrayer,
+// Normal-sektioner) är oförändrad. `productArea.fields` utelämnar ALLA
+// link-/section-fält + `name` — dem sätter actions-koden.
+
+function buildPaParentFields(state: ProductAreaState, mode: WriteMode): Out {
+  const o: Out = {};
+  putText(o, 'slug', state.slug, mode);
+  putText(o, 'h1', state.h1, mode);
+  putText(o, 'top_bg', state.topBg, mode);
+
+  putText(o, 'hero_h2', state.heroH2, mode);
+  putText(o, 'hero_text', state.heroText, mode);
+  putText(o, 'hero_cta_text', state.heroCtaText, mode);
+  putText(o, 'hero_cta_url', state.heroCtaUrl, mode);
+  putText(o, 'hero_benefits', state.heroBenefits, mode);
+  putText(o, 'hero_image_url', state.heroImage, mode);
+  putText(o, 'hero_bg', state.heroBg, mode);
+  putText(o, 'hero_accent', state.heroAccent, mode);
+
+  putText(o, 'npi_title', state.npiTitle, mode);
+  putText(o, 'npi_description', state.npiDescription, mode);
+  putText(o, 'npi_image_url', state.npiImage, mode);
+  putText(o, 'npi_link', state.npiLink, mode);
+
+  putText(o, 'toggle_bg', state.toggleBg, mode);
+  putText(o, 'toggle_header_bg', state.toggleHeaderBg, mode);
+  putText(o, 'toggle_accent', state.toggleAccent, mode);
+
+  putText(o, 'solutions_title', state.solutionsTitle, mode);
+  putText(o, 'solutions_bg', state.solutionsBg, mode);
+  putText(o, 'solutions_card_bg', state.solutionsCardBg, mode);
+
+  putText(o, 'contact_name', state.contactName, mode);
+  putText(o, 'contact_title', state.contactTitle, mode);
+  putText(o, 'contact_email', state.contactEmail, mode);
+  putText(o, 'contact_phone', state.contactPhone, mode);
+  putText(o, 'contact_image_url', state.contactImage, mode);
+  putText(o, 'contact_text', state.contactText, mode);
+  putText(o, 'contact_bg', state.contactBg, mode);
+
+  putText(o, 'docs_title', state.docsTitle, mode);
+  putText(o, 'docs_iframe', state.docsIframe, mode);
+  putText(o, 'docs_bg', state.docsBg, mode);
+
+  putBool(o, 'use_side_menu', state.sideMenu);
+  putBool(o, 'show_request', state.request);
+  putBool(o, 'default_open', state.defaultOpen);
+
+  putBool(o, 'show_contact_form', state.showContactForm);
+  Object.assign(
+    o,
+    contactFormToFields(state.contactForm, { schema: 'snake_case', nullForEmpty: mode === 'update' }),
+  );
+  return o;
+}
+
+function buildPaProductFields(p: LinkedProduct, index: number, mode: WriteMode): Out {
+  const o: Out = {};
+  putText(o, 'name', p.name, mode);
+  putText(o, 'ecosystem_description', p.ecosystemDescription, mode);
+  putText(o, 'description', p.description, mode);
+  putText(o, 'bullets', p.bullets, mode);
+  putText(o, 'image_url', p.image, mode);
+  putText(o, 'button_1_text', p.button1Text, mode);
+  putText(o, 'button_1_url', p.button1Url, mode);
+  putText(o, 'button_2_text', p.button2Text, mode);
+  putText(o, 'button_2_url', p.button2Url, mode);
+  putText(o, 'header_side_menu', p.headerSideMenu, mode);
+  putBool(o, 'horizontal', p.horizontal);
+  putBool(o, 'is_active', p.visa);
+  o.order = index + 1;
+  return o;
+}
+
+function buildPaSolutionFields(s: LinkedSolution, index: number, mode: WriteMode): Out {
+  const o: Out = {};
+  putText(o, 'name', s.name, mode);
+  putText(o, 'category', s.category, mode);
+  putText(o, 'image_url', s.image, mode);
+  putText(o, 'url', s.url, mode);
+  putText(o, 'description', s.description, mode);
+  putText(o, 'cta_text', s.ctaText, mode);
+  putBool(o, 'is_active', s.visa);
+  o.order = index + 1;
+  return o;
+}
+
+export function buildProductAreaTransform(
+  state: ProductAreaState,
+  mode: WriteMode,
+): PaTransformResult {
+  return {
+    productArea: buildPaParentFields(state, mode),
+    products: state.products.map((p, i) => ({
+      _clientIndex: i,
+      _recordId: p.recordId || null,
+      fields: buildPaProductFields(p, i, mode),
+    })),
+    solutions: state.solutions.map((s, i) => ({
+      _clientIndex: i,
+      _recordId: s.recordId || null,
+      fields: buildPaSolutionFields(s, i, mode),
+    })),
+  };
 }
