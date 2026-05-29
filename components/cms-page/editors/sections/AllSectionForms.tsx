@@ -36,6 +36,7 @@ import {
   TextOnlySection,
   TgVariant,
 } from '@/lib/cms-page-types';
+import { FaqItem, emptyFaqItem } from '@/lib/faq-block';
 import { makeTabPatch, SectionEditorContext } from '../SectionFormsCommon';
 
 const TEXT_ALIGN_OPTS: readonly { value: TextAlign; label: string }[] = [
@@ -328,19 +329,65 @@ export function PartnerListForm({ section, patch }: SectionEditorContext<Partner
 // ─── faq ─────────────────────────────────────────────────────────────────────
 
 export function FaqForm({ section, patch }: SectionEditorContext<FaqSection>) {
+  const setItems = (next: FaqItem[]) => patch({ items: next });
+  const patchItem = (i: number, p: Partial<FaqItem>) =>
+    setItems(section.items.map((it, j) => (j === i ? { ...it, ...p } : it)));
+  const addItem = () => setItems([...section.items, emptyFaqItem()]);
+  const removeItem = (i: number) => setItems(section.items.filter((_, j) => j !== i));
+  const moveItem = (i: number, dir: -1 | 1) => {
+    const j = i + dir;
+    if (j < 0 || j >= section.items.length) return;
+    const next = [...section.items];
+    const [m] = next.splice(i, 1);
+    next.splice(j, 0, m);
+    setItems(next);
+  };
+
   return (
     <>
       <Field.Text label="Eyebrow" value={section.eyebrow} onChange={(v) => patch({ eyebrow: v })} />
       <Field.Text label="Rubrik (H2)" value={section.h2} onChange={(v) => patch({ h2: v })} />
       <Field.RichText label="Brödtext" value={section.body} onChange={(v) => patch({ body: v })} rows={3} />
-      <Field.Textarea
-        label="FAQ-poster"
-        value={section.items}
-        onChange={(v) => patch({ items: v })}
-        rows={10}
-        hint="Q:/A:-prefix, tom rad mellan par"
-        placeholder={'Q: Vad ingår?\nA: ...\n\nQ: Hur lång leveranstid?\nA: ...'}
-      />
+
+      <div className="pt-2 mt-2 border-t border-gray-200/60">
+        <p className="text-[11px] text-gray-400 mb-2">Frågor och svar</p>
+        {section.items.length === 0 && (
+          <p className="text-[11px] text-gray-300 italic mb-2">Inga FAQ:er — klicka &quot;Lägg till&quot; nedan.</p>
+        )}
+        <div className="space-y-2">
+          {section.items.map((item, i) => (
+            <RepeaterCard
+              key={item.clientId}
+              index={i}
+              title={item.question}
+              onTitleChange={(v) => patchItem(i, { question: v })}
+              titlePlaceholder="Frågetext…"
+              onMoveUp={() => moveItem(i, -1)}
+              onMoveDown={() => moveItem(i, 1)}
+              canMoveUp={i > 0}
+              canMoveDown={i < section.items.length - 1}
+              onRemove={() => removeItem(i)}
+              removeTitle="Ta bort FAQ"
+              defaultOpen={!item.question.trim() && !item.answer.trim()}
+            >
+              <Field.RichText
+                label="Svar"
+                value={item.answer}
+                onChange={(v) => patchItem(i, { answer: v })}
+                rows={4}
+                placeholder="Svaret på frågan…"
+              />
+            </RepeaterCard>
+          ))}
+        </div>
+        <button
+          type="button"
+          onClick={addItem}
+          className="w-full py-2 text-sm text-gray-300 hover:text-gray-500 transition-colors"
+        >
+          + Lägg till FAQ
+        </button>
+      </div>
     </>
   );
 }

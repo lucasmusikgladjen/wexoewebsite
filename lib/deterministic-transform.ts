@@ -27,6 +27,7 @@ import { ProductAreaState, LinkedProduct, LinkedSolution } from './product-area-
 import { PageState, Tab } from './types';
 import { CmsPageState, PageSection, TabsSection, TabItem } from './cms-page-types';
 import { contactFormToFields } from './contact-form-mapper';
+import { faqItemsToJson, faqItemsToLines } from './faq-block';
 import { sectionToPayload } from './claude-transform';
 import type { WriteMode } from './schema/to-fields';
 import type {
@@ -81,20 +82,17 @@ function putIcon(out: Out, key: string, icon: unknown): void {
   out[key] = PARTNER_ICONS.has(v) ? v : '';
 }
 
-/** FAQ-array → JSON-sträng (filtrerar tom fråga, droppar clientId). CREATE
- *  utelämnar om tom; UPDATE skickar alltid (även "[]"). */
+/** FAQ-array → JSON-spegel via det delade blocket (filtrerar tom fråga, droppar
+ *  clientId). CREATE utelämnar om tom; UPDATE skickar alltid (även "[]"). */
 function putFaqsJson(
   out: Out,
   key: string,
   faqs: PartnerPageState['faqs'],
   mode: WriteMode,
 ): void {
-  const filtered = (Array.isArray(faqs) ? faqs : [])
-    .filter((f) => f && typeof f.question === 'string' && f.question.trim() !== '')
-    .map((f) => ({ question: f.question, answer: f.answer ?? '' }));
-  const s = JSON.stringify(filtered);
+  const s = faqItemsToJson(faqs);
   if (mode === 'update') out[key] = s;
-  else if (filtered.length > 0) out[key] = s;
+  else if (s !== '[]') out[key] = s;
 }
 
 export function buildPartnerFields(state: PartnerPageState, mode: WriteMode): Out {
@@ -424,14 +422,6 @@ function putComputed(out: Out, key: string, s: string, mode: WriteMode): void {
   else if (s !== '') out[key] = s;
 }
 
-function faqItemsToString(items: Tab['faqItems']): string {
-  // En FAQ-rad kräver en fråga (rubriken); rader utan fråga droppas.
-  return items
-    .filter((f) => (f.question ?? '').trim() !== '')
-    .map((f) => `Q: ${f.question ?? ''}\nA: ${f.answer ?? ''}`)
-    .join('\n\n');
-}
-
 function compareRowsToString(rows: Tab['compareRows']): string {
   return rows
     .filter((r) => (r.label ?? '') !== '' || (r.valueA ?? '') !== '' || (r.valueB ?? '') !== '')
@@ -533,7 +523,7 @@ function buildLpTabFields(tab: Tab, index: number, mode: WriteMode): Out {
       putText(o, 'fm_url', tab.fmUrl, mode);
       break;
     case 'faq':
-      putComputed(o, 'faq_items', faqItemsToString(tab.faqItems), mode);
+      putComputed(o, 'faq_items', faqItemsToLines(tab.faqItems), mode);
       break;
     case 'calameo':
       putText(o, 'calameo_1_title', tab.calTitle1, mode);

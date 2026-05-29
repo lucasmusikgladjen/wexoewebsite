@@ -22,13 +22,12 @@ import { AirtableRecord, BASE_ID } from './airtable';
 import {
   PartnerPageState,
   PartnerQuickFact,
-  PartnerFaqItem,
   QuickFactIcon,
   QUICK_FACT_ICON_KEYS,
-  newFaqClientId,
 } from './partner-types';
 import { str, bool, linkedIds, asString } from './airtable-helpers';
 import { contactFormFromFields } from './contact-form-mapper';
+import { faqItemsFromJson } from './faq-block';
 
 export const PARTNER_BASE_ID = BASE_ID;
 
@@ -79,30 +78,6 @@ function readBenefits(v: unknown): string[] {
       .filter((x) => x !== '');
   }
   return [];
-}
-
-function readFaqs(v: unknown): PartnerFaqItem[] {
-  if (typeof v !== 'string' || v.trim() === '') return [];
-  let parsed: unknown;
-  try {
-    parsed = JSON.parse(v);
-  } catch {
-    return [];
-  }
-  if (!Array.isArray(parsed)) return [];
-  const items: PartnerFaqItem[] = [];
-  for (const raw of parsed) {
-    if (!raw || typeof raw !== 'object') continue;
-    const item = raw as Record<string, unknown>;
-    const question = asString(item.question).trim();
-    if (question === '') continue;
-    items.push({
-      clientId: newFaqClientId(),
-      question,
-      answer: asString(item.answer),
-    });
-  }
-  return items;
 }
 
 export function partnerPageStateFromRecord(record: AirtableRecord): PartnerPageState {
@@ -165,7 +140,7 @@ export function partnerPageStateFromRecord(record: AirtableRecord): PartnerPageS
 
     showFaq: bool(f, 'show_faq'),
     faqH2: str(f, 'faq_h2'),
-    faqs: readFaqs(f['faqs']),
+    faqs: faqItemsFromJson(f['faqs']) ?? [],
 
     showContactPerson: bool(f, 'show_contact_person'),
     contactName: str(f, 'contact_name'),
