@@ -152,9 +152,7 @@ loggen finns i `IMPLEMENTATION_LOG.md`.
   inline-scoped CSS (~28 KB duplicerat), 6/15 sektionstyper implementerade på
   flera ställen.
 - **Datamodell tvingad platt av Airtable**: `contact_form_*` (15 fält) ×6
-  tabeller; pseudo-array-kolumner (`quick_stat_1_…`, `gallery_image_1_…`);
-  dubbla case-modeller (`cases.php` / `case_pages.php` / `cms_cases.php`,
-  två levande case-tabeller).
+  tabeller; pseudo-array-kolumner (`quick_stat_1_…`, `gallery_image_1_…`).
 - **Builder-sprawl** (~25 900 rader TS): ~15 000 är per-sidtyps-bespoke som
   växer linjärt med antal sidtyper.
 
@@ -284,13 +282,17 @@ borta; preview och render delar färg/typografi-källa.
 ### FAS 6 — Död kod & legacy-städning · **[BÅDA]** · *parallellt, låg risk*
 
 - [ ] Verifiera och ta bort oanvända `write-entities`-sidscheman
-      (`customer_type_pages`, `case_pages`, `cms_pages`, `cms_page_sections`,
+      (`customer_type_pages`, `cms_pages`, `cms_page_sections`,
       `cms_section_tabs`) — behåll bara faktiskt använda (`user_submissions` m.fl.).
-- [ ] Konsolidera dubbla case-modeller till **en** (`cases.php` /
-      `case_pages.php` / `cms_cases.php` + de två case-tabellerna).
+- [x] Konsolidera case-modellen till **en** kanonisk entitet (`cms_cases`).
+      Klart i kod (PR #54/#72): `case_pages` + `cases` borttagna, alla konsumenter
+      pekar på `cms_cases`. **Kvar (manuellt):** radera Airtable-tabellen
+      `cms_case_pages` (`tbl3uMV6IpRIZeucA`) + tomma legacy-länkfält — se
+      `IMPLEMENTATION_LOG.md`.
 - [ ] Ta bort sista `LEGACY_BASE_ID`-referensen i buildern (efter FAS 5).
 
-**Klar när:** 0 oanvända scheman; en case-modell; 0 legacy-base-referenser.
+**Klar när:** 0 oanvända scheman; Airtable-tabellen `cms_case_pages` raderad;
+0 legacy-base-referenser.
 
 ### FAS 7 — Claude på input-lagret (valfritt/framtid) · **[BUILDER]** · *kräver FAS 2*
 
@@ -321,5 +323,12 @@ borta; preview och render delar färg/typografi-källa.
 
 Lägg nyaste överst. Format: `YYYY-MM-DD — [repo] — vad gjordes / vad återstår`.
 
+- 2026-05-29 — [BÅDA] — Case-konsolideringen (PR #54/#72) slog ihop
+  `case_pages`/`cases` → kanoniska `cms_cases` och införde en central `Permalink`
+  (PHP `Permalink.php` ↔ TS `permalink.ts`, manuellt speglad). FAS 6:s
+  case-konsolidering är därmed klar i kod (kvar: radera Airtable-tabellen
+  `cms_case_pages`). `Permalink`-paret är ett nytt exempel på det manuellt
+  speglade par som FAS 1:s schema-ansats på sikt ska absorbera. Branch synkad
+  mot `main`.
 - 2026-05-29 — [BÅDA] — Plan skapad, ersätter `MIGRATION-PLAN.md`. Inga
   kodändringar ännu.
