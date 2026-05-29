@@ -50,7 +50,7 @@ WordPress-plugins — utan att någonsin behöva se Airtable eller WP-admin.**
 Den här planen ändrar inte det målet. Den ändrar *mekaniken under det* så att
 systemet blir:
 
-- **Modulärt** — ett återkommande element (kontaktformulär, hero, FAQ, CTA)
+- **Modulärt** — ett återkommande element (kontaktformulär och FAQ)
   definieras *en gång* (schema + editor + design) och återanvänds, istället för
   att kopieras in i varje sidtyp.
 - **Skalbart** — att lägga till en sidtyp eller ett fält ska vara
@@ -103,7 +103,7 @@ React-editorn (och valfritt i Lager A), aldrig på spar-knappen.
 ### 1.5 Den andra bärande principen: behåll gränsen, dela tegelstenarna
 
 Scope-isolering (en plugin/editor per sidtyp) och kod-duplicering (varje plugin
-skriver om hero/contact/CSS) är **två olika saker**. Vi behåller det första och
+skriver om kontaktformulär/CSS) är **två olika saker**. Vi behåller det första och
 tar bort det andra. En sidtyp förblir sin egen plugin/editor — men byggd av
 delade block, inte egna kopior. Att en delad renderer *finns tillgänglig* räcker
 inte (kontaktformuläret är idag implementerat på 3 ställen trots
@@ -150,7 +150,7 @@ loggen finns i `IMPLEMENTATION_LOG.md`.
   mot att tom array raderar allt innehåll.
 - **Render-duplicering** (plugins, ~26 200 rader PHP): 14/14 plugins har egen
   inline-scoped CSS (~28 KB duplicerat), 6/15 sektionstyper implementerade på
-  flera ställen, hero ×3, contact-form ×3.
+  flera ställen.
 - **Datamodell tvingad platt av Airtable**: `contact_form_*` (15 fält) ×6
   tabeller; pseudo-array-kolumner (`quick_stat_1_…`, `gallery_image_1_…`);
   dubbla case-modeller (`cases.php` / `case_pages.php` / `cms_cases.php`,
@@ -167,14 +167,14 @@ Systemet anses moderniserat när allt nedan är sant och verifierat:
 - [ ] Ett fält i en sidtyp definieras på **exakt ett ställe** (ett delat schema);
       typ, mapper, editor-fält och PHP-läsning *härleds* därifrån.
 - [ ] **Spar gör 0 Anthropic-anrop.** `claude-transform.ts` är borttagen.
-- [ ] Återkommande element (contact_form, hero, faq, cta, testimonial)
+- [ ] Återkommande element (contact_form, faq)
       definieras **en gång** (schema + editor + render) och återanvänds.
 - [ ] Marknadsföraren kan fortfarande ändra contact-form-text **per sida** utan
       att schemat lever i flera tabeller.
 - [ ] Preview (builder) och render (plugin) delar **en källa** för
       block-struktur och för design-tokens (färg/typografi).
-- [ ] **0 sektionstyper** implementerade på fler än ett ställe; `automation-pillar`
-      migrerad till `wexoe-pages`-sektioner.
+- [ ] `automation-pillar` konsoliderad till `wexoe-pages`-sektioner (ingen
+      deprecated parallell-plugin kvar).
 - [ ] **0 oanvända scheman** (`write-entities`-sidscheman borttagna eller
       faktiskt använda), **en** case-modell, **0** legacy-base-referenser.
 - [ ] Claude finns kvar **enbart** på explicita input-/copy-åtgärder, aldrig
@@ -249,7 +249,7 @@ inga "håll i synk"-kommentarer kvar för typen; läs + editor fungerar oförän
 **Klar när:** spar gör 0 Anthropic-anrop; tom-array-guards behövs inte längre
 (deterministiskt); p95 save-latens väsentligt lägre.
 
-### FAS 3 — Delade block (contact_form först) · **[BÅDA]** · *gynnas av FAS 1*
+### FAS 3 — Delade block (contact_form + FAQ) · **[BÅDA]** · *gynnas av FAS 1*
 
 - [ ] Besluta lagringsform för per-sida block-innehåll: **child-tabell**
       (`cms_contact_blocks`, en rad per sida) **eller JSON-kolumn**
@@ -258,9 +258,9 @@ inga "håll i synk"-kommentarer kvar för typen; läs + editor fungerar oförän
 - [ ] Definiera `contact_form` som **ett block**: schema (en gång) + editor-
       komponent (en gång) + Core-renderer (utöka befintlig `ContactForm`).
 - [ ] Migrera data för de 6 sidtyperna till blocket; uppdatera läs/skriv/editor/render.
-- [ ] Upprepa mönstret för `faq`/QnA, `hero`, `cta`, `testimonial`.
+- [ ] Upprepa mönstret för `faq`/QnA-blocket.
 
-**Klar när:** contact_form-schemat finns på ett ställe; 0 `contact_form_*`-kolumner
+**Klar när:** contact_form- och faq-blocken definieras på ett ställe vardera (schema + editor + render); 0 `contact_form_*`-kolumner
 kvar i de 6 sidtabellerna (eller exakt 1 JSON-kolumn); text fortfarande
 redigerbar per sida.
 
@@ -278,9 +278,8 @@ borta; preview och render delar färg/typografi-källa.
 ### FAS 5 — Plugin-konsolidering · **[PLUGINS]** · *gynnas av FAS 4*
 
 - [ ] Migrera `automation-pillar`-shortcodes till `wexoe-pages`-sektioner.
-- [ ] Dedupe hero/cta/testimonial/team-grid till delade sektioner/Core-renderers.
 
-**Klar när:** 0 sektionstyper på >1 ställe; `automation-pillar` borttaget.
+**Klar när:** `automation-pillar` borttaget; ingen deprecated parallell-plugin kvar.
 
 ### FAS 6 — Död kod & legacy-städning · **[BÅDA]** · *parallellt, låg risk*
 
