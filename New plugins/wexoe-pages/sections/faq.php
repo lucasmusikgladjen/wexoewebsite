@@ -3,7 +3,13 @@
  * Section: faq (section_type = "faq")
  *
  * Hopfällbara Q&A-rader via <details>/<summary> (ingen JS).
- * faq_items-format: en rad per Q&A med pipe-separator: "Question | Answer".
+ * faq_items-format (det buildern skriver): Q:/A:-prefix, ett par per block:
+ *     Q: Fråga
+ *     A: Svar
+ *
+ *     Q: Nästa fråga
+ *     A: Nästa svar
+ * Bakåtkompat: äldre rader på pipe-format "Fråga | Svar" stöds också.
  * Svar stödjer inline-markdown (**bold**, [link](url), `code`).
  */
 
@@ -15,15 +21,36 @@ return function ($section, $page, $ctx) {
     $body    = (string) ($section['faq_body']    ?? '');
     $items_raw = is_array($section['faq_items'] ?? null) ? $section['faq_items'] : [];
 
+    // Core normaliserar faq_items till en array av icke-tomma rader (type=lines).
+    // Buildern skriver Q:/A:-prefix: para ihop varje Q:-rad med nästa A:-rad.
+    // Äldre pipe-rader ("Fråga | Svar") stöds som fallback.
     $items = [];
+    $pending_q = null;
     foreach ($items_raw as $line) {
         if (!is_string($line)) continue;
-        $parts = explode('|', $line, 2);
-        if (count($parts) !== 2) continue;
-        $q = trim($parts[0]);
-        $a = trim($parts[1]);
-        if ($q !== '' && $a !== '') {
-            $items[] = ['q' => $q, 'a' => $a];
+        $line = trim($line);
+        if ($line === '') continue;
+
+        if (preg_match('/^Q\s*:\s*(.*)$/i', $line, $m)) {
+            $pending_q = trim($m[1]);
+            continue;
+        }
+        if (preg_match('/^A\s*:\s*(.*)$/i', $line, $m)) {
+            $a = trim($m[1]);
+            if ($pending_q !== null && $pending_q !== '' && $a !== '') {
+                $items[] = ['q' => $pending_q, 'a' => $a];
+            }
+            $pending_q = null;
+            continue;
+        }
+        // Bakåtkompat: pipe-format på en rad.
+        if (strpos($line, '|') !== false) {
+            $parts = explode('|', $line, 2);
+            $q = trim($parts[0]);
+            $a = trim($parts[1]);
+            if ($q !== '' && $a !== '') {
+                $items[] = ['q' => $q, 'a' => $a];
+            }
         }
     }
 
