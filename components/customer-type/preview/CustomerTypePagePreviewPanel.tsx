@@ -83,7 +83,7 @@ export default function CustomerTypePagePreviewPanel({
                 </div>
                 <p style={{ fontSize: 14, color: '#666', margin: 0 }}>
                   Linkade case-records renderas i strippen på publika sidan.
-                  Innehåll hanteras i Airtable (cms_case_pages).
+                  Innehåll hanteras i Airtable (cms_cases).
                 </p>
               </div>
             </div>

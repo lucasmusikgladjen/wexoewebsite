@@ -2,7 +2,7 @@
  * Forward and reverse mapping between Airtable `cms_customer_type_pages`
  * records och `CustomerTypePageState`.
  *
- * Schema är flat (en linked-record-länk till cms_case_pages, ingen Claude-
+ * Schema är flat (en linked-record-länk till cms_cases, ingen Claude-
  * transform). snake_case-konvention både i Airtable och här.
  */
 

@@ -4,7 +4,7 @@
 // som drivs av `[wexoe_customer_type slug="..."]`-shortcoden.
 //
 // Cases är inte längre inline-fält — de länkas via `caseIds` till
-// cms_case_pages. Builder-editorn redigerar bara customer-type-page-fält
+// cms_cases. Builder-editorn redigerar bara customer-type-page-fält
 // (hero, value, contact-form). Cases hanteras i Airtable tills en separat
 // case-editor byggs.
 
@@ -40,7 +40,7 @@ export interface CustomerTypePageState {
   benefit2: string;
   benefit3: string;
 
-  /** Linkade case-records (cms_case_pages). Read-only i builder denna runda;
+  /** Linkade case-records (cms_cases). Read-only i builder denna runda;
    *  visar bara antal i settings-panelen. */
   caseIds: string[];
 
