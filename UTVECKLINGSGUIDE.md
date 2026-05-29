@@ -541,6 +541,6 @@ Core cachar varje entitet i en WP-transient med default-TTL 24h (konfigurerbar p
 
 - `NEW_PAGE_TYPE.md` (denna mapp) — receptet för att skapa en helt ny sidtyp (plugin + schema + builder-editor). Pair-läs med samma fil i `wexoebuilder/`.
 - `wexoebuilder/CLAUDE.md` — bygg-sidan av samma system. Page-type-ramverket, Claude-transform-mellanlaget, SSOT-redigerare.
-- `MIGRATION-PLAN.md` — kanonisk plan för Wexoe → Wexoe NY-migrationen (snake_case-omskrivning). Aktuell, men inte primärt utvecklingsmaterial.
+- `ARKITEKTURPLAN.md` — kanonisk, framåtblickande arkitekturplan (modularisering: single-source-schema, deterministisk save, delade block). Spegelidentisk i båda repona. (Ersätter den slutförda `MIGRATION-PLAN.md`; migrationshistoriken finns i `IMPLEMENTATION_LOG.md`.)
 - `IMPLEMENTATION_LOG.md` — löpande logg av migrationsåtgärder. Historik, inte API.
 - `wexoe-core/src/Core.php` — koden själv. Doc-kommentarerna är auktoritativa när dokumentation och kod skiljer sig åt.

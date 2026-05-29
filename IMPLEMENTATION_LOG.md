@@ -4,6 +4,8 @@
 **Källplan:** `unifiedfeaturesplan.md` (rev 2, 2026-05-13), `MIGRATION-PLAN.md` (2026-05-14)
 **Implementation startad:** 2026-05-13
 
+> **2026-05-29:** `MIGRATION-PLAN.md` är pensionerad och ersatt av `ARKITEKTURPLAN.md` (arkitektur-refaktor). Airtable-migrationen Wexoe → Wexoe NY är slutförd; referenser till `MIGRATION-PLAN.md` nedan är historiska och dess innehåll finns i git-historiken.
+
 Detta dokument loggar varje konkret åtgärd som tas under implementationen av planen. Filer som skapas/ändras, Airtable-mutationer, designbeslut som dyker upp på vägen, samt manuella TODO:s som användaren måste utföra (när utökning till runtime krävs).
 
 ---
