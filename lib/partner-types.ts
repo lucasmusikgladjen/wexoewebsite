@@ -28,6 +28,13 @@
  */
 
 import { ContactFormState, emptyContactFormState } from './contact-form-types';
+import { FaqItem, emptyFaqItem, newFaqClientId } from './faq-block';
+
+// FAS 3: FAQ är ett delat block. Partner använder den delade `FaqItem`-typen
+// (alias bevarar `PartnerFaqItem`-namnet för befintliga referenser) och de
+// delade helpers — serialisering sker via `lib/faq-block.ts`.
+export type PartnerFaqItem = FaqItem;
+export { emptyFaqItem, newFaqClientId };
 
 /**
  * Quick-facts ikon-keys. Måste hållas i synk med
@@ -54,13 +61,6 @@ export interface PartnerQuickFact {
   icon: QuickFactIcon;
   value: string;
   label: string;
-}
-
-export interface PartnerFaqItem {
-  /** Stabilt React-key. Genereras lokalt — skickas aldrig till Airtable. */
-  clientId: string;
-  question: string;
-  answer: string;
 }
 
 export interface PartnerPageState {
@@ -154,15 +154,6 @@ export type PartnerPageSectionId =
 
 export function emptyQuickFact(): PartnerQuickFact {
   return { icon: '', value: '', label: '' };
-}
-
-/** Genererar ett tillräckligt stabilt klient-side ID för React-keys. */
-export function newFaqClientId(): string {
-  return `faq_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`;
-}
-
-export function emptyFaqItem(): PartnerFaqItem {
-  return { clientId: newFaqClientId(), question: '', answer: '' };
 }
 
 export function emptyPartnerPageState(): PartnerPageState {

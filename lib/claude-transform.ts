@@ -27,6 +27,7 @@ import {
   CASE_GALLERY_MAX,
 } from './case-types';
 import { PartnerPageState } from './partner-types';
+import { faqItemsToJson, faqItemsToLines } from './faq-block';
 
 // ─── Schemas loaded once at module boot ────────────────────────────────────
 const SCHEMA_LP = readFileSync(
@@ -1256,8 +1257,10 @@ export function sectionToPayload(sec: PageSection, index: number): Record<string
         pl_scope_division: sec.scopeDivision, pl_scope_country: sec.scopeCountry,
         pl_limit: sec.limit };
     case 'faq':
+      // FAS 3: dual-write — Q:/A:-fältet (PHP renderar från det) + JSON-spegeln.
       return { ...base,
-        faq_eyebrow: sec.eyebrow, faq_h2: sec.h2, faq_body: sec.body, faq_items: sec.items };
+        faq_eyebrow: sec.eyebrow, faq_h2: sec.h2, faq_body: sec.body,
+        faq_items: faqItemsToLines(sec.items), faq_json: faqItemsToJson(sec.items) };
     case 'testimonial':
       return { ...base,
         t_eyebrow: sec.eyebrow, t_quote: sec.quote,
