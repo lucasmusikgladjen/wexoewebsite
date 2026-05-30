@@ -15,7 +15,7 @@ import {
   clearsForTabType,
   clearsForSidebarType,
   LpTransformDownload,
-} from '@/lib/claude-transform';
+} from '@/lib/transform-shared';
 import { buildLandingTransform } from '@/lib/deterministic-transform';
 import { invalidateWexoeCoreCache } from '@/lib/wexoe-cache';
 import { getPageType } from '@/lib/page-types/registry';

@@ -1,7 +1,7 @@
 /**
  * Deterministiska state → Airtable-fält-transformer (ARKITEKTURPLAN FAS 2).
  *
- * Ersätter Claude-mellanlaget (`claude-transform.ts`) på skrivvägen för de
+ * Ersatte Claude-mellanlaget (tidigare `claude-transform.ts`, borttaget i FAS 2) på skrivvägen för de
  * sidtyper vars regler är deterministiska (vilket de alla är — Claude gjorde
  * bara mekanisk omdöpning/formatering). Ingen LLM, ingen latens, inget
  * tredjepartsberoende, och ingen risk att ett spar tappar innehåll.
@@ -28,7 +28,7 @@ import { PageState, Tab } from './types';
 import { CmsPageState, PageSection, TabsSection, TabItem } from './cms-page-types';
 import { contactFormToFields } from './contact-form-mapper';
 import { faqItemsToJson, faqItemsToLines } from './faq-block';
-import { sectionToPayload } from './claude-transform';
+import { sectionToPayload } from './transform-shared';
 import type { WriteMode } from './schema/to-fields';
 import type {
   PaTransformResult,
@@ -38,7 +38,7 @@ import type {
   CmsPageTransformResult,
   CmsPageTransformSection,
   CmsPageTransformTab,
-} from './claude-transform';
+} from './transform-shared';
 
 type Out = Record<string, unknown>;
 
