@@ -1,8 +1,8 @@
 /**
  * Forward mapping från Airtable `cms_cases`-records till `CaseState`.
  *
- * Bara fromRecord-riktningen — state → Airtable går via Claude-transform
- * (`transformCase` i `claude-transform.ts`). Schemat är flatt på Airtable-sidan
+ * Bara fromRecord-riktningen — state → Airtable går via den deterministiska
+ * skrivvägen (`buildCaseFields` i `deterministic-transform.ts`). Schemat är flatt på Airtable-sidan
  * men pseudo-arrayerna (quick_stat_N_*, result_N_*, gallery_image_N_*) packas
  * upp till riktiga arrays här så editorerna får jobba med items istället för
  * numrerade kolumner.

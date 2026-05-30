@@ -2,8 +2,8 @@
  * Forward mapping mellan Airtable `cms_partner_pages`-records och
  * `PartnerPageState`.
  *
- * Bara `fromRecord`-riktningen — state → Airtable går alltid via
- * Claude-transform (`transformPartner` i `claude-transform.ts`).
+ * Bara `fromRecord`-riktningen — state → Airtable går via den deterministiska
+ * skrivvägen (`buildPartnerFields` i `deterministic-transform.ts`).
  * snake_case-konvention både i Airtable och i denna mapper.
  *
  * Special-fält:

@@ -2,9 +2,9 @@
  * Reverse mapping from Airtable records → ProductAreaState, used by the
  * loader to hydrate the builder when editing an existing Product Area.
  *
- * Forward mapping (state → Airtable fields) now lives entirely in Claude
- * via `lib/claude-transform.ts` — there are no deterministic forward
- * mappers in this file anymore.
+ * Forward mapping (state → Airtable fields) lives in the deterministic write
+ * path (`buildProductAreaTransform` in `lib/deterministic-transform.ts`); this
+ * file holds only the reverse `fromRecord` direction.
  *
  * Post-migration: PA-familjen ligger i Wexoe NY (cms_product_pages +
  * cms_product_page_sections + cms_products + cms_solutions_mini). Alla

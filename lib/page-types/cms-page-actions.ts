@@ -43,7 +43,7 @@ import {
 import type {
   CmsPageTransformResult,
   CmsPageTransformTab,
-} from '../claude-transform';
+} from '../transform-shared';
 import { buildCmsPageTransform } from '../deterministic-transform';
 import type { RelationSyncResult } from './types';
 
