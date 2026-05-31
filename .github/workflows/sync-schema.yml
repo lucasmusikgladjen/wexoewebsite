@@ -40,16 +40,30 @@ jobs:
           owner: lucasmusikgladjen
           repositories: wexoebuilder
 
-      # 3. Hämta builder-repot (dit kopian ska) till mappen "builder/".
+      # 3. Slå upp builderns produktionsbranch = dess default-branch (dit PR:er
+      #    mergas, varifrån Vercel deployar). Hårdkoda INTE 'main' — builderns
+      #    default heter idag inte 'main', och kan dessutom döpas om utan att
+      #    synken ska brytas.
+      - name: Resolve builder default branch
+        id: builder
+        env:
+          GH_TOKEN: ${{ steps.app.outputs.token }}
+        run: |
+          branch=$(gh api repos/lucasmusikgladjen/wexoebuilder --jq .default_branch)
+          if [ -z "$branch" ]; then echo "Kunde inte läsa default-branch"; exit 1; fi
+          echo "branch=$branch" >> "$GITHUB_OUTPUT"
+          echo "Builder default branch: $branch"
+
+      # 4. Hämta builder-repot (dit kopian ska) till mappen "builder/".
       - name: Checkout wexoebuilder
         uses: actions/checkout@v4
         with:
           repository: lucasmusikgladjen/wexoebuilder
           token: ${{ steps.app.outputs.token }}
           path: builder
-          ref: main
+          ref: ${{ steps.builder.outputs.branch }}
 
-      # 4. Spegla bara *.json. README.md i builder/schema/ skyddas
+      # 5. Spegla bara *.json. README.md i builder/schema/ skyddas
       #    (exkluderas → --delete rör den inte).
       - name: Mirror schema JSON
         run: |
@@ -57,12 +71,14 @@ jobs:
           rsync -a --delete --include='*.json' --exclude='*' \
             wexoe-core/schema/ builder/schema/
 
-      # 5. Committa + pusha till builderns main ENDAST om något ändrats.
-      #    Direkt-push = går live av sig självt (om buildern auto-deployar
-      #    på push). changed-flaggan styr deploy-hooken i steg 6.
+      # 6. Committa + pusha till builderns produktionsbranch ENDAST om något
+      #    ändrats. Direkt-push = går live av sig självt (om buildern
+      #    auto-deployar på push). changed-flaggan styr deploy-hooken i steg 7.
       - name: Commit & push if changed
         id: push
         working-directory: builder
+        env:
+          BUILDER_BRANCH: ${{ steps.builder.outputs.branch }}
         run: |
           git add -A schema/
           if git diff --cached --quiet; then
@@ -73,10 +89,10 @@ jobs:
           git config user.name  "wexoe-schema-bot"
           git config user.email "wexoe-schema-bot@users.noreply.github.com"
           git commit -m "chore(schema): sync från wexoe-core@${GITHUB_SHA::7}"
-          git push origin main
+          git push origin "HEAD:$BUILDER_BRANCH"
           echo "changed=true" >> "$GITHUB_OUTPUT"
 
-      # 6. Om buildern INTE auto-deployar på push: lägg en deploy-hook-URL
+      # 7. Om buildern INTE auto-deployar på push: lägg en deploy-hook-URL
       #    i secret BUILDER_DEPLOY_HOOK så triggas ett nytt bygge här.
       #    Saknas secret:en hoppas steget tyst över.
       - name: Trigger builder deploy

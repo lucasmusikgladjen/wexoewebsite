@@ -48,13 +48,18 @@ Nackdel: tokenen är knuten till en person och måste förnyas vid utgång.
 
 ## Valfritt — trigga deploy explicit
 
-Om wexoebuilder **inte** auto-deployar på push till `main` (t.ex. ingen
-Vercel-git-koppling), skapa en **Deploy Hook**-URL hos värden och lägg den som
-secret `BUILDER_DEPLOY_HOOK` i wexoeplugins. Workflowet POST:ar då till den
+Om wexoebuilder **inte** auto-deployar på push till sin produktionsbranch (t.ex.
+ingen Vercel-git-koppling), skapa en **Deploy Hook**-URL hos värden och lägg den
+som secret `BUILDER_DEPLOY_HOOK` i wexoeplugins. Workflowet POST:ar då till den
 efter en lyckad synk så ett nytt bygge startar. Saknas secret:en hoppas steget
 tyst över (lämplig om push redan triggar deploy).
 
-- **Vercel:** Project → Settings → Git → Deploy Hooks → skapa hook för `main`.
+> Obs: workflowet slår upp builderns **default-branch** dynamiskt och pushar dit
+> — hårdkodar alltså inte `main`. Builderns default heter i skrivande stund
+> `claude/wexoe-page-builder-setup-DmUOd`; döps den om fungerar synken ändå.
+
+- **Vercel:** Project → Settings → Git → Deploy Hooks → skapa hook för builderns
+  produktionsbranch (samma branch Vercel redan deployar från).
 
 ---
 
