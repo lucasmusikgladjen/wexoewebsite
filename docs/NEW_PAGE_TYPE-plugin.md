@@ -2,9 +2,9 @@
 
 > **Är du marknadsförare? Läs `SKAPA-SIDA.md` istället.** Den filen är skriven för dig och guidar dig genom hela flowet. Denna fil är teknisk referens som LLM:er och utvecklare kan dyka i vid behov.
 
-Receptet för att lägga till en helt ny sidtyp i Wexoe-systemet. Denna fil täcker plugin-sidan: Airtable-tabellen, Core-schemat och PHP-pluginet som renderar shortcode på WP. Builder-sidan (Next.js-editorn) täcks av `wexoebuilder/NEW_PAGE_TYPE.md` — pair-läs.
+Receptet för att lägga till en helt ny sidtyp i Wexoe-systemet. Denna fil täcker plugin-sidan: Airtable-tabellen, Core-schemat och PHP-pluginet som renderar shortcode på WP. Builder-sidan (Next.js-editorn) täcks av `NEW_PAGE_TYPE-builder.md` (samma mapp) — pair-läs.
 
-Läs `UTVECKLINGSGUIDE.md` (denna mapp) först om du inte kan Core-API:t från huvudet.
+Läs `apps/wordpress/UTVECKLINGSGUIDE.md` först om du inte kan Core-API:t från huvudet.
 
 ---
 
@@ -25,7 +25,7 @@ Läs `UTVECKLINGSGUIDE.md` (denna mapp) först om du inte kan Core-API:t från h
                             ▼
   ┌──────────────────────────────────┐  ┌──────────────────────────┐
   │ FAS 2 — PHP-plugin                │  │ FAS 3 — Builder-editor   │
-  │ (denna repo)                       │  │ (wexoebuilder-repot)     │
+  │ (apps/wordpress)                   │  │ (apps/builder)           │
   │ Renderar shortcode från Core       │  │                          │
   └──────────────────────────────────┘  └──────────────────────────┘
                                                     │
@@ -67,7 +67,7 @@ En statisk HTML-fil som visar slutresultatet, med kommentartaggar som signalerar
    Mappar till Core::renderer('contact-form').
 ```
 
-Se `wexoebuilder/NEW_PAGE_TYPE.md` § FAS 0 för exempel.
+Se `NEW_PAGE_TYPE-builder.md` § FAS 0 för exempel.
 
 ### Output
 En `prototype.html` i en arbetskatalog. Den är *inte* checkad in i repon — den är en arbetsartefakt som följer med från FAS 1 till FAS 2 till FAS 3.
@@ -198,7 +198,7 @@ Aktuella delade renderers (se `UTVECKLINGSGUIDE.md` § 3.5): `hero`, `text-image
 
 ## FAS 3 — Builder-editor (annan repo)
 
-Skiftar till `wexoebuilder`. Se `wexoebuilder/NEW_PAGE_TYPE.md` för fullständigt recept.
+Skiftar till bygg-sidan (`apps/builder/`). Se `NEW_PAGE_TYPE-builder.md` för fullständigt recept.
 
 Sammanfattning av vad som händer där:
 1. State-types + mappers (Airtable record ↔ TS-state)
@@ -248,7 +248,7 @@ och vänta på feedback.
 
 ### Prompt — FAS 1 (Airtable + Core-schema)
 
-Körs i en Claude-session med Airtable MCP och `wexoeplugins`-repot. Output: en `entities/<name>.php`-fil och en skapad Airtable-tabell.
+Körs i en Claude-session i monorepot med Airtable MCP. Output: en `apps/wordpress/wexoe-core/entities/<name>.php`-fil och en skapad Airtable-tabell.
 
 ```
 Sidtypen <NAMN> ska få ett eget Airtable-bord + Core-schema.
@@ -257,8 +257,8 @@ Här är den annoterade HTML-prototypen:
 
   <bädda in prototype.html>
 
-Läs `UTVECKLINGSGUIDE.md` § 2 (Naming conventions), § 4 (Läs-schemaformat)
-och `NEW_PAGE_TYPE.md` § FAS 1.
+Läs `apps/wordpress/UTVECKLINGSGUIDE.md` § 2 (Naming conventions), § 4
+(Läs-schemaformat) och `docs/NEW_PAGE_TYPE-plugin.md` § FAS 1.
 
 Producera:
 1. En fält-lista i tabellform: Airtable-fältnamn (snake_case, engelska),
@@ -289,7 +289,7 @@ Skapa INGEN PHP-plugin och ingen builder-editor i denna fas — bara tabell + sc
 
 ### Prompt — FAS 2 (PHP-plugin)
 
-Körs i en session med `wexoeplugins`-repot. Output: en zip-bar plugin-mapp under `plugins/`.
+Körs i en session i monorepot. Output: en zip-bar plugin-mapp under `apps/wordpress/plugins/`.
 
 ```
 Tabellen och Core-schemat för <NAMN> är klart (entities/<entity_name>.php).
@@ -299,12 +299,12 @@ Här är den annoterade HTML-prototypen:
 
   <bädda in prototype.html>
 
-Här är Core-schemat (`wexoe-core/entities/<entity_name>.php`):
+Här är Core-schemat (`apps/wordpress/wexoe-core/entities/<entity_name>.php`):
 
   <bädda in schemafilen>
 
-Läs `UTVECKLINGSGUIDE.md` § 3 (Core publikt API), § 6 (Anatomi av ett
-feature-plugin) och `NEW_PAGE_TYPE.md` § FAS 2.
+Läs `apps/wordpress/UTVECKLINGSGUIDE.md` § 3 (Core publikt API), § 6 (Anatomi
+av ett feature-plugin) och `docs/NEW_PAGE_TYPE-plugin.md` § FAS 2.
 
 Studera ett existerande plugin som referens — `wexoe-audience-hero/` är
 en bra "enkel" referens; `wexoe-landing-page/` är mer komplex.
@@ -340,7 +340,7 @@ Krav:
 
 ### Prompt — FAS 3 (Builder-editor)
 
-Körs i en session med `wexoebuilder`-repot. Output: alla filer enligt checklistan i `wexoebuilder/NEW_PAGE_TYPE.md`.
+Körs i en session i monorepot (bygg-sidan, `apps/builder/`). Output: alla filer enligt checklistan i `docs/NEW_PAGE_TYPE-builder.md`.
 
 ```
 PHP-pluginet och Core-schemat för <NAMN> är klart. Nu bygger vi builder-editorn.
@@ -349,11 +349,11 @@ Här är den annoterade HTML-prototypen:
 
   <bädda in prototype.html>
 
-Här är Core-schemat (`wexoeplugins/wexoe-core/entities/<entity_name>.php`):
+Här är Core-schemat (`apps/wordpress/wexoe-core/entities/<entity_name>.php`):
 
   <bädda in schemafilen>
 
-Läs `CLAUDE.md` och `NEW_PAGE_TYPE.md` i denna repo. Studera Audience
+Läs `apps/builder/CLAUDE.md` och `docs/NEW_PAGE_TYPE-builder.md`. Studera Audience
 (`lib/page-types/audience.*`, `components/audience/`) för Lager 1-referens
 eller Product Area för Lager 3-referens.
 
@@ -364,7 +364,7 @@ Avgör först:
   prototypen kräver det (polymorfa items, pipe-format, multi-tabell-skrivning
   med specifik ordning)
 
-Producera alla filer enligt checklistan i NEW_PAGE_TYPE.md:
+Producera alla filer enligt checklistan i NEW_PAGE_TYPE-builder.md:
 - lib/<type>-types.ts
 - lib/<type>-mapper.ts
 - lib/page-types/<type>.server.ts
@@ -397,4 +397,4 @@ Visa förslag på state-struktur + section-uppdelning innan implementation.
 - `wexoe-core/write-entities/user_submissions.php` — write-schema-referens
 - `plugins/wexoe-audience-hero/wexoe-audience-hero.php` — enklaste plugin
 - `plugins/wexoe-landing-page/wexoe-landing-page.php` — komplext plugin med polymorfa tabs
-- `wexoebuilder/NEW_PAGE_TYPE.md` — bygger-sidan av samma flöde
+- `docs/NEW_PAGE_TYPE-builder.md` — bygg-sidan av samma flöde

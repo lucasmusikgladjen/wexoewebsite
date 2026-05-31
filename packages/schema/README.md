@@ -1,22 +1,27 @@
-# `schema/` — single-source entitetsscheman (ARKITEKTURPLAN FAS 0–1)
+# `schema/` — single-source entitetsscheman
 
 Det här är den **kanoniska källan** för en entitets fältlista. Ett fält
-definieras *en gång* här och konsumeras av båda repona:
+definieras *en gång* här (`packages/schema/entities/<table>.json`) och
+konsumeras av båda halvorna i monorepot:
 
-- **wexoe-core (PHP):** `entities/<table>.php` är en enrads-shim
-  `return \Wexoe\Core\Schema::from_json('<table>');`. `Schema::from_json()`
-  översätter JSON → den array-form `SchemaRegistry`/`Normalizer` förväntar sig.
-- **wexoebuilder (TS):** läser en spegelkopia av samma JSON (se
-  `wexoebuilder/schema/`) via `lib/schema/to-state.ts` för record → state.
+- **wexoe-core (PHP):** `apps/wordpress/wexoe-core/entities/<table>.php` är en
+  enrads-shim `return \Wexoe\Core\Schema::from_json('<table>');`.
+  `Schema::from_json()` läser den synkade kopian
+  `apps/wordpress/wexoe-core/schema/<table>.json` och översätter JSON → den
+  array-form `SchemaRegistry`/`Normalizer` förväntar sig.
+- **builder (TS):** läser en synkad kopia av samma JSON (se
+  `apps/builder/schema/`) via `lib/schema/to-state.ts` för record → state.
 
 Mål: ta bort den tidigare 6–10-faldiga upprepningen av samma fältlista
 (`entities/*.php`, `write-entities/*.php`, builderns `*-types.ts`,
 `*-mapper.ts`, `airtable-schema-*.md`).
 
-> **Repo-spegling:** JSON-filerna är kanoniska *här*. Buildern har en kopia
-> under `wexoebuilder/schema/` tills ett delat npm-paket / git-submodule
-> införs. Ändrar du ett schema — uppdatera båda kopiorna i samma change-set.
-> Detta är samma sanktionerade duplicering som `ARKITEKTURPLAN.md` självt.
+> **En sanningskälla, synkade kopior:** JSON-filerna här är kanoniska. De två
+> kopiorna (`apps/builder/schema/`, `apps/wordpress/wexoe-core/schema/`) är
+> committade och genereras med `npm run schema:sync` från monorepo-roten —
+> redigera dem aldrig för hand. Väktaren failar om en kopia driftat från
+> originalet. (Det finns ingen cross-repo-synk längre; den dog när monorepot
+> bildades.)
 
 ## Status (pilot)
 

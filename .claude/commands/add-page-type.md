@@ -2,9 +2,10 @@
 description: Skapa en ny sidtyp (schema + builder-editor + PHP-plugin) och verifiera med väktaren
 ---
 
-Du ska skapa en ny sidtyp `$ARGUMENTS`. Pair-läs `docs/NEW_PAGE_TYPE.md` och
-`docs/SKAPA-SIDA.md` — de beskriver hela flödet. En sidtyp är "klar" först när
-alla touchpoints finns och väktaren är grön.
+Du ska skapa en ny sidtyp `$ARGUMENTS`. Pair-läs `docs/NEW_PAGE_TYPE-builder.md`
+och `docs/NEW_PAGE_TYPE-plugin.md` (samt `docs/SKAPA-SIDA.md` för flödet) — de
+beskriver hela flödet. En sidtyp är "klar" först när alla touchpoints finns och
+väktaren är grön.
 
 Visa förslag på state-struktur + sektionsuppdelning INNAN du implementerar.
 Invänta godkännande. Sätt INTE en Claude-transform på spar-vägen — spar är
@@ -31,7 +32,7 @@ deterministiskt (rena funktioner).
 
 5. **PHP-plugin:** `apps/wordpress/plugins/wexoe-<id>/wexoe-<id>.php` — shortcode,
    Core-guard (`class_exists('\\Wexoe\\Core\\Core')`), läs via `Core::entity()`,
-   rendera med escaping + Core-helpers. Mönster i `docs/UTVECKLINGSGUIDE.md` § 6.
+   rendera med escaping + Core-helpers. Mönster i `apps/wordpress/UTVECKLINGSGUIDE.md` § 6.
 
 6. **Verifiera:** `npm run check` (schema-synk + väktare) + `cd apps/builder &&
    npx tsc --noEmit`. Om tester finns: skriv ett för transformen (`/tdd`).

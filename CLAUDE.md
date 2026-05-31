@@ -1,108 +1,121 @@
-# CLAUDE.md — Wexoe monorepo (ingång)
+# CLAUDE.md — Wexoe monorepo
 
-> Senast verifierad mot kod: 2026-05-31 (monorepo-restrukturering).
+> Ingången till hela systemet. Läs denna först, gå sedan till rätt app-CLAUDE.md.
+> Senast verifierad mot kod: 2026-05-31.
 
-Detta är **monorepot** för hela Wexoe-systemet. Den här filen är en router —
-den ger bred kontext och pekar vidare. Läs den först, gå sen till rätt app/doc.
+## Vad systemet är (i en mening)
 
-## Vad systemet är
-
-Wexoe driver sin publika sajt på WordPress (Enfold) men har flyttat allt
-innehåll till Airtable. En Next.js-builder låter marknadsförare redigera sidor
-med live-preview och skriver till Airtable; WordPress-plugins läser från Airtable
-(via `wexoe-core`) och renderar.
+Marknadsförare redigerar sidor i en **Next.js-builder** med live-preview; allt
+innehåll lagras i **Airtable**; **WordPress-plugins** läser från Airtable (via
+`wexoe-core`) och renderar de publika sidorna. Ingen marknadsförare ser någonsin
+Airtable eller WP-admin.
 
 ```
-apps/builder (Next.js)  →  Airtable  →  apps/wordpress/wexoe-core  →  feature-plugins  →  WP-sidor
-   (skriver, deterministiskt)  (CMS)        (enda Airtable-auktoriteten)    (shortcodes)
+apps/builder ──skriver──►  Airtable  ──läses av──►  apps/wordpress/wexoe-core ──►  feature-plugins ──►  publika WP-sidor
+ (Next.js/TS,             (CMS,           (PHP, enda Airtable-          (shortcodes)
+  deterministisk save)     Wexoe NY)       auktoriteten på WP-sidan)
 ```
 
-## Monorepo-layout
+Två "halvor", ett repo. Buildern (TS) och WordPress (PHP) renderar **samma**
+sidtyper var för sig — därför är den delade sanningskällan (`packages/schema`)
+och väktaren (`tools/guardian`) kärnan i hela arkitekturen: de hindrar de två
+halvorna från att glida isär.
+
+## Karta — var bor vad
 
 ```
 apps/
-  builder/        # Next.js/TS-buildern (Vercel; Root Directory = apps/builder). Egen CLAUDE.md.
-  wordpress/      # WP-plugins. wexoe-core = datalager; plugins/ = feature-plugins per sidtyp.
+  builder/          # Next.js/TS-buildern. Vercel (Root Directory = apps/builder). → apps/builder/CLAUDE.md
+  wordpress/        # WordPress-pluginsen.                                          → apps/wordpress/CLAUDE.md
+    wexoe-core/     #   datalager + helpers (enda som pratar med Airtable från WP)
+    plugins/        #   ett feature-plugin per sidtyp (renderar shortcode)
 packages/
-  schema/         # ⭐ SANNINGSKÄLLAN. entities/<table>.json (fält EN gång) + enums/ (section_type m.fl.)
+  schema/           # ⭐ SANNINGSKÄLLAN. entities/<table>.json (fältlistan EN gång) + enums/ (section_type)
 tools/
-  schema-sync.mjs        # kopierar packages/schema → committade kopior (apps/builder + wexoe-core)
-  guardian/guardian.mjs  # ⭐ VÄKTAREN — validerar paritet/enum/schema/strängar + genererar manifest
-docs/             # ARKITEKTURPLAN, MONOREPO-PLAN, NEW_PAGE_TYPE, SKAPA-SIDA, DOCS-MAP (genererad), decisions/
-manifest.json     # ⭐ GENERERAD systemkarta (av guardian)
-.claude/          # SessionStart-hook + slash-kommandon (/add-section, /add-page-type, /tdd)
+  schema-sync.mjs   # kopierar packages/schema → committade kopior (builder + wexoe-core)
+  guardian/         # ⭐ VÄKTAREN — validerar att halvorna är i synk; genererar manifest + DOCS-MAP
+  verify.mjs        # kör ALLA lokala grindar i en körning (= CI)
+  airtable-audit.mjs# jämför schemat mot den FAKTISKA Airtable-basen (bara CI)
+docs/               # tvärgående dokumentation (se docs/README.md för index)
+.claude/            # SessionStart-hook + slash-kommandon (/add-section, /add-page-type, /tdd)
+manifest.json       # ⭐ GENERERAD systemkarta (av guardian) — maskinläsbar
 ```
 
-## Sanningskällor (single source) — så här hänger det ihop
+**"Var bor allt om sidtyp/sektion X?"** → läs `docs/DOCS-MAP.md` (genererad) eller
+`manifest.json`. Leta aldrig igenom trädet för hand — väktaren har redan kartlagt det.
 
-- **Fält** definieras EN gång i `packages/schema/entities/<table>.json`. Kör
-  `npm run schema:sync` → kopior i `apps/builder/schema/` (buildern importerar
-  `@/schema/*`) och `apps/wordpress/wexoe-core/schema/` (WP-pluginet läser i
-  drift; måste vara committad så den följer med i en zip). **Redigera bara
-  originalet.** Väktaren failar om kopiorna driftar.
-- **`section_type`-menyn** definieras EN gång i
-  `packages/schema/enums/section-types.json`. PHP-dispatchern + builderns
-  SectionType valideras mot den.
-- **"Var bor allt"** → läs `docs/DOCS-MAP.md` (genererad) eller `manifest.json`.
-  Leta inte igenom trädet för hand.
+## Sanningskällor — vad synkar, vad synkar inte
+
+| Sak | Definieras EN gång i | Synkas hur | Vem mer läser |
+|---|---|---|---|
+| **Fält per entitet** | `packages/schema/entities/<table>.json` | `npm run schema:sync` → committade kopior | PHP: `Schema::from_json` · Builder: `@/schema/*` |
+| **`section_type`-menyn** | `packages/schema/enums/section-types.json` | väktaren validerar | PHP-dispatcher + builderns `SectionType` |
+| **Var allt bor** | (inget — genereras) | `npm run guardian` | `manifest.json`, `docs/DOCS-MAP.md` |
+
+**Schema-flödet, viktigt:** du redigerar **bara** originalet i
+`packages/schema/entities/`. Kör sedan `npm run schema:sync`. Det skriver två
+committade kopior:
+- `apps/builder/schema/<table>.json` — buildern importerar `@/schema/*`.
+- `apps/wordpress/wexoe-core/schema/<table>.json` — WP-pluginet läser den i drift.
+  **Måste vara committad** eftersom du deployar WP genom att ladda ner/zippa
+  mappen (online-GitHub-zipper) — inget script körs vid zip; kopian följer med
+  för att den redan ligger där.
+
+Synken sker alltså **vid push/utveckling, aldrig vid zip**. Väktaren failar om en
+kopia driftat från originalet. Detta är inte codegen — det är ren filkopia.
+(Det finns ingen cross-repo GitHub Action längre; den dog när monorepot bildades.)
 
 ## Innan du är klar: kör verify
 
 ```
-npm run verify     # ⭐ ALLA lokala grindar i en körning (= CI): schema-synk,
-                   #   guardian, tsc, lint, vitest, php -l, pest. Grön = klart.
+npm run verify        # ⭐ ALLA grindar i en körning (= CI): schema-synk, guardian,
+                      #   tsc, lint, vitest, php -l, pest. Avbryter INTE vid första felet.
 npm run verify:quick  # snabb loop under utveckling (hoppar tsc/lint)
-npm run check      # bara sanningsvakten (schema-synk-koll + guardian) — snabbast
-npm run guardian   # bygg om manifest.json + docs/DOCS-MAP.md efter strukturändring
+npm run check         # bara sanningsvakten (schema-synk + guardian) — snabbast
+npm run guardian      # bygg om manifest.json + docs/DOCS-MAP.md efter en strukturändring
 ```
-`npm run verify` är den enda sanningen för "klart": den kör samma grindar som
-CI och avbryter INTE vid första felet — du ser hela bilden i en körning. Grönt
-lokalt = grönt i CI. En ändring som lägger till/ändrar en sektion eller sidtyp
-är inte klar förrän den är grön. (CI: `.github/workflows/ci.yml`.)
 
-**Maskinläsbart för agenter:** `node tools/verify.mjs --json` och
-`node tools/guardian/guardian.mjs --json` ger `{ ok, ... }`-JSON så du kan parsa
-fel programmatiskt istället för prosa.
+`npm run verify` är **den enda sanningen för "klart"**: samma grindar som CI
+(`.github/workflows/ci.yml`), hela bilden i en körning, grönt lokalt = grönt i CI.
+En ändring som rör en sektion eller sidtyp är inte klar förrän verify är grön.
 
-**Verifieringsverktyg (alla beroendefria, Node stdlib / PHP):**
-| Verktyg | Vad det bevisar | Var |
-|---|---|---|
-| `tools/verify.mjs` | Kör + samlar alla lokala grindar (en sanning för "klart") | lokalt + CI |
-| `tools/guardian/guardian.mjs` | Intern konsistens: paritet/enum/strängar/schema-synk | lokalt + CI |
-| `tools/airtable-audit.mjs` | Schemat matchar den FAKTISKA Airtable-basen (fält/typer/section_type-enum) — driften väktaren inte kan se | **bara CI** (kräver `AIRTABLE_API_KEY`-secret; se `docs/AIRTABLE-AUDIT.md`) |
+För agenter: `node tools/verify.mjs --json` och
+`node tools/guardian/guardian.mjs --json` ger maskinläsbar `{ ok, errors[] }`.
 
-## Hårda regler
+## Hårda regler (bryt inte utan att fråga)
 
 1. **Spar är deterministiskt.** state→Airtable sker via rena funktioner
-   (`apps/builder/lib/deterministic-transform.ts`), **inga Claude-anrop på spar**.
-   Claude finns bara på input/copy (`/api/parse`, `/api/copy`). Påståenden om
-   "Claude-transform på spar" i äldre text är inaktuella — rätta dem.
+   (`apps/builder/lib/deterministic-transform.ts`) — **inga Claude-anrop på spar.**
+   Claude finns bara på input/copy (`/api/parse`, `/api/copy`). Hittar du en text
+   som påstår "Claude-transform på spar" är den inaktuell → rätta den.
 2. **Bara `wexoe-core` pratar med Airtable** från WP-sidan. Feature-plugins går
-   via `\Wexoe\Core\Core`. Duplicera aldrig Core-helpers lokalt.
+   via fasaden `\Wexoe\Core\Core`. Duplicera aldrig Core-helpers lokalt.
 3. **Redigera aldrig schema-kopiorna** (`apps/builder/schema/`,
-   `wexoe-core/schema/`) — bara `packages/schema/entities/`. Kör `schema:sync`.
-4. **Naming låst:** snake_case, engelska, prefix `core_`/`cms_`/`inbox_`. Se
-   `docs/` (UTVECKLINGSGUIDE / ARKITEKTURPLAN).
-5. **State-typer heter `<Type>State`** (standardiserat). Inga Airtable-fältnamn i UI-kod.
+   `apps/wordpress/wexoe-core/schema/`). Bara `packages/schema/entities/` + `schema:sync`.
+4. **Naming är låst:** snake_case, engelska, tabellprefix `core_`/`cms_`/`inbox_`.
+   State-typer heter `<Tabell>State` (tabellnamnet utan `cms_`, PascalCase).
+   Full tabell i `apps/wordpress/UTVECKLINGSGUIDE.md` § 2.
+5. **Inga Airtable-fältnamn i UI-kod.** State är snake_case domänfält; Airtable-namn
+   lever bara i mappers, transform-byggarna och `packages/schema`.
 
 ## Vart pekar resten?
 
-| Vad | Var |
+| Du vill… | Gå till |
 |---|---|
-| Bygg-sidan (Next.js): page-type-ramverk, deterministisk save | `apps/builder/CLAUDE.md` |
-| Core-API, schemaformat, plugin-anatomi | `apps/wordpress/UTVECKLINGSGUIDE.md` |
-| Skapa ny sidtyp (flöde / teknisk referens) | `docs/SKAPA-SIDA.md` · `docs/NEW_PAGE_TYPE.md` · `/add-page-type` |
-| Lägg till en sektion | `/add-section` |
-| TDD ur kravspec | `/tdd` |
-| Arkitektur-refaktorn (modularisering, faser) | `docs/ARKITEKTURPLAN.md` |
-| Denna infrastruktur-utrullning (faser, status) | `docs/MONOREPO-PLAN.md` |
-| Migrationshistorik / Airtable-datafixar | `docs/IMPLEMENTATION_LOG.md` |
+| Förstå bygg-sidan (page-types, save, preview) | `apps/builder/CLAUDE.md` |
+| Förstå WP-sidan (Core-API, plugins, rendering) | `apps/wordpress/CLAUDE.md` |
+| Core-API-referens (alla metoder, schemaformat) | `apps/wordpress/UTVECKLINGSGUIDE.md` |
+| Schema-formatet (fälttyper, hints) | `packages/schema/README.md` |
+| Skapa en ny sidtyp | `/add-page-type` · `docs/SKAPA-SIDA.md` (flöde) · `docs/NEW_PAGE_TYPE-*.md` (teknik) |
+| Lägga till en sektion | `/add-section` |
+| TDD ur en kravspec | `/tdd` |
+| Airtable-audit (schema ↔ verklig bas) | `docs/AIRTABLE-AUDIT.md` |
+| All dokumentation, indexerad | `docs/README.md` |
 
-## Verktyg & verifiering i denna miljö
+## Miljö
 
-- **Node 22 + PHP 8.x** finns. `npm run check` körs utan beroenden (Node stdlib).
-- Builder-deps installeras av SessionStart-hooken (`.claude/hooks/session-start.sh`)
-  → `tsc`/`lint`/`vitest` funkar. PHP: `php -l` direkt; Pest/PHPCS via composer (FAS 6).
-- **Ingen auto-deploy från WP-sidan.** En push gör inget live — användaren zippar
-  plugin-mappen (via online-GitHub-zipper) och laddar upp i WP-admin. Schema-kopian
-  i `wexoe-core/schema/` följer med i zippen automatiskt (committad).
+- **Node 22 + PHP 8.x** finns. `npm run check`/`guardian` är beroendefria (Node stdlib).
+- SessionStart-hooken (`.claude/hooks/session-start.sh`) installerar builder-deps +
+  composer-deps + kör schema-synk, så `tsc`/`vitest`/`pest` funkar direkt i en ny session.
+- **Ingen auto-deploy på WP-sidan.** En push gör inget live — du zippar plugin-mappen
+  och laddar upp i WP-admin. (Buildern auto-deployar däremot via Vercel.)
