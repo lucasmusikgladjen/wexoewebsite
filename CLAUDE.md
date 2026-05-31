@@ -74,7 +74,32 @@ lib/
   *-types.ts            # Per-sidtyp state-typer
   *-mapper.ts           # Per-sidtyp record↔state-mappning
   airtable-schema-*.md  # Specs som matas in i Claude system prompt
+  schema/               # Schema-ramverk (vanlig kod, redigeras normalt)
+    entity-schema.ts    #   schema-formatet (typer)
+    to-state.ts         #   generisk record → state (builderns Normalizer)
+schema/                 # ⚠️ AUTO-SPEGLADE *.json från wexoe-core — redigera ALDRIG (se § 3.1)
 ```
+
+### 3.1 `schema/*.json` är auto-speglade — redigera dem ALDRIG här
+
+> **Om du är en LLM/utvecklare som vill ändra ett fält: gör det INTE i det här
+> repot.** `schema/*.json` (och deras kopia under `lib/schema/`s konsumtion) är
+> **automatiska spegelkopior** av de kanoniska schemana i
+> `wexoeplugins/wexoe-core/schema/`. De är källan (single source of truth).
+
+Ett GitHub Actions-workflow i **wexoeplugins**
+(`.github/workflows/sync-schema.yml`) triggar när `wexoe-core/schema/**` ändras
+på `main`, speglar `*.json` hit och pushar direkt till builderns `main`. Allt du
+ändrar direkt i `schema/`-mappen här **skrivs över vid nästa synk**.
+
+- **Vill du ändra/lägga till ett fält?** Ändra JSON-filen i `wexoe-core/schema/`
+  i wexoeplugins-repot, pusha till `main` → ändringen dyker upp här av sig själv.
+- **Varför en kopia alls?** Repona deployas separat; buildern kan inte läsa in
+  wexoeplugins vid bygget, så en committad kopia krävs. Den hålls dock alltid i
+  synk maskinellt — aldrig för hand. Se `schema/README.md` här och
+  `wexoeplugins/.github/SCHEMA_SYNC_SETUP.md` för detaljer.
+- **`lib/schema/*.ts` (formatet + `to-state.ts`)** är vanlig kod och redigeras
+  normalt — det är bara `*.json`-datafilerna som är speglade.
 
 ---
 
