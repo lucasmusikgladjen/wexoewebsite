@@ -12,7 +12,8 @@
     },
     "autoload-dev": {
         "psr-4": {
-            "Wexoe\\Core\\": "wexoe-core/src/"
+            "Wexoe\\Core\\": "wexoe-core/src/",
+            "Wexoe\\Tests\\Support\\": "tests/Support/"
         }
     },
     "config": {

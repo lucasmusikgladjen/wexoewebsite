@@ -46,14 +46,31 @@ manifest.json     # ⭐ GENERERAD systemkarta (av guardian)
 - **"Var bor allt"** → läs `docs/DOCS-MAP.md` (genererad) eller `manifest.json`.
   Leta inte igenom trädet för hand.
 
-## Innan du är klar: kör väktaren
+## Innan du är klar: kör verify
 
 ```
-npm run check      # schema-synk-koll + guardian (paritet/enum/strängar). Grön = klart.
+npm run verify     # ⭐ ALLA grindar i en körning (= CI): schema-synk, guardian,
+                   #   tsc, lint, vitest, php -l, pest, airtable-audit. Grön = klart.
+npm run verify:quick  # snabb loop under utveckling (hoppar tsc/lint/audit)
+npm run check      # bara sanningsvakten (schema-synk-koll + guardian) — snabbast
 npm run guardian   # bygg om manifest.json + docs/DOCS-MAP.md efter strukturändring
 ```
-En ändring som lägger till/ändrar en sektion eller sidtyp är inte klar förrän
-`npm run check` är grön. (CI kör samma grind: `.github/workflows/ci.yml`.)
+`npm run verify` är den enda sanningen för "klart": den kör samma grindar som
+CI och avbryter INTE vid första felet — du ser hela bilden i en körning. Grönt
+lokalt = grönt i CI. En ändring som lägger till/ändrar en sektion eller sidtyp
+är inte klar förrän den är grön. (CI: `.github/workflows/ci.yml`.)
+
+**Maskinläsbart för agenter:** `node tools/verify.mjs --json`,
+`node tools/guardian/guardian.mjs --json`, `node tools/airtable-audit.mjs --json`
+ger alla `{ ok, ... }`-JSON så du kan parsa fel programmatiskt istället för prosa.
+
+**Verifieringsverktyg (alla beroendefria, Node stdlib / PHP):**
+| Verktyg | Vad det bevisar |
+|---|---|
+| `tools/verify.mjs` | Kör + samlar alla grindar (en sanning för "klart") |
+| `tools/guardian/guardian.mjs` | Intern konsistens: paritet/enum/strängar/schema-synk |
+| `tools/airtable-audit.mjs` | Schemat matchar den FAKTISKA Airtable-basen (fält/typer/section_type-enum). Skippar utan `AIRTABLE_API_KEY`; hård grind med nyckel (lokalt/CI-secret) |
+| `apps/wordpress/tests/Sections/RenderTest.php` | wexoe-pages-sektioner renderar rätt HTML headless (utan WP/DB/nät) via `tests/Support/RenderHarness.php` + `tests/wp-stubs.php` |
 
 ## Hårda regler
 
