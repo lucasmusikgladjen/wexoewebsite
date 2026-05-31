@@ -35,8 +35,8 @@ export const PARTNER_TABLE_IDS = {
   partnerPages: 'tblQv5E8pSgwxy6wU',
   /** För picker-dropdowns. Håll i synk med entities/cases.php. */
   cases: 'tblxH3ECSMvDTYrIQ',
-  /** För picker-dropdowns. Håll i synk med entities/product_areas.php. */
-  productAreas: 'tbl5PQR7FNHCogeya',
+  /** För picker-dropdowns. Håll i synk med entities/product_pages.php. */
+  productPages: 'tbl5PQR7FNHCogeya',
 } as const;
 
 const ICON_KEY_SET: ReadonlySet<string> = new Set(QUICK_FACT_ICON_KEYS);

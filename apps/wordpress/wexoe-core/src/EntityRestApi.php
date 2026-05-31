@@ -28,7 +28,7 @@ class EntityRestApi {
 
     /**
      * Entiteter som får editeras via denna route. Whitelist.
-     * Sid-data-tabeller (landing_pages, product_areas, audience_heroes, user_submissions)
+     * Sid-data-tabeller (landing_pages, product_pages, audience_heroes, user_submissions)
      * ingår INTE — de skrivs via egna dedikerade routes / write-paths.
      */
     const CORE_EDITABLE_ENTITIES = [

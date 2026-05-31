@@ -38,7 +38,7 @@ export default function CategoriesEditor({
       <div className="pt-2 mt-2 border-t border-gray-100">
         <Field.LinkedRecords
           label="Produktområden"
-          source="product_areas"
+          source="product_pages"
           value={state.categoryIds}
           onChange={(ids) => set('categoryIds', ids)}
           filter={(r) => r.is_active !== false}

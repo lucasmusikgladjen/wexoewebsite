@@ -8,7 +8,7 @@
 | id | server | ui |
 |---|---|---|
 | `landing` | — | — |
-| `product` | apps/builder/lib/page-types/product-area.server.ts | apps/builder/lib/page-types/product-area.ui.tsx |
+| `product-page` | apps/builder/lib/page-types/product-page.server.ts | apps/builder/lib/page-types/product-page.ui.tsx |
 | `customer-type` | apps/builder/lib/page-types/customer-type.server.ts | apps/builder/lib/page-types/customer-type.ui.tsx |
 | `page` | apps/builder/lib/page-types/cms-page.server.ts | apps/builder/lib/page-types/cms-page.ui.tsx |
 | `case` | apps/builder/lib/page-types/case.server.ts | apps/builder/lib/page-types/case.ui.tsx |
@@ -58,11 +58,11 @@
 - `lp_downloads`
 - `lp_tabs`
 - `partner_pages`
-- `product_areas`
 - `product_page_sections`
+- `product_pages`
 - `products`
 - `solutions`
 
 ## Copy-handlers (app/api/copy/route.ts)
 
-`landing`, `product-area`, `customer-type`, `case`, `page`, `partner`
+`landing`, `product-page`, `customer-type`, `case`, `page`, `partner`

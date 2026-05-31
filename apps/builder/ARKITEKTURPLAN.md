@@ -205,7 +205,7 @@ Systemet anses moderniserat när allt nedan är sant och verifierat:
 
 > Pilot-sidtyp genomgående: **`customer-type`** (`cms_customer_type_pages`) — den
 > enklaste (flat, en tabell). Den mest komplexa referensen att stresstesta mot
-> efter pilot: **`product-area`** (multi-tabell, child-records).
+> efter pilot: **`product-page`** (multi-tabell, child-records).
 
 ### FAS 0 — Fundament & format-beslut · **[BÅDA]**
 
@@ -246,7 +246,7 @@ inga "håll i synk"-kommentarer kvar för typen; läs + editor fungerar oförän
       jämför output vid varje spar, logga avvikelser. Flippa pilot till
       deterministisk väg efter ≥50 saves utan avvikelse.
       *(HOPPADES ÖVER — direkt-flippat utan shadow-jämförelse. Kör ett diff-test mot live-records innan FAS 2 stämplas verifierad.)*
-- [x] Replikera `toFields` + shadow-flip för övriga sidtyper (`product-area`,
+- [x] Replikera `toFields` + shadow-flip för övriga sidtyper (`product-page`,
       `cms-page`, `case`, `partner`, `landing`). *(alla 6 flippade — utan shadow, se ovan)*
 - [x] Radera `claude-transform.ts` och de 6 `airtable-schema-*.md` när alla
       typer är flippade. *(2026-05-30)*

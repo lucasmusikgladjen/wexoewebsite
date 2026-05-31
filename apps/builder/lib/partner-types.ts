@@ -7,7 +7,7 @@
  *
  * Sektion-ordning matchar `wexoe-partner-page/src/Renderer.php`-rendringen,
  * inte editor-quicknav-ordningen (där `Inställningar` ligger sist enligt
- * konventionen från customer-type/product-area).
+ * konventionen från customer-type/product-page).
  *
  * Schemat har tre länkade fält:
  *   - `partnerIds`  → core_partners (single-pick, pluginet använder första)

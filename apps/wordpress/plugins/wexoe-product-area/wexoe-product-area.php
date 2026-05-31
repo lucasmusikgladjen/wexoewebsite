@@ -310,7 +310,9 @@ function wexoe_pa_test_map_article_to_legacy($row) {
 }
 
 function wexoe_pa_test_fetch_product_area($slug) {
-    $repo = wexoe_pa_test_get_repo('product_areas');
+    // Entiteten heter product_pages (matchar Airtable-tabellen cms_product_pages).
+    // Plugin-basename + shortcode behålls dock (active_plugins-/WP-innehålls-kontrakt).
+    $repo = wexoe_pa_test_get_repo('product_pages');
     if (!$repo) return null;
     $row = $repo->find($slug);
     if (!$row) return null;
@@ -4212,7 +4214,7 @@ function wexoe_product_area_test_shortcode($atts) {
 
     // Clear entity caches if nocache is set.
     if ($atts['nocache'] === 'true') {
-        foreach (['product_areas', 'products', 'solutions', 'articles', 'customers'] as $entity) {
+        foreach (['product_pages', 'products', 'solutions', 'articles', 'customers'] as $entity) {
             $repo = wexoe_pa_test_get_repo($entity);
             if ($repo) {
                 $repo->clear_cache();

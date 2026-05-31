@@ -469,8 +469,9 @@ plugins/
     wexoe-landing-page.php
   wexoe-audience-hero/
     wexoe-audience-hero.php
-  wexoe-product-area/
-    wexoe-product-area.php
+  wexoe-product-area/      # Plugin-basename behålls (active_plugins-kontrakt);
+    wexoe-product-area.php #   sidtypen heter product-page i builder/schema/entitet
+
   wexoe-pages/             # One-off-sidor — dispatcher + sections/
     wexoe-pages.php          # Bootstrap, shortcode, dispatcher, SEO
     sections/                # En fil per section_type-renderer

@@ -517,7 +517,7 @@ function wexoe_pages_debug_comment($msg) {
 /* ============================================================
    FONT PRELOAD — emit DM Sans link tags once per page
    ============================================================
-   Other Wexoe plugins (landing, contact, customer-type, product-area)
+   Other Wexoe plugins (landing, contact, customer-type, product-page)
    all load DM Sans via Google Fonts. We do the same so typography is
    consistent across plugins even when this is the only one on the page.
 */

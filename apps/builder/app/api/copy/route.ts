@@ -7,7 +7,7 @@ import {
   SSOT_BASE_ID,
 } from '@/lib/airtable';
 import { TABLE_IDS as LP_TABLE_IDS } from '@/lib/airtable';
-import { PA_TABLE_IDS, PA_BASE_ID } from '@/lib/product-area-mapper';
+import { PA_TABLE_IDS, PA_BASE_ID } from '@/lib/product-page-mapper';
 import {
   CUSTOMER_TYPE_TABLE_IDS,
   CUSTOMER_TYPE_BASE_ID,
@@ -241,25 +241,25 @@ async function copyLandingPage(
   });
 }
 
-// ─── Product Area (copy owned sections; share Products/Solutions) ─────────
+// ─── Product Page (copy owned sections; share Products/Solutions) ─────────
 //
 // PA family lives in Wexoe NY with snake_case fields. Product/Solution
 // relations are shared by reference; owned section records are deep-copied.
 
-async function copyProductArea(
+async function copyProductPage(
   apiKey: string,
   sourceId: string,
   name: string | undefined,
   slug: string | undefined,
 ) {
-  const source = await getRecord(apiKey, PA_TABLE_IDS.productAreas, sourceId, PA_BASE_ID);
+  const source = await getRecord(apiKey, PA_TABLE_IDS.productPages, sourceId, PA_BASE_ID);
   const sourceName = (source.fields.name as string) || '';
   const sourceSlug = (source.fields.slug as string) || '';
 
   const newName = name?.trim() || defaultCopyName(sourceName);
   const newSlug = slug?.trim() || defaultCopySlug(sourceSlug);
 
-  if (await isSlugTaken(apiKey, PA_TABLE_IDS.productAreas, newSlug, 'slug', PA_BASE_ID)) {
+  if (await isSlugTaken(apiKey, PA_TABLE_IDS.productPages, newSlug, 'slug', PA_BASE_ID)) {
     return NextResponse.json(
       { error: `Slug "${newSlug}" finns redan. Välj ett annat.` },
       { status: 409 },
@@ -301,16 +301,16 @@ async function copyProductArea(
   fields.slug = newSlug;
   fields.section_ids = newSectionIds;
 
-  const newPa = await createRecord(apiKey, PA_TABLE_IDS.productAreas, fields, PA_BASE_ID);
+  const newPa = await createRecord(apiKey, PA_TABLE_IDS.productPages, fields, PA_BASE_ID);
 
-  await invalidateWexoeCoreCache(PA_ENTITIES, 'product-area:copy');
+  await invalidateWexoeCoreCache(PA_ENTITIES, 'product-page:copy');
 
   return NextResponse.json({
     success: true,
     id: newPa.id,
     name: newName,
     slug: newSlug,
-    type: 'product-area' as const,
+    type: 'product-page' as const,
     sectionsCopied: newSectionIds.length,
   });
 }
@@ -640,7 +640,7 @@ async function copyCmsPage(
 
 const COPY_HANDLERS: Record<string, CopyHandler> = {
   'landing': copyLandingPage,
-  'product-area': copyProductArea,
+  'product-page': copyProductPage,
   'customer-type': copyCustomerType,
   'case': copyCase,
   'page': copyCmsPage,

@@ -69,7 +69,7 @@ export const CMS_LINKED_SOURCES = {
     sortField: 'slug',
   },
   /** cms_product_pages — produktområdessidor. Linkas av partner-sidor (kategorier). */
-  product_areas: {
+  product_pages: {
     tableId: 'tbl5PQR7FNHCogeya',
     fields: [
       'slug',

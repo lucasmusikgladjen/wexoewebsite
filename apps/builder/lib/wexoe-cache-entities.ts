@@ -3,7 +3,7 @@
 // Kept in a side-effect-free module so client-safe metadata (the page-type
 // registry) can reference cache entity names without importing webhook code.
 export const LP_ENTITIES = ['landing_pages', 'lp_tabs', 'lp_downloads'] as const;
-export const PA_ENTITIES = ['product_areas', 'products', 'solutions'] as const;
+export const PA_ENTITIES = ['product_pages', 'products', 'solutions'] as const;
 // Customer-type-pages (tidigare audience_heroes) migrerades till Wexoe NY
 // och länkar nu cms_cases (case-strippens kort) — båda entiteterna invalideras
 // tillsammans när en kundtyp-sida muteras.
@@ -27,12 +27,12 @@ export const CMS_PAGES_ENTITIES = ['cms_pages', 'cms_page_sections', 'cms_sectio
 // invalidiera dem härifrån.
 export const CASE_ENTITIES = ['cms_cases'] as const;
 // Partner-sidor (leverantörssidor som Rockwell, HMS, Wittenstein, …).
-// Sidan länkar in cms_cases (success cases) och product_areas (kategorier)
+// Sidan länkar in cms_cases (success cases) och product_pages (kategorier)
 // + core_partners (identitet). Alla fyra invalideras tillsammans när en
 // partner-sida muteras så att ändringar i linked records syns omedelbart.
 export const PARTNER_ENTITIES = [
   'partner_pages',
   'cms_cases',
-  'product_areas',
+  'product_pages',
   'core_partners',
 ] as const;

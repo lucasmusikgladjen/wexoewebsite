@@ -1,7 +1,7 @@
 /**
  * Bidirektional mappning för contact-form-fält i sidtyps-records.
  *
- * Contact-form-blocket återanvänds av flera sidtyper (audience, product-area,
+ * Contact-form-blocket återanvänds av flera sidtyper (audience, product-page,
  * landing-page, ...). Sidtyperna ligger i olika baser och olika naming-eror:
  *
  *  - Legacy-basen (audience, m.fl.) — Title Case-fält:

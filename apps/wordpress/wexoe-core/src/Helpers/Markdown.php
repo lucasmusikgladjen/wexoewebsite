@@ -10,7 +10,7 @@ if (!defined('ABSPATH')) {
  *
  * Two strategies, tried in order:
  *   1. If the global \Parsedown class is loaded (e.g. by another plugin like
- *      wexoe-product-area), use it in safe mode.
+ *      wexoe-product-page), use it in safe mode.
  *   2. Otherwise, fall back to a minimal internal parser that handles:
  *        - Headers (# ## ###)
  *        - Bold (**text** or __text__)

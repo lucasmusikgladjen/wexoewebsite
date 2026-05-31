@@ -4,7 +4,7 @@
  *
  * Tar ett normaliserat partner_pages-record från Core::entity('partner_pages')
  * och producerar prototype_4.html-strukturen. Resolva linked records
- * (core_partners, cases, product_areas) i konstruktorn och cache:a på instansen.
+ * (core_partners, cases, product_pages) i konstruktorn och cache:a på instansen.
  *
  * Markup matchar prototypens .sup-*-prefixade klasser. Visual styling kommer
  * från ../assets/style.css (enqueueas av bootstrap-filen).
@@ -28,7 +28,7 @@ class Renderer {
     /** @var array Resolva success cases (max 3, aktiva, i länkad ordning). */
     private $cases;
 
-    /** @var array Resolva product-area cards (aktiva, i länkad ordning). */
+    /** @var array Resolva product-page cards (aktiva, i länkad ordning). */
     private $categories;
 
     /** @var array Parsade FAQ-items från faqs JSON-fältet. */
@@ -167,7 +167,7 @@ class Renderer {
 
     /**
      * category_ids → produktområdes-kort. Filter is_active, behåll länkad
-     * ordning. Inget order-fält på product_areas.
+     * ordning. Inget order-fält på product_pages.
      */
     private function resolve_categories(): array {
         $ids = isset($this->data['category_ids']) && is_array($this->data['category_ids'])
@@ -175,7 +175,7 @@ class Renderer {
             : [];
         if (empty($ids)) return [];
 
-        $repo = \Wexoe\Core\Core::entity('product_areas');
+        $repo = \Wexoe\Core\Core::entity('product_pages');
         if (!$repo) return [];
 
         $records = $repo->find_by_ids($ids);
@@ -605,11 +605,11 @@ class Renderer {
     }
 
     /**
-     * Produktområdes-kort. Fältmappning från product_areas-record:
+     * Produktområdes-kort. Fältmappning från product_pages-record:
      *   card_image_url   → image
      *   name             → name
      *   card_description → description
-     *   /produktomrade/{slug}/ → URL (mappar mot wexoe-product-area-plugin)
+     *   /produktomrade/{slug}/ → URL (mappar mot wexoe-product-page-plugin)
      */
     private function render_category_card(array $cat): string {
         $image       = trim((string) ($cat['card_image_url'] ?? ''));

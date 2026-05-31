@@ -48,7 +48,7 @@ export interface PaTransformLinked {
 }
 
 export interface PaTransformResult {
-  productArea: Record<string, unknown>;
+  productPage: Record<string, unknown>;
   products: PaTransformLinked[];
   solutions: PaTransformLinked[];
 }

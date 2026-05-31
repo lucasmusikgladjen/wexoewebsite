@@ -11,13 +11,13 @@ interface Props {
 }
 
 /**
- * Kategorier — grid av product-area-kort. Bild/namn/beskrivning kommer
+ * Kategorier — grid av product-page-kort. Bild/namn/beskrivning kommer
  * från cms_product_pages-recordet (card_image_url, name, card_description).
  * Pluginet returnerar ingenting om category_ids är tom → vi visar då en
  * tom state-notis i preview.
  */
 export default function CategoriesPreview({ state, active, onSelect }: Props) {
-  const categories = useLinkedRecords('product_areas', state.categoryIds).filter(
+  const categories = useLinkedRecords('product_pages', state.categoryIds).filter(
     (r) => r.is_active !== false,
   );
 

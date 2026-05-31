@@ -8,7 +8,7 @@ if (!defined('ABSPATH')) {
 /**
  * ContactForm-renderer. CSS-prefix `wxcf-*`.
  *
- * Anropas av wexoe-pages (Tier 2), wexoe-landing-page, wexoe-product-area,
+ * Anropas av wexoe-pages (Tier 2), wexoe-landing-page, wexoe-product-page,
  * wexoe-audience-hero. Returnerar HTML inkl. inline CSS + JS som POST:ar till
  * admin-ajax.php?action=wxcf_submit. Submission landar i `user_submissions`
  * via Core::submission().
