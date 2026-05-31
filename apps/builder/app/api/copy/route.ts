@@ -21,6 +21,8 @@ import {
 } from '@/lib/cms-page-types';
 import {
   invalidateWexoeCoreCache,
+  LP_ENTITIES,
+  PA_ENTITIES,
   CUSTOMER_TYPE_PAGE_ENTITIES,
   CASE_ENTITIES,
   CMS_PAGES_ENTITIES,
@@ -226,6 +228,8 @@ async function copyLandingPage(
     await createRecord(apiKey, LP_TABLE_IDS.landingPageDownloads, dlFields);
   }
 
+  await invalidateWexoeCoreCache(LP_ENTITIES, 'landing:copy');
+
   return NextResponse.json({
     success: true,
     id: newLp.id,
@@ -298,6 +302,8 @@ async function copyProductArea(
   fields.section_ids = newSectionIds;
 
   const newPa = await createRecord(apiKey, PA_TABLE_IDS.productAreas, fields, PA_BASE_ID);
+
+  await invalidateWexoeCoreCache(PA_ENTITIES, 'product-area:copy');
 
   return NextResponse.json({
     success: true,
