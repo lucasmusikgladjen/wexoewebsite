@@ -50,7 +50,7 @@ wexoe/                              # nytt repo (namn TBD av människa)
 │   ├── builder/                    # = gamla wexoebuilder (Next.js/TS), via subtree
 │   └── wordpress/                  # = gamla wexoeplugins, via subtree
 │       ├── wexoe-core/             #   datalager + helpers (enda Airtable-auktoriteten)
-│       │   └── schema/             #   ⚠️ .gitignored — materialiseras ur packages/schema vid dev/zip
+│       │   └── schema/             #   committad spegelkopia av packages/schema (synk vid push, väktarskyddad — följer med i WP-zip)
 │       └── plugins/                #   feature-plugins (en mapp per sidtyp)
 ├── packages/
 │   └── schema/                     # ⭐ SANNINGSKÄLLAN — delad, neutral
