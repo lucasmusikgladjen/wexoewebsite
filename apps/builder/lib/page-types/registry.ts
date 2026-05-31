@@ -45,7 +45,7 @@ import {
 
 export type PageTypeId =
   | 'landing'
-  | 'product'
+  | 'product-page'
   | 'customer-type'
   | 'page'
   | 'case'
@@ -94,8 +94,7 @@ export interface PageTypeMeta {
    *
    * `apiType` är strängen som POST /api/copy förväntar sig i body.type.
    * Måste matcha en registrerad handler i `app/api/copy/route.ts`.
-   * Konvention: samma som `id` för enkla typer, men `product-area` istället
-   * för `product` av historiska skäl.
+   * Konvention: samma som `id` (t.ex. `product-page`, `customer-type`).
    */
   copy?: { apiType: string };
 }
@@ -145,22 +144,22 @@ export const PAGE_TYPES = definePageTypes([
       })),
   },
   {
-    id: 'product',
+    id: 'product-page',
     label: 'Produkt',
     description: 'Produktområdesida med produkter och lösningar',
     creatable: true,
-    listUrl: '/api/product-area?action=list',
-    createPath: '/editor/product-area',
-    editPath: (id) => `/editor/product-area/${id}`,
+    listUrl: '/api/product-page?action=list',
+    createPath: '/editor/product-page',
+    editPath: (id) => `/editor/product-page/${id}`,
     cacheEntities: PA_ENTITIES,
-    copy: { apiType: 'product-area' },
+    copy: { apiType: 'product-page' },
     mapList: (data) =>
       (data.pages ?? []).map((p) => ({
         id: pickString(p, 'id'),
         name: pickString(p, 'name', 'h1', 'slug'),
         slug: pickString(p, 'slug'),
         h1: pickString(p, 'h1'),
-        type: 'product',
+        type: 'product-page',
         divisionIds: pickStringArray(p, 'divisionIds'),
       })),
   },

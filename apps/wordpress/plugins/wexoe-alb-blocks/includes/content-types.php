@@ -42,9 +42,14 @@ function wexoe_alb_content_types() {
             'list'   => 'wexoe_alb_list_by_slug',
             'render' => 'wexoe_alb_render_customer_type_page',
         ],
+        // Nyckeln 'product_areas' är ett PUBLIKT kontrakt: den sparas i Avia
+        // post_content som content_type="product_areas" (+ content_id-prefix
+        // "product_areas:{slug}"). Att byta nyckeln skulle bryta befintliga
+        // sparade block på live-sidor, så den BEHÅLLS. Bara backend-uppslaget
+        // 'entity' pekar på den omdöpta wexoe-core-entiteten 'product_pages'.
         'product_areas' => [
-            'label'  => __('Product Area', 'wexoe'),
-            'entity' => 'product_areas',
+            'label'  => __('Product Page', 'wexoe'),
+            'entity' => 'product_pages',
             'pk'     => 'slug',
             'list'   => 'wexoe_alb_list_by_slug',
             'render' => 'wexoe_alb_render_product_area',

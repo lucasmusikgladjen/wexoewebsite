@@ -17,7 +17,7 @@
  * Okända facet-namn ignoreras (debug-kommentar i WP_DEBUG).
  *
  * Scope (cat_scope_division, cat_scope_country) påverkar idag bara products
- * indirekt (products har product_page_ids → product_areas, men ingen direkt
+ * indirekt (products har product_page_ids → product_pages, men ingen direkt
  * country/division-länk). Kvar för forward-compat när scope-länkar läggs till.
  */
 

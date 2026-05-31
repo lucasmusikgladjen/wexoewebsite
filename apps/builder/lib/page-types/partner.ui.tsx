@@ -13,10 +13,10 @@
  *   9. Inställningar — slug/SEO/links (alltid synlig)
  *
  * Sektionsordningen i editorn matchar rendering-ordningen i Renderer.php,
- * med Inställningar sist (samma som customer-type / product-area).
+ * med Inställningar sist (samma som customer-type / product-page).
  *
  * Renaming-konvention för visibility-helper: identisk med
- * `product-area.ui.tsx::showToggle` — hade flyttats till ett delat
+ * `product-page.ui.tsx::showToggle` — hade flyttats till ett delat
  * helper-modul men håller den inline här för att inte plumbra typing
  * mellan sidtyperna.
  */

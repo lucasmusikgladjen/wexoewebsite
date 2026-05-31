@@ -6,7 +6,7 @@
  *
  * Tabellen ligger i Wexoe NY (cms_partner_pages) — BASE_ID är wired på
  * partnerServer. Cache-invalidering täcker partner_pages + cases +
- * product_areas + core_partners enligt `PARTNER_ENTITIES`.
+ * product_pages + core_partners enligt `PARTNER_ENTITIES`.
  */
 
 import {

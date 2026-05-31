@@ -44,7 +44,7 @@
  *   Lager 3 — Full override: skriv egen `create`/`update`/`delete` som
  *     anropar den deterministiska transformen (rena funktioner, ingen
  *     Claude). Det här är standardvalet — alla nuvarande sidtyper
- *     (customer-type, cms-page, product-area, landing-page, case, partner)
+ *     (customer-type, cms-page, product-page, landing-page, case, partner)
  *     använder det. Ger ett enhetligt sätt att transformera state →
  *     Airtable-fält. (Tidigare gick detta via en Claude-transform med en
  *     schema-MD per sidtyp; den togs bort i FAS 2.)
@@ -72,7 +72,7 @@ import { AirtableFields } from '../airtable-helpers';
 // ─── Server-side definition ─────────────────────────────────────────────────
 
 export interface PageTypeServerDef<TState, TListItem = unknown> {
-  /** Unikt ID för sidtypen, t.ex. 'audience', 'product-area', 'case'. */
+  /** Unikt ID för sidtypen, t.ex. 'audience', 'product-page', 'case'. */
   id: string;
 
   /** Visningsnamn — används i loggning, error-meddelanden. UI-label sätts

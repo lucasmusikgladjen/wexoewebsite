@@ -78,7 +78,7 @@ function defaultLabel(source: LinkedSourceName, rec: NormalizedRecord): string {
           (rec.slug as string) ||
           ''
         );
-      case 'product_areas':
+      case 'product_pages':
         return (
           (rec.name as string) ||
           (rec.h1 as string) ||

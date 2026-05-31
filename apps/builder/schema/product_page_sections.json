@@ -22,7 +22,7 @@
         },
         "product_page_ids": {
             "type": "link",
-            "entity": "product_areas"
+            "entity": "product_pages"
         },
         "h2": {
             "type": "text"

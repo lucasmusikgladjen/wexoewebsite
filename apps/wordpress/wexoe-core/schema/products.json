@@ -52,7 +52,7 @@
         },
         "product_page_ids": {
             "type": "link",
-            "entity": "product_areas"
+            "entity": "product_pages"
         },
         "article_ids": {
             "type": "link",

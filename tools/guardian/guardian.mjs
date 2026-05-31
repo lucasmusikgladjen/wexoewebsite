@@ -109,10 +109,12 @@ function checkEnums() {
 // ─────────────────────────────────────────────────────────────────────────
 // R-parity — sidtypers touchpoints
 // ─────────────────────────────────────────────────────────────────────────
-// Registry-id ≠ filnamn för två sidtyper. Detta är en KÄND namn-mismatch
-// (magisk koppling) som FAS 3 ska städa. Tills dess mappar vi explicit här;
+// Registry-id ≠ filnamn för kvarvarande sidtyper. Detta är en KÄND namn-mismatch
+// (magisk koppling) som FAS 3 städar stegvis. Tills dess mappar vi explicit här;
 // väktaren varnar så att kopplingen är synlig och inte glöms.
-const ID_TO_MODULE = { product: 'product-area', page: 'cms-page' };
+// `product` → `product-area` är borttagen: sidtypen heter nu `product-page`
+// genomgående (id = modul = filer), så ingen mismatch kvarstår.
+const ID_TO_MODULE = { page: 'cms-page' };
 // landing är medvetet legacy (lib/state.ts reducer + page-mapper.ts), ingen .server.ts.
 const LEGACY_NO_MODULE = new Set(['landing']);
 

@@ -5,7 +5,7 @@
  * `core_coworkers` filtrerat på (country + ev. division) och returnera första
  * aktiva coworker. Den används som default kontaktperson på sidan.
  *
- * Server-side only. Anropas från `/api/publish` (LP), `/api/product-area` (PA).
+ * Server-side only. Anropas från `/api/publish` (LP), `/api/product-page` (PA).
  */
 
 import { listRecords, SSOT_BASE_ID } from './airtable';

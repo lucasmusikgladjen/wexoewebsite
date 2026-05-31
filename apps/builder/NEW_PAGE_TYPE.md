@@ -170,7 +170,7 @@ Lägg till `relations[]` (Lager 2) ovanpå Lager 3 om sidtypen har child-records
 
 Varje sidtyp behöver en state→Airtable-fält-transform, antingen:
 - **Schema-driven (föredraget framåt):** `schema/<entity>.json` + återanvänd `lib/schema/to-fields.ts`. Referens: `customer-type`.
-- **Per-typ-byggare:** en `build<Type>…`-funktion i `lib/deterministic-transform.ts`. Kopiera mönstret från `buildCaseFields` / `buildPartnerFields` (flatt) eller `buildProductAreaTransform` (komplex, multi-tabell). Delade primitiver finns i `lib/transform-shared.ts`.
+- **Per-typ-byggare:** en `build<Type>…`-funktion i `lib/deterministic-transform.ts`. Kopiera mönstret från `buildCaseFields` / `buildPartnerFields` (flatt) eller `buildProductPageTransform` (komplex, multi-tabell). Delade primitiver finns i `lib/transform-shared.ts`.
 
 …plus `create`/`update` override-metoder på `PageTypeServerDef` som anropar transformen och skriver via `createRecord`/`updateRecord`.
 
@@ -218,7 +218,7 @@ Verifiera fältnamnen mot live-records innan du anser transformen klar — fel f
 10. `lib/page-types/registry.ts`:
     - Utöka `PageTypeId`-unionen med det nya id:t (`'landing' | 'product' | ... | '<type>'`). Annars rejectar TypeScript ditt nya `id`/`type` innan routen ens kan byggas.
     - Lägg till entry i `PAGE_TYPES` (id, label, description, createPath, editPath, cacheEntities, listUrl, mapList). `mapList` returnerar `PageRow[]` med `type: '<type>'` — samma literal som du la till i unionen.
-    - Sätt `copy: { apiType: '<api-type>' }` på entry:n. `apiType`-strängen är vad UI:n och `/api/copy` använder för att para ihop sidtypen med rätt handler — konvention: samma som `id`, förutom `product-area` för historiska skäl.
+    - Sätt `copy: { apiType: '<api-type>' }` på entry:n. `apiType`-strängen är vad UI:n och `/api/copy` använder för att para ihop sidtypen med rätt handler — konvention: samma som `id`.
 
 11. `app/api/copy/route.ts`:
     - Skriv en `copy<Type>(apiKey, sourceId, name, slug)`-funktion enligt mönstret som de andra typerna följer (slug-uniqueness-kollen, fält-strip av backlinks/computed, defaultCopyName/Slug-fallback, cache-invalidation).
@@ -403,7 +403,7 @@ Visa förslag på state-struktur + section-uppdelning innan du implementerar.
 - `lib/page-types/types.ts` — den definitiva spec:en för ramverket
 - `lib/page-types/registry.ts` — toppkommentar med kort checklista
 - `lib/page-types/customer-type.{server,ui}.ts` — minsta Lager 3-referens (en tabell, ingen child-records)
-- `lib/page-types/product-area.{server,ui}.ts` — komplex Lager 3-referens (multi-tabell, child-records)
+- `lib/page-types/product-page.{server,ui}.ts` — komplex Lager 3-referens (multi-tabell, child-records)
 - `lib/deterministic-transform.ts` — per-typ skriv-byggare (`build<Type>`); inga Claude-anrop
 - `lib/transform-shared.ts` — delade skriv-primitiver (sectionToPayload, clears*, result-typer)
 - `lib/schema/` + `schema/<entity>.json` — schema-driven transform (single-source, pilot customer-type)

@@ -50,7 +50,7 @@ app/
   globals/              # SSOT-redigerare (per core_* entity)
   api/
     audience/           # CRUD-route för audience-sidor
-    product-area/       # CRUD-route för produktsidor
+    product-page/       # CRUD-route för produktsidor
     page/               # CRUD-route för CMS pages (informationssidor)
     read/               # Läs-route för landing pages (legacy)
     publish/            # Cache-invalidering mot WP
@@ -58,7 +58,7 @@ app/
     copy/               # AI-textgenerering
 components/
   audience/             # Editor-fält + preview-komponenter per sidtyp
-  product-area/
+  product-page/
   cms-page/
   editors/              # Legacy LP-editor (migreras till page-types)
   preview/              # Legacy LP-preview
@@ -158,7 +158,7 @@ Det viktigaste mönstret i hela buildern: hur det putsade editor-statet översä
 **Lösning:** Buildern håller den enkla modellen i sitt state. Vid spar kör server-routen en **ren funktion** som översätter state → Airtable-fält, plus metadata (`_clientIndex`, `_recordId`) för att korrelera nya/befintliga records. Backenden diffar och PATCHar/CREATEar/DELETEar. Två varianter:
 
 - **`lib/schema/to-fields.ts`** — schema-driven (single-source). Härleder mappningen ur `schema/<entity>.json`. Pilot: `customer-type`. Dit hela arkitekturen är på väg (se `ARKITEKTURPLAN.md` FAS 1).
-- **`lib/deterministic-transform.ts`** — handskrivna per-typ-byggare (`buildLandingTransform`, `buildProductAreaTransform`, `buildCmsPageTransform`, `buildPartnerFields`, `buildCaseFields`) för de typer som ännu inte flyttats till den schema-drivna vägen. Delade primitiver (`sectionToPayload`, stale-field-`clears*`, result-typer) ligger i `lib/transform-shared.ts`.
+- **`lib/deterministic-transform.ts`** — handskrivna per-typ-byggare (`buildLandingTransform`, `buildProductPageTransform`, `buildCmsPageTransform`, `buildPartnerFields`, `buildCaseFields`) för de typer som ännu inte flyttats till den schema-drivna vägen. Delade primitiver (`sectionToPayload`, stale-field-`clears*`, result-typer) ligger i `lib/transform-shared.ts`.
 
 **Varför rena funktioner (och inte Claude)?** Spar är *mekaniskt och deterministiskt* — döpa om `statNumber` → `stat_number`, serialisera en lista till lines-format. En ren funktion gör det snabbare, gratis och utan risk att hallucinera bort innehåll. (Historik: skrivvägen gick tidigare via en Claude-transform med ett MD-schema per sidtyp; den togs bort i FAS 2 eftersom editorn redan producerar rent state innan spar — Claude tillförde bara latens, kostnad och icke-determinism. Claude finns kvar på input-/copy-lagret, aldrig på spar. Se `ARKITEKTURPLAN.md` § 1.4.)
 
@@ -190,7 +190,7 @@ För riktiga sidor är detta för fattigt — då går vi via page-types-ramverk
 - **snake_case** överallt i state, mappers, scheman och Airtable display-namn. Buildern speglar Core-konventionen. Se `wexoeplugins/UTVECKLINGSGUIDE.md` § Naming.
 - **Inga Airtable-fältnamn i UI-kod.** State är snake_case domänfält; Airtable-namn finns bara i mappers, transform-byggarna och `schema/`.
 - **Per-sidtyp typer i `lib/<type>-types.ts`.** State-typen ska kunna serialiseras (skickas server→client som JSON utan funktioner/Date-objekt).
-- **State-typ-namn matchar Airtable-tabellen.** Regel: `<Tabell>State` där `<Tabell>` = tabellnamnet utan `cms_`-prefix i PascalCase. Så `cms_partner_pages` → `PartnerPageState`, `cms_cases` → `CaseState`, `cms_customer_type_pages` → `CustomerTypePageState`, `cms_pages` → `CmsPageState`. **Dokumenterat undantag:** `ProductAreaState` (tabell `cms_product_pages`) behåller sitt interna namn eftersom hela sidtypen heter `product-area` i id/filer/mapper/bas — där väger kod-konsekvens tyngre än tabellnamnet. Nya sidtyper följer huvudregeln (matcha tabellen) om inte ett lika starkt internt namn redan är etablerat.
+- **State-typ-namn matchar Airtable-tabellen — utan undantag.** Regel: `<Tabell>State` där `<Tabell>` = tabellnamnet utan `cms_`-prefix i PascalCase. Så `cms_partner_pages` → `PartnerPageState`, `cms_cases` → `CaseState`, `cms_customer_type_pages` → `CustomerTypePageState`, `cms_pages` → `CmsPageState`, `cms_product_pages` → `ProductPageState`. (Sidtypen `product-page` döptes om i FAS 3 så att id/filer/mapper/bas och state-typen alla matchar tabellen `cms_product_pages` — det tidigare undantaget `ProductAreaState` finns inte längre.)
 - **State-uppdateringar är immutabla.** Editor-komponenter får `state` + `onChange(next)`. Använd spread `{ ...state, foo: bar }`.
 - **Server-pages hydrerar state.** Server-page hämtar från Airtable, kör `fromRecord`, skickar `initialState` som prop till client-builder. Klienten skickar aldrig egna Airtable-anrop.
 - **Cache-invalidering är obligatorisk.** Varje muterande route kör `clearWexoeCache(cacheEntities)` efter lyckad skrivning. Annars stale page-plugins.

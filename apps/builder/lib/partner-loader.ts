@@ -3,7 +3,7 @@
  *
  * Tunn wrapper — partner-sidan har bara en tabell, så loader behöver inte
  * göra något smart. Filen finns för konsekvens med customer-type-loader
- * och product-area-loader (vilket gör route-factory:n och edit-pages
+ * och product-page-loader (vilket gör route-factory:n och edit-pages
  * symmetriska över sidtyper).
  */
 

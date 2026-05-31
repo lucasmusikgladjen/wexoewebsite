@@ -12,7 +12,7 @@
  * Källor:
  *   - `core_*` (alla CoreEntityName från `lib/core/registry`).
  *   - CMS-tabeller via `CmsLinkedSourceName` i `lib/linked-sources.ts`
- *     (idag: products, articles, cases, product_areas).
+ *     (idag: products, articles, cases, product_pages).
  *
  * Endpoint: en enda generisk route `/api/linked/[source]` som dispatchar
  * mellan core-normaliseringen och CMS-passthrough på serversidan.

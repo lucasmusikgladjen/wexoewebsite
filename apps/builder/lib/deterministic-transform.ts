@@ -23,7 +23,7 @@ import {
   CASE_RESULTS_MAX,
   CASE_GALLERY_MAX,
 } from './case-types';
-import { ProductAreaState, LinkedProduct, LinkedSolution } from './product-area-types';
+import { ProductPageState, LinkedProduct, LinkedSolution } from './product-page-types';
 import { PageState, Tab } from './types';
 import { CmsPageState, PageSection, TabsSection, TabItem } from './cms-page-types';
 import { contactFormToFields } from './contact-form-mapper';
@@ -303,12 +303,12 @@ export function buildCaseFields(state: CaseState, mode: WriteMode): Out {
 
 // ─── Product Area (multi-record: products + solutions) ─────────────────────
 //
-// Returnerar samma shape som `transformProductArea` (PaTransformResult) så att
-// orchestreringen i `product-area-actions.ts` (child-record-diff, link-arrayer,
-// Normal-sektioner) är oförändrad. `productArea.fields` utelämnar ALLA
+// Returnerar samma shape som `transformProductPage` (PaTransformResult) så att
+// orchestreringen i `product-page-actions.ts` (child-record-diff, link-arrayer,
+// Normal-sektioner) är oförändrad. `productPage.fields` utelämnar ALLA
 // link-/section-fält + `name` — dem sätter actions-koden.
 
-function buildPaParentFields(state: ProductAreaState, mode: WriteMode): Out {
+function buildPaParentFields(state: ProductPageState, mode: WriteMode): Out {
   const o: Out = {};
   putText(o, 'slug', state.slug, mode);
   putText(o, 'h1', state.h1, mode);
@@ -391,12 +391,12 @@ function buildPaSolutionFields(s: LinkedSolution, index: number, mode: WriteMode
   return o;
 }
 
-export function buildProductAreaTransform(
-  state: ProductAreaState,
+export function buildProductPageTransform(
+  state: ProductPageState,
   mode: WriteMode,
 ): PaTransformResult {
   return {
-    productArea: buildPaParentFields(state, mode),
+    productPage: buildPaParentFields(state, mode),
     products: state.products.map((p, i) => ({
       _clientIndex: i,
       _recordId: p.recordId || null,

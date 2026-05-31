@@ -154,7 +154,7 @@
         },
         "category_ids": {
             "type": "link",
-            "entity": "product_areas"
+            "entity": "product_pages"
         },
         "show_faq": {
             "type": "bool"
