@@ -147,7 +147,7 @@ loggen finns i `IMPLEMENTATION_LOG.md`.
   Koden bär "håll i synk med …"-kommentarer på ≥5 ställen.
 - **Claude på spar-vägen**: `claude-transform.ts` (~1 570 rader) +
   6 schema-MD (~1 255 rader). ~1–3 s latens/spar, tokenkostnad, defensiva guards
-  mot att tom array raderar allt innehåll.
+  mot att tom array raderar allt innehåll. **(✅ löst i FAS 2 — `claude-transform.ts` borttaget 2026-05-30; se § 6.)**
 - **Render-duplicering** (plugins, ~26 200 rader PHP): 14/14 plugins har egen
   inline-scoped CSS (~28 KB duplicerat), 6/15 sektionstyper implementerade på
   flera ställen.
@@ -162,20 +162,25 @@ loggen finns i `IMPLEMENTATION_LOG.md`.
 
 Systemet anses moderniserat när allt nedan är sant och verifierat:
 
-- [ ] Ett fält i en sidtyp definieras på **exakt ett ställe** (ett delat schema);
+- [~] Ett fält i en sidtyp definieras på **exakt ett ställe** (ett delat schema);
       typ, mapper, editor-fält och PHP-läsning *härleds* därifrån.
-- [ ] **Spar gör 0 Anthropic-anrop.** `claude-transform.ts` är borttagen.
-- [ ] Återkommande element (contact_form, faq)
+      *(pilot `customer-type` sparar ur JSON-schemat; gammal mapper/state-typ kvar, 1/6 typer)*
+- [x] **Spar gör 0 Anthropic-anrop.** `claude-transform.ts` är borttagen.
+      *(2026-05-30: alla 6 typer kör deterministisk transform; `claude-transform.ts` + 6 schema-MD raderade)*
+- [~] Återkommande element (contact_form, faq)
       definieras **en gång** (schema + editor + render) och återanvänds.
+      *(faq-block + `contact_form_json` tillagda additivt; gamla kolumner kvar)*
 - [ ] Marknadsföraren kan fortfarande ändra contact-form-text **per sida** utan
       att schemat lever i flera tabeller.
-- [ ] Preview (builder) och render (plugin) delar **en källa** för
+- [~] Preview (builder) och render (plugin) delar **en källa** för
       block-struktur och för design-tokens (färg/typografi).
+      *(`DesignTokens.php` finns; konsumeras ännu av 0 feature-plugins)*
 - [ ] `automation-pillar` konsoliderad till `wexoe-pages`-sektioner (ingen
       deprecated parallell-plugin kvar).
-- [ ] **0 oanvända scheman** (`write-entities`-sidscheman borttagna eller
+- [~] **0 oanvända scheman** (`write-entities`-sidscheman borttagna eller
       faktiskt använda), **en** case-modell, **0** legacy-base-referenser.
-- [ ] Claude finns kvar **enbart** på explicita input-/copy-åtgärder, aldrig
+      *(en case-modell ✅; plugins 0 legacy-ref ✅; builder har kvar `LEGACY_BASE_ID`; några `write-entities` återställda)*
+- [x] Claude finns kvar **enbart** på explicita input-/copy-åtgärder, aldrig
       på spar.
 
 ---
@@ -204,14 +209,14 @@ Systemet anses moderniserat när allt nedan är sant och verifierat:
 
 ### FAS 0 — Fundament & format-beslut · **[BÅDA]**
 
-- [ ] Besluta källformat för delat schema: **neutral JSON** i
+- [x] Besluta källformat för delat schema: **neutral JSON** i
       `wexoe-core/schema/<entity>.json`, läst av både wexoe-core (PHP) och
       buildern (TS). Motiv: båda repona kan läsa JSON utan codegen-steg; PHP är
       inte importerbart i TS och tvärtom.
-- [ ] Skriv en kort `wexoe-core/schema/README.md` som definierar schema-formatet
+- [x] Skriv en kort `wexoe-core/schema/README.md` som definierar schema-formatet
       (fält-typer: text, richtext, int, float, bool, image, url, link, lines,
       block-referens) — superset av dagens `Normalizer`-typer.
-- [ ] Den här planen committad i båda repona.
+- [x] Den här planen committad i båda repona.
 
 **Klar när:** schema-formatet är dokumenterat och godkänt av människa.
 
@@ -234,15 +239,17 @@ inga "håll i synk"-kommentarer kvar för typen; läs + editor fungerar oförän
 
 ### FAS 2 — Deterministisk save (Claude bort från Lager B) · **[BUILDER]** · *kräver FAS 1*
 
-- [ ] Implementera generisk `toFields(state, schema, mode)` (ren funktion;
+- [x] Implementera generisk `toFields(state, schema, mode)` (ren funktion;
       camelCase→snake_case, lines-join, pseudo-array-expansion, block-serialisering).
+      *(`lib/schema/to-fields.ts` + per-typ-byggarna i `deterministic-transform.ts`)*
 - [ ] **Shadow-mode:** kör `toFields` parallellt med `transformCustomerType`,
       jämför output vid varje spar, logga avvikelser. Flippa pilot till
       deterministisk väg efter ≥50 saves utan avvikelse.
-- [ ] Replikera `toFields` + shadow-flip för övriga sidtyper (`product-area`,
-      `cms-page`, `case`, `partner`, `landing`).
-- [ ] Radera `claude-transform.ts` och de 6 `airtable-schema-*.md` när alla
-      typer är flippade.
+      *(HOPPADES ÖVER — direkt-flippat utan shadow-jämförelse. Kör ett diff-test mot live-records innan FAS 2 stämplas verifierad.)*
+- [x] Replikera `toFields` + shadow-flip för övriga sidtyper (`product-area`,
+      `cms-page`, `case`, `partner`, `landing`). *(alla 6 flippade — utan shadow, se ovan)*
+- [x] Radera `claude-transform.ts` och de 6 `airtable-schema-*.md` när alla
+      typer är flippade. *(2026-05-30)*
 
 **Klar när:** spar gör 0 Anthropic-anrop; tom-array-guards behövs inte längre
 (deterministiskt); p95 save-latens väsentligt lägre.
@@ -310,19 +317,32 @@ borta; preview och render delar färg/typografi-källa.
 
 | Fas | Status | Repo | Kort notis |
 |---|---|---|---|
-| 0 — Fundament | [ ] | BÅDA | — |
-| 1 — Single source schema (pilot) | [ ] | BÅDA | — |
-| 2 — Deterministisk save | [ ] | BUILDER | — |
-| 3 — Delade block | [ ] | BÅDA | — |
-| 4 — Delad CSS/tokens | [ ] | BÅDA | — |
-| 5 — Plugin-konsolidering | [ ] | PLUGINS | — |
-| 6 — Död kod/legacy | [ ] | BÅDA | — |
-| 7 — Claude på input (valfritt) | [ ] | BUILDER | — |
+| 0 — Fundament | [x] | BÅDA | `schema/` + README.md finns; plan committad i båda. |
+| 1 — Single source schema (pilot) | [~] | BÅDA | JSON-schema finns för `customer-type`; spar kör schema-drivet. Gammal `customer-type-mapper.ts` + state-typ kvar; ej replikerat (1/6). |
+| 2 — Deterministisk save | [~] | BUILDER | Alla 6 typer kör deterministisk transform; `claude-transform.ts` + 6 MD raderade (2026-05-30). **Shadow-mode/verifiering hoppades över** — kör diff-test innan [x]. |
+| 3 — Delade block | [~] | BÅDA | `faq`-block + `contact_form_json` tillagda **additivt**; 14 `contact_form_*`-kolumner kvar i ≥4 tabeller, data ej migrerad. |
+| 4 — Delad CSS/tokens | [~] | BÅDA | `DesignTokens.php` byggd men konsumeras av **0** feature-plugins; ~25 filer har kvar egen inline-`<style>`. |
+| 5 — Plugin-konsolidering | [ ] | PLUGINS | Ej påbörjad. |
+| 6 — Död kod/legacy | [~] | BÅDA | Case → `cms_cases` klar; plugins 0 legacy-ref. Kvar: builder `LEGACY_BASE_ID`, återställda `write-entities/cms_*`, radera Airtable-tabell `cms_case_pages`. |
+| 7 — Claude på input (valfritt) | [~] | BUILDER | `parse-input.ts` + `/api/parse` finns (ev. stub); byggt före FAS 2-beroendet. |
 
 ### Ändringslogg
 
 Lägg nyaste överst. Format: `YYYY-MM-DD — [repo] — vad gjordes / vad återstår`.
 
+- 2026-05-30 — [BÅDA] — **Tracker-avstämning mot faktiskt kodläge.** Git-loggen
+  visade FAS 1–4/6/7 som mergeade medan § 6 stod på noll — § 3/5/6 uppdaterade
+  till verkligt läge (`[~]` där den nya vägen lagts till *additivt* men den
+  gamla vägen/datan/verifieringen ännu är kvar). Kärna: FAS 0 klar; FAS 2
+  funktionellt klar men shadow-mode skippades; FAS 1/3/4/6/7 påbörjade men ingen
+  uppfyller sina "Klar när"-kriterier — systemet kör dubbla vägar parallellt.
+- 2026-05-30 — [BUILDER] — **FAS 2-städning:** `claude-transform.ts` (1 576 rader
+  döda `transform*()`) + de 6 `airtable-schema-*.md` raderade. Levande
+  skriv-primitiver (`sectionToPayload`, `clearsForTabType/Sidebar`, result-typerna)
+  flyttade till nya `lib/transform-shared.ts`; importer ompekade; `tsc --noEmit`
+  grön. Docs (CLAUDE.md § 5, NEW_PAGE_TYPE.md, mapper-headers) uppdaterade så de
+  inte längre beskriver en Claude-spar-väg. **Kvar:** diff-test (deterministisk vs
+  tidigare Claude-output) på riktiga records innan FAS 2 stämplas [x].
 - 2026-05-29 — [BÅDA] — Case-konsolideringen (PR #54/#72) slog ihop
   `case_pages`/`cases` → kanoniska `cms_cases` och införde en central `Permalink`
   (PHP `Permalink.php` ↔ TS `permalink.ts`, manuellt speglad). FAS 6:s

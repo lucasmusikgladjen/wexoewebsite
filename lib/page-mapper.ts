@@ -2,9 +2,9 @@
  * Reverse mapping from Airtable records → PageState, used by the editor to
  * hydrate the builder when editing an existing Landing Page.
  *
- * Forward mapping (state → Airtable fields) now lives entirely in Claude
- * via `lib/claude-transform.ts` — there are no deterministic forward
- * mappers in this file anymore.
+ * Forward mapping (state → Airtable fields) lives in the deterministic write
+ * path (`buildLandingTransform` in `lib/deterministic-transform.ts`); this
+ * file holds only the reverse `fromRecord` direction.
  */
 
 import {

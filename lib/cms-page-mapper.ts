@@ -10,6 +10,7 @@
 
 import { AirtableRecord } from './airtable';
 import { asString, asNumber, asBool, asLinkIds } from './airtable-helpers';
+import { faqItemsFromStored } from './faq-block';
 import {
   BaseSection,
   CmsPageState,
@@ -310,7 +311,8 @@ export function sectionFromRecord(
         eyebrow: asString(f['faq_eyebrow']),
         h2: asString(f['faq_h2']),
         body: asString(f['faq_body']),
-        items: asString(f['faq_items']),
+        // FAS 3: read-prefer JSON-spegeln, annars Q:/A:-fältet (bakåtkompat).
+        items: faqItemsFromStored(f['faq_json'], f['faq_items']),
       };
       return sec;
     }

@@ -160,18 +160,21 @@ FAS 1 (schema) och FAS 2 (PHP-plugin) körs först. Denna fas antar att:
 
 ### Trelagsbeslut
 
-Alla sidtyper använder **Lager 3 + Claude-transform**. Börja alltid där — också för sidtyper vars schema är 1-till-1 mellan state och Airtable. Enhetlig kod över alla sidtyper, schema-ändringar görs i en MD-fil, ingen risk att en handskriven mapper hamnar ur synk.
+Alla sidtyper använder **Lager 3 med deterministisk transform** (rena funktioner, inga Claude-anrop på spar — Claude-transformen togs bort i FAS 2). Börja alltid där — också för sidtyper vars schema är 1-till-1 mellan state och Airtable. Enhetlig kod över alla sidtyper.
 
-Lägg till `relations[]` (Lager 2) ovanpå Lager 3 om sidtypen har child-records i separat tabell (t.ex. tabs, downloads, products). Lager 1 (handskriven `stateToFields` utan Claude) stöds av ramverket men används inte i produktionen.
+Lägg till `relations[]` (Lager 2) ovanpå Lager 3 om sidtypen har child-records i separat tabell (t.ex. tabs, downloads, products). Lager 1 (handskriven `stateToFields`) stöds av ramverket men används inte i produktionen.
 
-### Claude-transform-checklistan
+### Transform-checklistan
 
-Varje sidtyp behöver:
-- `lib/airtable-schema-<type>.md` — Markdown-spec med komplett fältlista, typer, formateringsregler. Matas in i Claude system prompt.
-- Transform-funktion i `lib/claude-transform.ts` — payload-builder + system-prompt-builder + `transform<Type>()`. Kopiera mönstret från `transformCustomerType` (enklast) eller `transformProductArea` (komplex, multi-tabell).
-- `create` och `update` override-metoder på `PageTypeServerDef` som anropar transform-funktionen och skriver till Airtable.
+> **Riktningen är dit, men mallen är inte spikad än.** Den schema-drivna vägen är pilot på `customer-type`; övriga typer använder fortfarande per-typ-byggare. Vill du göra en ny typ schema-driven — vänta gärna in att piloten körts hela vägen (ARKITEKTURPLAN FAS 1). Annars: kopiera närmaste per-typ-byggare.
 
-Verifiera schema-MD mot live-records innan du anser den klar — fel fältnamn i schema-MD är det vanligaste felscenariot i hela Claude-transform-flödet. Claude returnerar ett korrekt-utseende svar som ändå PATCHar fel fält.
+Varje sidtyp behöver en state→Airtable-fält-transform, antingen:
+- **Schema-driven (föredraget framåt):** `schema/<entity>.json` + återanvänd `lib/schema/to-fields.ts`. Referens: `customer-type`.
+- **Per-typ-byggare:** en `build<Type>…`-funktion i `lib/deterministic-transform.ts`. Kopiera mönstret från `buildCaseFields` / `buildPartnerFields` (flatt) eller `buildProductAreaTransform` (komplex, multi-tabell). Delade primitiver finns i `lib/transform-shared.ts`.
+
+…plus `create`/`update` override-metoder på `PageTypeServerDef` som anropar transformen och skriver via `createRecord`/`updateRecord`.
+
+Verifiera fältnamnen mot live-records innan du anser transformen klar — fel fältnamn PATCHar fel fält.
 
 ### Checklista (Lager 3, standardflöde)
 
@@ -187,13 +190,13 @@ Verifiera schema-MD mot live-records innan du anser den klar — fel fältnamn i
 
 2. `lib/<type>-mapper.ts`:
    ```ts
-   // Bara fromRecord-riktningen. State → Airtable går via Claude-transform i Lager 3.
+   // Bara fromRecord-riktningen. State → Airtable går via den deterministiska transformen i Lager 3.
    export function <type>StateFromRecord(r: AirtableRecord): <Type>State { ... }
    ```
 
-3. `lib/airtable-schema-<type>.md` + transform-funktion i `lib/claude-transform.ts` (se Claude-transform-checklistan ovan).
+3. Transform: `schema/<entity>.json` (schema-driven, föredraget) eller en `build<Type>`-funktion i `lib/deterministic-transform.ts` (se Transform-checklistan ovan).
 
-4. `lib/page-types/<type>.server.ts`: instansiera `PageTypeServerDef<<Type>State, <ListItem>>` med id/label/tableId/fromRecord/listItemMapper/slug och `create`/`update` override:s som anropar `transform<Type>` + skriver via `createRecord`/`updateRecord`.
+4. `lib/page-types/<type>.server.ts`: instansiera `PageTypeServerDef<<Type>State, <ListItem>>` med id/label/tableId/fromRecord/listItemMapper/slug och `create`/`update` override:s som anropar transformen + skriver via `createRecord`/`updateRecord`.
 
 5. `lib/page-types/<type>.ui.tsx`: instansiera `PageTypeUIDef<<Type>State>` med sections (en per `<!-- section -->` i prototypen), `previewLayout`, `slugInput`.
 
@@ -377,8 +380,9 @@ också en existerande sidtyp som referens — Customer Type
 Product Area är komplex Lager 3 med child-records.
 
 Producera alla filer enligt checklistan i NEW_PAGE_TYPE.md. Alla sidtyper
-använder Lager 3 + Claude-transform — börja med att skriva schema-MD och
-transform-funktion. Om sidtypen har child-records i separat tabell, lägg
+använder Lager 3 med deterministisk transform — skriv `schema/<entity>.json`
+(schema-driven) eller en `build<Type>`-funktion i `deterministic-transform.ts`.
+Om sidtypen har child-records i separat tabell, lägg
 till `relations[]` (Lager 2) ovanpå.
 
 Krav:
@@ -400,7 +404,8 @@ Visa förslag på state-struktur + section-uppdelning innan du implementerar.
 - `lib/page-types/registry.ts` — toppkommentar med kort checklista
 - `lib/page-types/customer-type.{server,ui}.ts` — minsta Lager 3-referens (en tabell, ingen child-records)
 - `lib/page-types/product-area.{server,ui}.ts` — komplex Lager 3-referens (multi-tabell, child-records)
-- `lib/claude-transform.ts` — Claude-mellanlaget; alla `transform<Type>` lever här
-- `lib/airtable-schema-*.md` — en per sidtyp; specifikationen som matas in i Claude
+- `lib/deterministic-transform.ts` — per-typ skriv-byggare (`build<Type>`); inga Claude-anrop
+- `lib/transform-shared.ts` — delade skriv-primitiver (sectionToPayload, clears*, result-typer)
+- `lib/schema/` + `schema/<entity>.json` — schema-driven transform (single-source, pilot customer-type)
 - `lib/route-factory.ts` — `createPageRoute()` factory
 - `components/audience/` — kanonisk editor + preview-uppdelning

@@ -15,6 +15,8 @@
  * varje korts inre editor är typ-medveten.
  */
 
+import { FaqItem } from './faq-block';
+
 // ─── Singleselect-värden (matchar Airtable-choices exakt) ─────────────────
 
 export type SectionType =
@@ -253,7 +255,8 @@ export interface FaqSection extends BaseSection {
   eyebrow: string;
   h2: string;
   body: string;
-  items: string;
+  /** FAS 3: strukturerad delad FAQ-modell (tidigare en rå Q:/A:-sträng). */
+  items: FaqItem[];
 }
 
 export interface TestimonialSection extends BaseSection {
@@ -431,7 +434,7 @@ export function emptySection(type: SectionType): PageSection {
         variant: 'grid', partnerManualIds: [],
         scopeDivision: '', scopeCountry: '', limit: 0 };
     case 'faq':
-      return { ...base, type: 'faq', eyebrow: '', h2: '', body: '', items: '' };
+      return { ...base, type: 'faq', eyebrow: '', h2: '', body: '', items: [] };
     case 'testimonial':
       return { ...base, type: 'testimonial', eyebrow: '', quote: '',
         authorName: '', authorTitle: '', authorImageUrl: '',

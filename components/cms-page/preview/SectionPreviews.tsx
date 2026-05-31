@@ -488,23 +488,8 @@ export function PartnerListPreview({ section }: { section: PartnerListSection })
 }
 
 export function FaqPreview({ section }: { section: FaqSection }) {
-  const items: { q: string; a: string }[] = [];
-  let pending: { q?: string; a?: string } = {};
-  for (const line of section.items.split('\n')) {
-    const trimmed = line.trim();
-    if (trimmed.startsWith('Q:')) {
-      if (pending.q !== undefined || pending.a !== undefined) {
-        items.push({ q: pending.q ?? '', a: pending.a ?? '' });
-        pending = {};
-      }
-      pending.q = trimmed.slice(2).trim();
-    } else if (trimmed.startsWith('A:')) {
-      pending.a = trimmed.slice(2).trim();
-    }
-  }
-  if (pending.q !== undefined || pending.a !== undefined) {
-    items.push({ q: pending.q ?? '', a: pending.a ?? '' });
-  }
+  // FAS 3: items är nu en strukturerad FaqItem[] (tidigare en rå Q:/A:-sträng).
+  const items = section.items.map((it) => ({ q: it.question, a: it.answer }));
 
   return (
     <div style={{ background: C.paper, ...sectionPad, fontFamily: font }}>
