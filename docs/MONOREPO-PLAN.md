@@ -350,14 +350,22 @@ tidigt så allt därefter verifieras automatiskt.
 
 ## Progress
 
+> **Status 2026-05-31:** Hela strukturen byggd på branchen
+> `claude/monorepo-restructure` i wexoeplugins-repot (väg B). Verifierat i
+> container: guardian grön, `tsc --noEmit` grön, Vitest 6/6, Pest 8/8.
+> **Återstår innan "klart":** (a) människa: GitHub repo-rename → `wexoe` +
+> Vercel Root Directory → `apps/builder`; (b) FAS 1.3 migrera de 25
+> kvarvarande entiteterna till JSON; (c) FAS 3 state-typ-rename (efter att CI
+> kört grönt på riktig runner).
+
 | Fas | Status | Notis |
 |---|---|---|
-| 0 — Monorepo-fundament | [ ] | Blockerad på repo-skapande (människa). |
-| 1 — Delad schema + migrera alla | [ ] | |
-| 2 — Enum-källa | [ ] | |
-| 3 — State-typ-standard | [ ] | Efter CI (R3). |
-| 4 — Väktare + manifest | [ ] | Bygg skelett tidigt. |
-| 5 — Minimal CI | [ ] | |
-| 6 — TDD-uppställning | [ ] | |
-| 7 — LLM-verktyg (.claude) | [ ] | |
-| 8 — CLAUDE.md + docs | [ ] | |
+| 0 — Monorepo-fundament | [x] | Subtree: apps/builder (228 c) + apps/wordpress (184 c), full historik bevarad (413 c i grafen, 2 föräldrar). **Kvar (människa):** repo-rename + Vercel-ompek. |
+| 1 — Delad schema + migrera alla | [~] | packages/schema/entities = original; schema-sync → committade kopior (builder+wexoe-core), alla byte-identiska. Pilot (1 entitet) klar. **Kvar: migrera 25 entiteter till JSON (1.3).** |
+| 2 — Enum-källa | [x] | packages/schema/enums/section-types.json (15 typer); väktaren R-enum grön mot PHP-dispatchern. Builder SectionType-validering kvar att koppla. |
+| 3 — State-typ-standard | [ ] | Görs efter att CI körts grönt på riktig runner (R3). Väktaren flaggar redan id≠modul-mismatchen. |
+| 4 — Väktare + manifest | [x] | tools/guardian: R-schema/R-enum/R-parity/R-strings + genererar manifest.json + docs/DOCS-MAP.md. Grön, varnar för 3 kända kopplingar. |
+| 5 — Minimal CI | [x] | .github/workflows/ci.yml: guardian + builder(tsc/lint/vitest) + wordpress(php -l/pest). Körs på riktig GitHub-runner efter merge. |
+| 6 — TDD-uppställning | [x] | Vitest (6/6) + Pest (8/8) körda gröna. tests/bootstrap.php löser ABSPATH-guarden. /tdd-skill finns. |
+| 7 — LLM-verktyg (.claude) | [x] | SessionStart-hook (deps+schema-synk, idempotent, verifierad) + /add-section, /add-page-type, /tdd. |
+| 8 — CLAUDE.md + docs | [~] | Root CLAUDE.md = router klar; docs/ konsoliderad (en kopia per doc). **Kvar: slå ihop builder/plugins NEW_PAGE_TYPE-varianterna; splittra IMPLEMENTATION_LOG (D4).** |
