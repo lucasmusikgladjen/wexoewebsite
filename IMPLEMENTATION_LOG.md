@@ -10,6 +10,24 @@ Detta dokument loggar varje konkret åtgärd som tas under implementationen av p
 
 ---
 
+## contact_form → `contact_form_json` (FAS 3 cutover, 2026-05-31)
+
+**Symptom/mål:** Det delade contact_form-blocket låg som 14 platta `contact_form_*`-kolumner ×5 tabeller (70 kolumner). FAS 3 hade lagt JSON-spegel-kolumn + dual-write additivt, men bara `customer-type` skrev JSON (`emitJson`), PHP läste fortfarande platt, och inga gamla kolumner var städade. Användaren bekräftade att kontaktformuläret inte används live → kör hela cutovern.
+
+**Åtgärd:**
+- **Builder (wexoebuilder):** `deterministic-transform.ts` — `emitJson: true` på alla 4 övriga sidtyper (partner/case/landing/PA). `contact-form-mapper.ts` — JSON-spegeln serialiseras nu i **snake_case, oprefixade nycklar** (`show_company`, `cta_text`, …) så PHP kan `json_decode` rakt in i `ContactForm::render`-API:t.
+- **Core:** ny `ContactForm::from_record($data, $extra)` — `json_decode(contact_form_json)` + merge. Alla 5 renderare (landing, partner, case, product-area, customer-type) kollapsade från 14 fält → `from_record()` + per-sida-extra.
+- **Scheman:** 4 entity-filer (`landing_pages`, `partner_pages`, `cms_cases`, `product_areas`) + `schema/cms_customer_type_pages.json`: 14 platta fält → 1 `contact_form_json`. `show_contact_form`-toggle behållen.
+
+**Airtable-mutationer (`Wexoe NY` `appokKSTaBdCa8YiW`):**
+- Skapade `contact_form_json` (multilineText) i `cms_landing_pages`, `cms_partner_pages`, `cms_cases`, `cms_product_pages` (customer-type hade redan).
+- Backfillade de 2 records som hade contact_form-data (partner `reczjm8m1GwycvwHp`, case `rec5iIU0e90ceblsS`) → komplett JSON.
+- Döpte om alla 70 gamla fält (14 ×5 tabeller) → `__deprecated_contact_form_*`. **Data bevarad** (MCP saknar delete_field).
+
+**Manuell TODO (användaren):** Verifiera att kontaktformulär renderar rätt på de 2 backfillade sidorna, **sedan** radera de 70 `__deprecated_contact_form_*`-fälten i Airtable-UI:t (Airtable-API/MCP kan inte radera fält).
+
+---
+
 ## PR 2 — Case-konsolidering: `cms_case_pages` + `cases` → `cms_cases` (2026-05-29)
 
 **Branch (båda repon):** `claude/ecstatic-heisenberg-IG3SH`
