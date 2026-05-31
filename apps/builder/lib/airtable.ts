@@ -4,16 +4,9 @@
  * Default-basen är Wexoe NY (appokKSTaBdCa8YiW) för alla nya tabeller
  * (cms_landing_pages, cms_customer_type_pages, cms_cases, cms_articles,
  * core_*, etc.).
- *
- * `LEGACY_BASE_ID` (Wexoe, appXoUcK68dQwASjF) finns kvar för automation-
- * pillar-plugins (offerings, product_navigation, team_rack) som ännu inte
- * migrerats. Tabeller där: pass `baseId: LEGACY_BASE_ID` explicit.
  */
 
 export const BASE_ID = 'appokKSTaBdCa8YiW';
-
-/** Legacy Wexoe-basen — endast för icke-migrerade tabeller (PA, audience). */
-export const LEGACY_BASE_ID = 'appXoUcK68dQwASjF';
 
 /** Bakåtkompatibelt alias — pekar nu på samma bas som BASE_ID. */
 export const SSOT_BASE_ID = BASE_ID;

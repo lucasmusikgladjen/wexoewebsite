@@ -38,6 +38,7 @@ const P = {
   registry: join(ROOT, 'apps/builder/lib/page-types/registry.ts'),
   copyRoute: join(ROOT, 'apps/builder/app/api/copy/route.ts'),
   cacheEntities: join(ROOT, 'apps/builder/lib/wexoe-cache-entities.ts'),
+  wpEntities: join(ROOT, 'apps/wordpress/wexoe-core/entities'),
   pagesDispatcher: join(ROOT, 'apps/wordpress/plugins/wexoe-pages/wexoe-pages.php'),
   sectionsDir: join(ROOT, 'apps/wordpress/plugins/wexoe-pages/sections'),
   pageTypesDir: join(ROOT, 'apps/builder/lib/page-types'),
@@ -153,7 +154,7 @@ function checkParity() {
 // ─────────────────────────────────────────────────────────────────────────
 // R-strings — apiType ↔ COPY_HANDLERS, cacheEntities mot kända
 // ─────────────────────────────────────────────────────────────────────────
-function checkStrings() {
+function checkStrings(knownEntities) {
   const reg = read(P.registry) || '';
   const copy = read(P.copyRoute) || '';
   const apiTypes = [...reg.matchAll(/apiType:\s*'([a-z-]+)'/g)].map((m) => m[1]);
@@ -170,6 +171,18 @@ function checkStrings() {
   for (const h of handlers) {
     if (!apiTypes.includes(h)) warnings.push(`R-strings: COPY_HANDLERS '${h}' har ingen registry-apiType som pekar dit`);
   }
+  // Validera cache-entitetsnamn mot schema-entiteter (packages/schema/entities/)
+  // OCH wexoe-core PHP-entiteter (wexoe-core/entities/). Cache-webhook anropar
+  // Core::entity(name) — ett fel namn failar tyst i drift.
+  const wpEntityNames = existsSync(P.wpEntities)
+    ? readdirSync(P.wpEntities).filter((f) => f.endsWith('.php')).map((f) => f.replace('.php', ''))
+    : [];
+  const ceFile = read(P.cacheEntities) || '';
+  const cacheNames = [...new Set([...ceFile.matchAll(/'([a-z_]+)'/g)].map((m) => m[1]))];
+  for (const name of cacheNames) {
+    if (!knownEntities.includes(name) && !wpEntityNames.includes(name))
+      errors.push(`R-strings: cache-entitet '${name}' matchar varken packages/schema/entities/ eller wexoe-core/entities/`);
+  }
   return { apiTypes, handlers };
 }
 
@@ -181,7 +194,7 @@ const rel = (p) => p.replace(ROOT + '/', '');
 const entities = checkSchema();
 const { enumSlugs, dispatched } = checkEnums();
 const pageTypes = checkParity();
-const { apiTypes, handlers } = checkStrings();
+const { apiTypes, handlers } = checkStrings(entities);
 
 const manifest = {
   generatedAt: new Date().toISOString().slice(0, 10),

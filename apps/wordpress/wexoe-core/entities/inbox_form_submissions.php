@@ -10,6 +10,12 @@
  * buildern (TS) sa att en faltandring gors pa ett stalle.
  *
  * Lagg till/andra falt i JSON-filen, inte har.
+ *
+ * OBS: table_id ar null i inbox_form_submissions.json — tabellen existerar
+ * i Airtable Wexoe NY (appokKSTaBdCa8YiW) men table_id ar inte registrerat.
+ * Hamta table_id fran Airtable (Tables → inbox_form_submissions → API docs)
+ * och uppdatera packages/schema/entities/inbox_form_submissions.json,
+ * kor sedan `npm run schema:sync` sa kopian i wexoe-core/schema/ uppdateras.
  */
 
 if (!defined('ABSPATH')) exit;
