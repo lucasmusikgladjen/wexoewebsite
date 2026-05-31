@@ -31,20 +31,7 @@
 
     "case_ids": { "type": "link", "entity": "cms_cases" },
 
-    "show_contact_form":                 { "type": "bool" },
-    "contact_form_eyebrow":              { "type": "text",  "block": "contact_form" },
-    "contact_form_title":                { "type": "text",  "block": "contact_form" },
-    "contact_form_subtitle":             { "type": "text",  "block": "contact_form" },
-    "contact_form_layout":               { "type": "text",  "block": "contact_form" },
-    "contact_form_theme":                { "type": "text",  "block": "contact_form" },
-    "contact_form_show_company":         { "type": "bool",  "block": "contact_form" },
-    "contact_form_show_phone":           { "type": "bool",  "block": "contact_form" },
-    "contact_form_show_dropdown":        { "type": "bool",  "block": "contact_form" },
-    "contact_form_dropdown_label":       { "type": "text",  "block": "contact_form" },
-    "contact_form_options":              { "type": "lines", "block": "contact_form" },
-    "contact_form_cta_text":             { "type": "text",  "block": "contact_form" },
-    "contact_form_message_label":        { "type": "text",  "block": "contact_form" },
-    "contact_form_trust_signals":        { "type": "lines", "block": "contact_form" },
-    "contact_form_show_contact_person":  { "type": "bool",  "block": "contact_form" }
+    "show_contact_form":  { "type": "bool" },
+    "contact_form_json":  { "type": "text" }
   }
 }
