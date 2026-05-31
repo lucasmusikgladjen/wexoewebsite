@@ -2,7 +2,7 @@
 
 Den här filen guidar dig — marknadsföraren — genom att lägga till en ny sidtyp i Wexoe-systemet. Du behöver inte kunna programmera. Du driver flowet, LLM:er gör jobbet.
 
-Filen är speglad i båda repon (`wexoeplugins` och `wexoebuilder`) så du hittar den oavsett vilken du råkar öppna. Tekniska detaljer ligger i `NEW_PAGE_TYPE.md` i respektive repo — du behöver INTE läsa dem.
+Filen ligger i `docs/` i monorepot. Tekniska detaljer ligger i `NEW_PAGE_TYPE-builder.md` (bygg-sidan) och `NEW_PAGE_TYPE-plugin.md` (plugin-sidan) i samma mapp — du behöver INTE läsa dem.
 
 ---
 
@@ -111,14 +111,14 @@ feedback.
 
 ⏱ **Tid:** 15–30 minuter
 
-🛠 **Verktyg:** Claude Code-session med **wexoeplugins**-repot öppet + Airtable MCP aktivt.
+🛠 **Verktyg:** Claude Code-session i monorepot + Airtable MCP aktivt.
 
 📍 **Var det landar:**
 - Ny tabell i Airtable-basen `Wexoe NY` (`appokKSTaBdCa8YiW`).
-- Ny fil: `wexoeplugins/wexoe-core/entities/<entity_name>.php` (committas).
+- Ny fil: `apps/wordpress/wexoe-core/entities/<entity_name>.php` (committas).
 
 ### 👤 Vad DU gör
-1. Öppna en ny Claude Code-session mot `wexoeplugins`-repot.
+1. Öppna en ny Claude Code-session i monorepot.
 2. Klistra in kickoff-prompten nedan + hela innehållet i prototype.html.
 3. **Vänta på fält-listan.** LLM:en SKA visa dig en tabell med föreslagna Airtable-fält INNAN tabellen skapas. Granska den.
 4. Säg "ja, skapa tabellen" eller justera (t.ex. "döp om field X till Y", "lägg till en checkbox för Z").
@@ -133,7 +133,7 @@ feedback.
 ### ✅ Klart när
 - Du ser den nya tabellen i Airtable.
 - En `test`-record finns och har data i alla viktiga fält.
-- `entities/<entity_name>.php` är committad i `wexoeplugins`-repot.
+- `apps/wordpress/wexoe-core/entities/<entity_name>.php` är committad.
 - LLM:en har INTE påbörjat något plugin eller någon editor (det är nästa fas).
 
 ### 📤 Hand-off till FAS 2
@@ -153,8 +153,8 @@ Här är den annoterade HTML-prototypen:
 
   <bädda in hela prototype.html>
 
-Läs `UTVECKLINGSGUIDE.md` § 2 (Naming conventions), § 4 (Läs-schemaformat)
-och `NEW_PAGE_TYPE.md` § FAS 1.
+Läs `apps/wordpress/UTVECKLINGSGUIDE.md` § 2 (Naming conventions), § 4
+(Läs-schemaformat) och `docs/NEW_PAGE_TYPE-plugin.md` § FAS 1.
 
 Producera:
 1. En fält-lista i tabellform: Airtable-fältnamn (snake_case, engelska),
@@ -181,13 +181,13 @@ tabell + schema. Commita och pusha när det är klart.
 
 ⏱ **Tid:** 30–60 minuter
 
-🛠 **Verktyg:** Claude Code-session med **wexoeplugins**-repot. Behöver INTE Airtable MCP.
+🛠 **Verktyg:** Claude Code-session i monorepot. Behöver INTE Airtable MCP.
 
 📍 **Var det landar:**
-- Ny mapp: `wexoeplugins/plugins/wexoe-<type>/wexoe-<type>.php` (committas).
+- Ny mapp: `apps/wordpress/plugins/wexoe-<type>/wexoe-<type>.php` (committas).
 
 ### 👤 Vad DU gör
-1. Öppna en ny Claude Code-session mot `wexoeplugins`-repot.
+1. Öppna en ny Claude Code-session i monorepot.
 2. Klistra in kickoff-prompten + prototype.html.
 3. Vänta på leverans. LLM:en bygger pluginet.
 4. Ladda ner / zip:a plugin-mappen.
@@ -229,8 +229,8 @@ Här är Core-schemat (`wexoe-core/entities/<entity_name>.php`):
 
   <bädda in schemafilen>
 
-Läs `UTVECKLINGSGUIDE.md` § 3 (Core publikt API), § 6 (Anatomi av ett
-feature-plugin) och `NEW_PAGE_TYPE.md` § FAS 2.
+Läs `apps/wordpress/UTVECKLINGSGUIDE.md` § 3 (Core publikt API), § 6 (Anatomi
+av ett feature-plugin) och `docs/NEW_PAGE_TYPE-plugin.md` § FAS 2.
 
 Studera `plugins/wexoe-audience-hero/wexoe-audience-hero.php` som
 referens för enkla sidtyper, eller `wexoe-landing-page/wexoe-landing-page.php`
@@ -256,12 +256,12 @@ php -l ska gå ren. Commita och pusha när det är klart.
 
 ⏱ **Tid:** 30–90 minuter
 
-🛠 **Verktyg:** Claude Code-session med **wexoebuilder**-repot.
+🛠 **Verktyg:** Claude Code-session i monorepot (bygg-sidan, `apps/builder/`).
 
-📍 **Var det landar:** En handfull filer i `wexoebuilder` (server.ts, ui.tsx, editors, preview, route, pages) — LLM:en hanterar listan. Allt committas.
+📍 **Var det landar:** En handfull filer i `apps/builder/` (server.ts, ui.tsx, editors, preview, route, pages) — LLM:en hanterar listan. Allt committas.
 
 ### 👤 Vad DU gör
-1. Öppna en ny Claude Code-session mot `wexoebuilder`-repot.
+1. Öppna en ny Claude Code-session i monorepot.
 2. Klistra in kickoff-prompten + prototype.html + schema-filen.
 3. **Vänta på förslag.** LLM:en ska föreslå state-struktur och sektionsuppdelning INNAN den implementerar.
 4. Godkänn eller justera. Sen kör LLM:en.
@@ -290,17 +290,17 @@ Inga fler faser. Du är klar.
    Sidtyp:        <NAMN>
    Aktuell fas:   FAS 3 av 4 — Builder-editor
    Föregående:    PHP-plugin + Core-schema är klart
-   Mål nu:        Bygga builder-editor i wexoebuilder-repot
+   Mål nu:        Bygga builder-editor (bygg-sidan, apps/builder/)
 
 Här är den annoterade HTML-prototypen:
 
   <bädda in hela prototype.html>
 
-Här är Core-schemat (`wexoeplugins/wexoe-core/entities/<entity_name>.php`):
+Här är Core-schemat (`apps/wordpress/wexoe-core/entities/<entity_name>.php`):
 
   <bädda in schemafilen>
 
-Läs `CLAUDE.md` och `NEW_PAGE_TYPE.md` i denna repo. Studera Audience
+Läs `apps/builder/CLAUDE.md` och `docs/NEW_PAGE_TYPE-builder.md`. Studera Audience
 (`lib/page-types/audience.*`, `components/audience/`) som referens för
 enkla sidtyper, eller Product Area för komplexa.
 
@@ -310,8 +310,8 @@ prototypen. Motivera valet.
 Visa förslag på state-struktur + section-uppdelning INNAN du implementerar.
 Invänta godkännande.
 
-Sedan: producera alla filer enligt checklistan i NEW_PAGE_TYPE.md. Commita
-och pusha när det är klart.
+Sedan: producera alla filer enligt checklistan i NEW_PAGE_TYPE-builder.md.
+Commita och pusha när det är klart.
 ```
 
 ---
@@ -346,8 +346,8 @@ Preview-komponenten och PHP-renderingen är två kopior av samma layout. Be FAS 
 
 ## Var jag tar vägen om jag vill veta mer
 
-- `NEW_PAGE_TYPE.md` (i denna repo) — teknisk referens om du eller en LLM behöver detaljer per fas
-- `UTVECKLINGSGUIDE.md` (i `wexoeplugins`) — fullständig referens för Core-API och plugin-konventioner
-- `CLAUDE.md` (i `wexoebuilder`) — fullständig arkitektur-översikt över buildern
+- `docs/NEW_PAGE_TYPE-builder.md` + `docs/NEW_PAGE_TYPE-plugin.md` — teknisk referens om du eller en LLM behöver detaljer per fas
+- `apps/wordpress/UTVECKLINGSGUIDE.md` — fullständig referens för Core-API och plugin-konventioner
+- `apps/builder/CLAUDE.md` — fullständig arkitektur-översikt över buildern
 
 Men om du är marknadsförare: ovanstående räcker. Du behöver inte läsa de tekniska filerna.

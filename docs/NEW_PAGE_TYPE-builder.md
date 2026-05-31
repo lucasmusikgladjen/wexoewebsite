@@ -2,9 +2,9 @@
 
 > **Är du marknadsförare? Läs `SKAPA-SIDA.md` istället.** Den filen är skriven för dig och guidar dig genom hela flowet. Denna fil är teknisk referens som LLM:er och utvecklare kan dyka i vid behov.
 
-Receptet för att lägga till en helt ny sidtyp i Wexoe-systemet (t.ex. case-sidor, nyheter, leverantörssidor). Denna fil täcker bygget i `wexoebuilder`. Plugin-sidan (PHP-pluginet + Core-schemat + Airtable-tabellerna) täcks av `wexoeplugins/NEW_PAGE_TYPE.md` — pair-läs.
+Receptet för att lägga till en helt ny sidtyp i Wexoe-systemet (t.ex. case-sidor, nyheter, leverantörssidor). Denna fil täcker bygget i `apps/builder/`. Plugin-sidan (PHP-pluginet + Core-schemat + Airtable-tabellerna) täcks av `NEW_PAGE_TYPE-plugin.md` (samma mapp) — pair-läs.
 
-Läs `CLAUDE.md` (denna mapp) först om du inte vet hur page-type-ramverket är uppbyggt.
+Läs `apps/builder/CLAUDE.md` först om du inte vet hur page-type-ramverket är uppbyggt.
 
 ---
 
@@ -166,7 +166,7 @@ Lägg till `relations[]` (Lager 2) ovanpå Lager 3 om sidtypen har child-records
 
 ### Transform-checklistan
 
-> **Riktningen är dit, men mallen är inte spikad än.** Den schema-drivna vägen är pilot på `customer-type`; övriga typer använder fortfarande per-typ-byggare. Vill du göra en ny typ schema-driven — vänta gärna in att piloten körts hela vägen (ARKITEKTURPLAN FAS 1). Annars: kopiera närmaste per-typ-byggare.
+> **Riktningen är dit, men mallen är inte spikad än.** Den schema-drivna vägen är pilot på `customer-type`; övriga typer använder fortfarande per-typ-byggare. Vill du göra en ny typ schema-driven — verifiera först att piloten körts hela vägen (motiven finns i `docs/archive/ARKITEKTURPLAN.md`, men kolla nuläget mot koden). Annars: kopiera närmaste per-typ-byggare.
 
 Varje sidtyp behöver en state→Airtable-fält-transform, antingen:
 - **Schema-driven (föredraget framåt):** `schema/<entity>.json` + återanvänd `lib/schema/to-fields.ts`. Referens: `customer-type`.
@@ -304,7 +304,7 @@ och vänta på feedback.
 
 ### Prompt — FAS 1 (Airtable + Core-schema)
 
-Körs i en Claude-session som har Airtable MCP samt tillgång till `wexoeplugins`-repot. Output: en `entities/<name>.php`-fil och en skapad Airtable-tabell.
+Körs i en Claude-session i monorepot med Airtable MCP. Output: en `apps/wordpress/wexoe-core/entities/<name>.php`-fil och en skapad Airtable-tabell.
 
 ```
 Sidtypen <NAMN> ska få ett eget Airtable-bord + Core-schema.
@@ -313,8 +313,8 @@ Här är den annoterade HTML-prototypen:
 
   <bädda in prototype.html>
 
-Läs `wexoeplugins/UTVECKLINGSGUIDE.md` § 2 (Naming conventions), § 4
-(Läs-schemaformat) och `wexoeplugins/NEW_PAGE_TYPE.md`.
+Läs `apps/wordpress/UTVECKLINGSGUIDE.md` § 2 (Naming conventions), § 4
+(Läs-schemaformat) och `docs/NEW_PAGE_TYPE-plugin.md`.
 
 Producera:
 1. En lista över fält som behövs i Airtable-tabellen, inkl. typ (singleLineText,
@@ -322,7 +322,7 @@ Producera:
    exempel-värden. SHOWA mig listan innan du skapar tabellen.
 2. När jag godkänt listan: skapa tabellen i base appokKSTaBdCa8YiW (Wexoe NY)
    via Airtable MCP. Tabellnamn `cms_<plural>`. Snake_case fält-namn.
-3. Skriv `wexoeplugins/wexoe-core/entities/<name>.php` enligt schemaformatet.
+3. Skriv `apps/wordpress/wexoe-core/entities/<name>.php` enligt schemaformatet.
    Primärnyckel `slug`. Cache TTL 86400. Required `['slug']`.
 
 Skapa INGEN PHP-plugin och ingen builder-editor i denna fas — bara tabell + schema.
@@ -330,7 +330,7 @@ Skapa INGEN PHP-plugin och ingen builder-editor i denna fas — bara tabell + sc
 
 ### Prompt — FAS 2 (PHP-plugin)
 
-Körs i en session med `wexoeplugins`-repot. Output: en zip-bar plugin-mapp under `plugins/`.
+Körs i en session i monorepot. Output: en zip-bar plugin-mapp under `apps/wordpress/plugins/`.
 
 ```
 Tabellen och Core-schemat för <NAMN> är klart (`entities/<name>.php`).
@@ -340,8 +340,8 @@ Här är den annoterade HTML-prototypen:
 
   <bädda in prototype.html>
 
-Läs `wexoeplugins/UTVECKLINGSGUIDE.md` § 3 (Core publikt API), § 6 (Anatomi
-av ett feature-plugin) och `wexoeplugins/NEW_PAGE_TYPE.md`.
+Läs `apps/wordpress/UTVECKLINGSGUIDE.md` § 3 (Core publikt API), § 6 (Anatomi
+av ett feature-plugin) och `docs/NEW_PAGE_TYPE-plugin.md`.
 
 Producera under `plugins/wexoe-<type>/wexoe-<type>.php`:
 1. Plugin-header med korrekt namn/version.
@@ -361,7 +361,7 @@ Producera under `plugins/wexoe-<type>/wexoe-<type>.php`:
 
 ### Prompt — FAS 3 (Builder-editor)
 
-Körs i en session med `wexoebuilder`-repot. Output: alla filer enligt checklistan ovan.
+Körs i en session i monorepot (bygg-sidan, `apps/builder/`). Output: alla filer enligt checklistan ovan.
 
 ```
 PHP-pluginet och Core-schemat för <NAMN> är klart. Nu bygger vi builder-editorn.
@@ -370,16 +370,16 @@ Här är den annoterade HTML-prototypen:
 
   <bädda in prototype.html>
 
-Här är Core-schemat (`wexoeplugins/wexoe-core/entities/<name>.php`):
+Här är Core-schemat (`apps/wordpress/wexoe-core/entities/<name>.php`):
 
   <bädda in schemafilen>
 
-Läs `wexoebuilder/CLAUDE.md` och `wexoebuilder/NEW_PAGE_TYPE.md`. Studera
+Läs `apps/builder/CLAUDE.md` och `docs/NEW_PAGE_TYPE-builder.md`. Studera
 också en existerande sidtyp som referens — Customer Type
 (`lib/page-types/customer-type.*`, `components/audience/`) är minsta Lager 3-referensen;
 Product Area är komplex Lager 3 med child-records.
 
-Producera alla filer enligt checklistan i NEW_PAGE_TYPE.md. Alla sidtyper
+Producera alla filer enligt checklistan i NEW_PAGE_TYPE-builder.md. Alla sidtyper
 använder Lager 3 med deterministisk transform — skriv `schema/<entity>.json`
 (schema-driven) eller en `build<Type>`-funktion i `deterministic-transform.ts`.
 Om sidtypen har child-records i separat tabell, lägg

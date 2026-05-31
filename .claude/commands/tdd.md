@@ -26,7 +26,7 @@ Arbetssätt (följ strikt — testet kommer FÖRE implementationen):
 
 6. **Helhetskoll:** `npm run check` (väktaren) + relevant testsvit. Allt grönt.
 
-Om testrunnern saknas (Vitest/Pest inte uppsatt än): säg till — det hör till
-FAS 6 i `docs/MONOREPO-PLAN.md`, och jag sätter upp den först.
+Om testrunnern saknas (Vitest/Pest inte uppsatt än): säg till — historik finns
+i `docs/archive/MONOREPO-PLAN.md`, och jag sätter upp den först.
 
 Sammanfatta: kravlista, vilka tester du skrev, röd→grön-resan.

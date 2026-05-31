@@ -1,219 +1,154 @@
-# Wexoe Page Builder
+# CLAUDE.md — buildern (apps/builder)
 
-> **Vill du skapa en ny sidtyp?** Läs `SKAPA-SIDA.md` (i denna repo) — den guidar dig genom hela flowet steg för steg. Du behöver inte läsa filen du nu har öppen. Den är teknisk referens.
+> Router för bygg-sidan. Läs monorepo-roten (`/CLAUDE.md`) först. Senast
+> verifierad mot kod: 2026-05-31.
 
-Wexoe Page Builder ("buildern") är vår interna marknadsförar-app för att skapa och redigera sidor på wexoe.com. Den lever här, separat från WordPress, för att vi ska kunna ge marknadsförarna ett kompromisslöst UX-flöde utan att Avia/Enfold står i vägen.
+Wexoe Page Builder är vår interna marknadsförar-app för att skapa och redigera
+sidor på wexoe.com. Next.js (App Router) + TypeScript + Tailwind, värd på Vercel.
+Läser och skriver direkt mot Airtable REST; state→Airtable sker via en
+**deterministisk transform** (rena funktioner, **ingen Claude på spar-vägen**).
 
-Stack: Next.js (App Router) + TypeScript + Tailwind. Värd på Vercel. Läs och skriv direkt mot Airtable REST-API; state→Airtable-fält sker via en **deterministisk transform** (rena funktioner, ingen Claude på spar-vägen).
+## 1. Varför buildern finns
 
-> **Nyligen ändrat (2026-05-31):** Spar-vägen är deterministisk sedan FAS 2 — `claude-transform.ts` är **borttagen**. Om du hittar en text (kod-kommentar, guide, prompt) som påstår att en sidtyp skriver "via Claude" / "Claude-transform" / "genereras av Claude" på spar, är den **inaktuell** — lita på koden och rätta texten. Claude finns kvar enbart på input/copy (`/api/parse`, `/api/copy`), aldrig på spar. (`ARKITEKTURPLAN.md`-loggen beskriver historik i dåtid — korrekt, rör ej.) Systerrepots feature-plugins-mapp heter numera `plugins/` (ej `New plugins/`).
+**Buildern är inte en Airtable-vy.** Airtable är datakällan men ett dåligt UI för
+icke-tekniker: kryptiska fältnamn, riskabla rich-text-format, inga previews, lätt
+att skriva sönder en post. Buildern översätter den världen till en marknadsförar-
+vänlig redaktör med live-preview till höger och sektionsbaserade kontroller till
+vänster. Marknadsföraren ska aldrig behöva veta att Airtable existerar.
 
----
+**En sidtyp = ett plugin = en editor.** WP-pluginet (PHP) och builder-editorn (TS)
+renderar samma sidtyp var för sig — samma "form", men olika kod och olika
+datamodell. Pluginet läser rå Airtable-data; buildern visar en putsad version och
+översätter tillbaka vid spar. *Render-paritet hålls inte automatiskt — det är
+därför väktaren och det delade schemat finns (se monorepo-roten).*
 
-## 1. Vision och intentioner
+**Vibes:** Spotify, inte SAP. Direktredigering, snabba previews, "spara" som ett
+icke-moment. Felmeddelanden pekar på sektion + fält. Tomma defaults > krockande placeholders.
 
-**Buildern är inte en Airtable-vy.** Det är hela poängen. Airtable är vår datakälla, men Airtable som UI är dåligt för icke-tekniska användare: kryptiska fältnamn, riskabla rich-text-format ("Q==…//A==…" för QnA-element), inga previews, lätt att skriva sönder en post. Buildern översätter den världen till en marknadsförar-vänlig redaktör med live-preview till höger och tydliga sektionsbaserade kontroller till vänster.
-
-**En sidtyp = ett plugin = en editor.** På WordPress-sidan har varje sidtyp ett eget PHP-plugin som renderar frontend. I buildern har varje sidtyp en motsvarande editor. De har samma "form" — samma sektioner, samma villkorslogik — men inte samma kod, och inte samma datamodell. Pluginet läser den råa Airtable-formade datan; buildern visar en putsad version och översätter tillbaka vid spar.
-
-**Inget direkt Airtable-skrivande från klient.** Vi sparar via en server-route som kör en **deterministisk transform** (rena funktioner, inga Claude-anrop). Klienten skickar sitt enkla state (t.ex. en array med `{question, answer}`-objekt); transformen returnerar Airtable-redo fält i exakt det format pluginet förväntar sig (t.ex. en lines-textsträng med `Q: ... A: ...`-prefix). Backenden diffar mot existerande records och PATCHar/CREATEar/DELETEar. Se `lib/deterministic-transform.ts` (per-typ-byggare) och `lib/schema/to-fields.ts` (schema-driven, single-source).
-
-**Vibes:** Spotify-känsla, inte SAP. Direktredigering, generösa whitespace, snabba previews, "spara" som ett självklart icke-moment. Felmeddelanden ska peka på sektionen + fältet, inte bara säga "save failed". Tomma defaults är bättre än krockande placeholders. Marknadsföraren ska aldrig behöva veta att Airtable existerar.
-
----
-
-## 2. Systemkarta
-
-```
-┌──────────────┐     write      ┌──────────┐  read       ┌──────────────┐
-│ Web editor   │ ─────────────► │ Airtable │ ◄────────── │ Core Plugin  │ ──► Page Plugins (WP)
-│ (denna app)  │ ◄───────────── │   CMS    │             │   Cache      │
-└──────────────┘     display    └──────────┘             └──────────────┘
-       ▲
-       │
-       └── Marknadsförare. Ser aldrig Airtable, ser aldrig WP-admin.
-```
-
-- **SSOT-entiteter** (`core_*` i Airtable) — referensdata och singletons: företag, divisioner, partners, coworkers, grafisk profil. Globalt redigerbara via buildern under `/globals`.
-- **CMS-entiteter** (`cms_*` i Airtable) — sidor: landing pages, audience heroes, product pages, CMS pages (informationssidor). Redigerbara per record under `/editor/<type>/[recordId]`.
-- **Cache** — när buildern sparar invalideras motsvarande WP-transients via `/api/cache/clear`. Page-plugins läser nästa gång och hämtar fresh data från Core.
-
-Allt går genom **wexoe-core** på WP-sidan — page-plugins pratar aldrig med Airtable direkt. Se `wexoeplugins/UTVECKLINGSGUIDE.md` för Core-API och plugin-konventioner.
-
----
-
-## 3. Repo-layout
+## 2. Repo-layout
 
 ```
 app/
-  editor/               # Per-sidtyps redigeringsvyer (App Router server pages)
-  globals/              # SSOT-redigerare (per core_* entity)
+  editor/<type>/      # Per-sidtyps redigeringsvyer (App Router server pages)
+  globals/            # SSOT-redigerare (per core_* entitet)
   api/
-    audience/           # CRUD-route för audience-sidor
-    product-page/       # CRUD-route för produktsidor
-    page/               # CRUD-route för CMS pages (informationssidor)
-    read/               # Läs-route för landing pages (legacy)
-    publish/            # Cache-invalidering mot WP
-    core/               # SSOT-CRUD-routes
-    copy/               # AI-textgenerering
-components/
-  audience/             # Editor-fält + preview-komponenter per sidtyp
-  product-page/
-  cms-page/
-  editors/              # Legacy LP-editor (migreras till page-types)
-  preview/              # Legacy LP-preview
-  shared/               # Återanvändbara form-primitives
-  contact-form/         # Delad kontaktformulärsmodul (används av flera sidtyper)
+    page/ product-page/ customer-type/ partner/ case/   # CRUD-routes per sidtyp
+    copy/             # AI-textgenerering (Claude — INTE spar)
+    parse/            # AI input-tolkning (Claude — INTE spar)
+    publish/          # cache-invalidering mot WP
+    core/             # SSOT-CRUD
+components/<type>/     # Editor- + preview-komponenter per sidtyp
+  shared/             # återanvändbara form-primitives
+  contact-form/       # delad kontaktformulärsmodul
 lib/
-  page-types/           # Page-type ramverk — VIKTIGT, se nedan
-    types.ts            #   typdefinitioner (PageTypeServerDef, PageTypeUIDef, relations)
-    registry.ts         #   listing över alla sidtyper (klient-säker meta)
-    <type>.server.ts    #   server-half: mappers, validering, list
-    <type>.ui.tsx       #   UI-half: sektioner, preview-layout
-  core/                 # SSOT-ramverk (forms.ts, mapper.ts, loader.ts, registry.ts)
-  deterministic-transform.ts # Klient-state → Airtable-fält (rena funktioner, ingen Claude)
-  transform-shared.ts   # Delade skriv-primitiver: sectionToPayload, clears*, result-typer
-  schema/               # Single-source JSON-schema + to-fields.ts (FAS 1/2-vägen)
-  airtable.ts           # Tunn fetch-wrapper (read-only, used server-side)
-  *-types.ts            # Per-sidtyp state-typer
-  *-mapper.ts           # Per-sidtyp record↔state-mappning
-  airtable-schema-*.md  # Specs som matas in i Claude system prompt
-  schema/               # Schema-ramverk (vanlig kod, redigeras normalt)
-    entity-schema.ts    #   schema-formatet (typer)
-    to-state.ts         #   generisk record → state (builderns Normalizer)
-schema/                 # ⚠️ AUTO-SPEGLADE *.json från wexoe-core — redigera ALDRIG (se § 3.1)
+  page-types/         # ⭐ Page-type-ramverket (se § 3)
+    types.ts          #   PageTypeServerDef, PageTypeUIDef — läs kommentarerna, de är spec
+    registry.ts       #   alla sidtyper (klient-säker meta)
+    <type>.server.ts  #   server-half: mappers, validering, list, create/update
+    <type>.ui.tsx     #   UI-half: sektioner, preview-layout
+  core/               # SSOT-ramverk (registry/forms/mapper/loader)
+  deterministic-transform.ts  # ⭐ state → Airtable-fält (rena funktioner, ingen Claude)
+  transform-shared.ts # delade skriv-primitiver (sectionToPayload, clears*, result-typer)
+  schema/             # schema-RAMVERKET (vanlig kod): entity-schema.ts, to-state.ts, to-fields.ts
+  *-types.ts *-mapper.ts  # per-sidtyp state-typer + record↔state-mappning
+schema/               # ⚠️ SYNKAD KOPIA av packages/schema/entities (committad — se § 4)
 ```
 
-### 3.1 `schema/*.json` är auto-speglade — redigera dem ALDRIG här
+## 3. Page-type-ramverket (hjärtat)
 
-> **Om du är en LLM/utvecklare som vill ändra ett fält: gör det INTE i det här
-> repot.** `schema/*.json` (och deras kopia under `lib/schema/`s konsumtion) är
-> **automatiska spegelkopior** av de kanoniska schemana i
-> `wexoeplugins/wexoe-core/schema/`. De är källan (single source of truth).
-
-Ett GitHub Actions-workflow i **wexoeplugins**
-(`.github/workflows/sync-schema.yml`) triggar när `wexoe-core/schema/**` ändras
-på `main`, speglar `*.json` hit och pushar direkt till builderns `main`. Allt du
-ändrar direkt i `schema/`-mappen här **skrivs över vid nästa synk**.
-
-- **Vill du ändra/lägga till ett fält?** Ändra JSON-filen i `wexoe-core/schema/`
-  i wexoeplugins-repot, pusha till `main` → ändringen dyker upp här av sig själv.
-- **Varför en kopia alls?** Repona deployas separat; buildern kan inte läsa in
-  wexoeplugins vid bygget, så en committad kopia krävs. Den hålls dock alltid i
-  synk maskinellt — aldrig för hand. Se `schema/README.md` här och
-  `wexoeplugins/.github/SCHEMA_SYNC_SETUP.md` för detaljer.
-- **`lib/schema/*.ts` (formatet + `to-state.ts`)** är vanlig kod och redigeras
-  normalt — det är bara `*.json`-datafilerna som är speglade.
-
----
-
-## 4. Page-type-ramverket
-
-Hjärtat i buildern. Att lägga till en sidtyp ska vara *datadeklaration*, inte handskriven CRUD-kod.
-
-En sidtyp deklareras som två icke-överlappande filer:
+Att lägga till en sidtyp ska vara *datadeklaration*, inte handskriven CRUD. En
+sidtyp = två filer:
 
 ```ts
-// lib/page-types/<type>.server.ts
+// lib/page-types/<type>.server.ts  — importeras server-side
 export const <type>Server: PageTypeServerDef<TState, TListItem> = {
-  id, label, tableId, baseId,
-  emptyState, fromRecord, validate,
+  id, label, tableId, baseId, emptyState, fromRecord, validate,
   listItemMapper, listFields, listSort,
-  create, update,              // Lager 3 — anropar build<Type> i deterministic-transform.ts
-  relations: [...],            // Lager 2: deklarativa child-tabeller (om sidtypen har det)
+  create, update,            // Lager 3 — anropar build<Type> i deterministic-transform.ts
+  relations: [...],          // Lager 2 — deklarativa child-tabeller (om sidtypen har det)
   cacheEntities, slug,
 };
-
-// lib/page-types/<type>.ui.tsx
-export const <type>UI: PageTypeUIDef<TState> = {
-  id, label,
-  sections: [...],              // SectionDef[] — en per editor-panel
-  previewLayout: <Component>,   // renderar preview till höger
-  slugInput, toolbarExtras,
-};
+// lib/page-types/<type>.ui.tsx  — importeras client-side (React)
+export const <type>UI: PageTypeUIDef<TState> = { id, label, sections, previewLayout, … };
 ```
 
-Splittringen finns för att React-komponenter inte kan korsa Next:s server/client-gräns som props. Server-pages anropar `serverDef.fromRecord(record)` och skickar resultatet som plain JSON till `<PageTypeBuilder uiDef={…} />`.
+Splittringen finns för att React-komponenter inte kan korsa Next:s server/client-
+gräns som props. **Trelagsmodellen** (full kommentar i `lib/page-types/types.ts`):
+Lager 1 = ren CRUD (finns men används ej), Lager 2 = deklarativa relationer,
+**Lager 3 = full override som anropar den deterministiska transformen — standard
+för alla sidtyper** (customer-type, cms-page, product-page, landing, case, partner).
 
-**Trelagsmodell för routes** (se `lib/page-types/types.ts` för utförlig kommentar):
+**Copy-flödet** är opt-in: registry-entryn behöver `copy: { apiType }`, och strängen
+**måste** matcha en handler i `app/api/copy/route.ts::COPY_HANDLERS` — annars syns
+ingen Kopiera-knapp. (Väktarens R-strings fångar mismatch.)
 
-- **Lager 1** — vanlig CRUD. Bara `primary` (tableId + fromRecord + stateToFields). Ramverket stöder modellen men det är inte produktionsvalet — alla sidtyper går via den deterministiska transformen i Lager 3. Lager 1 finns kvar som en implementation-detalj.
-- **Lager 2** — primary + `relations[]`. Ramverket diffar och synkar varje relation (parent-link-array eller child-backlink-modell). För framtida case-sidor med content-blocks i separat tabell.
-- **Lager 3** — full override (`create`/`update`/`delete`) som anropar den deterministiska transformen (`deterministic-transform.ts`, eller den schema-drivna `schema/to-fields.ts` för pilot-typen). Detta är **standardvalet** för alla sidtyper — Customer Type, CMS Page, Product Area, Landing Page, Case och Partner använder alla detta idag.
+Lägg till en sidtyp: `/add-page-type` eller `../../docs/NEW_PAGE_TYPE-builder.md`.
 
-**Airtable saknar transaktioner.** Ramverket lovar inte atomär rollback. Vid fel: primary skrivs först (eller stoppas hela operationen om primary failar); därefter en relation i taget; fel ackumuleras i `RelationSyncResult.errors`. Klienten visar fel tydligt och låter användaren retrya.
+## 4. Schema — synkad kopia, redigera ALDRIG här
 
-**Copy-flödet är opt-in per sidtyp.** Tre-prickar-menyn "Kopiera" visas bara om registry-entry:n har `copy: { apiType: '...' }`, och `apiType`-strängen måste matcha en handler i `app/api/copy/route.ts::COPY_HANDLERS`. Glöms steget syns ingen Kopiera-knapp — vilket är säkrare än en knapp som kraschar mot fel handler, men användarna förväntar sig att alla sidor kan dupliceras. Se `NEW_PAGE_TYPE.md` § "Copy-flödet" för konventioner per handler (slug-unikhet, fält-strip, owned vs shared children, cache).
+`apps/builder/schema/*.json` är en **committad synk-kopia** av sanningskällan
+`packages/schema/entities/`. Buildern importerar den via `@/schema/<table>.json`
+(t.ex. i `lib/customer-type-mapper.ts`) och `lib/schema/to-state.ts` konsumerar den.
 
-Att lägga till en ny sidtyp = följ `NEW_PAGE_TYPE.md`.
+> **Ändra ett fält?** Redigera `packages/schema/entities/<table>.json` (monorepo-roten),
+> kör `npm run schema:sync`. Det uppdaterar denna kopia + WP-kopian. **Rör aldrig
+> kopian för hand** — väktaren (`npm run check`) failar om den driftar.
 
----
+`lib/schema/*.ts` (formatet + `to-state.ts` + `to-fields.ts`) är vanlig kod som
+redigeras normalt — det är bara `*.json`-datafilerna som är synkade.
+
+*(Det fanns tidigare en cross-repo GitHub Action som speglade schemat mellan två
+repon. Den finns inte längre — i monorepot är synken `npm run schema:sync`.)*
 
 ## 5. Deterministisk skrivväg (state → Airtable)
 
-Det viktigaste mönstret i hela buildern: hur det putsade editor-statet översätts till de råa Airtable-fälten vid spar.
+Det viktigaste mönstret: WP-pluginen vill ha data i ett rendering-vänligt format
+(t.ex. `Q: …\nA: …`-lines för FAQ); marknadsföraren vill ha ett vanligt formulär
+(lista av `{question, answer}`). Buildern håller den enkla modellen i state och kör
+vid spar en **ren funktion** som översätter state → Airtable-fält. Backenden diffar
+och PATCH/CREATE/DELETE:ar.
 
-**Problem:** Pluginen på WP-sidan förväntar sig data i ett format som passar PHP-rendering — t.ex. en multi-line text-sträng med `Q: fråga\nA: svar\n\nQ: nästa fråga\nA: nästa svar` för ett FAQ-element. Det är effektivt för rendering men ohanterligt som UI-fält. Marknadsföraren ska få ett vanligt formulär: en lista med `{question, answer}`-poster där hen kan dra-och-släppa, ta bort, lägga till. Det är två olika datamodeller för samma sak.
+- `lib/deterministic-transform.ts` — per-typ-byggare (`build<Type>…`). Standardvägen idag.
+- `lib/schema/to-fields.ts` — schema-driven (single-source), pilot `customer-type`. Dit arkitekturen är på väg.
 
-**Lösning:** Buildern håller den enkla modellen i sitt state. Vid spar kör server-routen en **ren funktion** som översätter state → Airtable-fält, plus metadata (`_clientIndex`, `_recordId`) för att korrelera nya/befintliga records. Backenden diffar och PATCHar/CREATEar/DELETEar. Två varianter:
-
-- **`lib/schema/to-fields.ts`** — schema-driven (single-source). Härleder mappningen ur `schema/<entity>.json`. Pilot: `customer-type`. Dit hela arkitekturen är på väg (se `ARKITEKTURPLAN.md` FAS 1).
-- **`lib/deterministic-transform.ts`** — handskrivna per-typ-byggare (`buildLandingTransform`, `buildProductPageTransform`, `buildCmsPageTransform`, `buildPartnerFields`, `buildCaseFields`) för de typer som ännu inte flyttats till den schema-drivna vägen. Delade primitiver (`sectionToPayload`, stale-field-`clears*`, result-typer) ligger i `lib/transform-shared.ts`.
-
-**Varför rena funktioner (och inte Claude)?** Spar är *mekaniskt och deterministiskt* — döpa om `statNumber` → `stat_number`, serialisera en lista till lines-format. En ren funktion gör det snabbare, gratis och utan risk att hallucinera bort innehåll. (Historik: skrivvägen gick tidigare via en Claude-transform med ett MD-schema per sidtyp; den togs bort i FAS 2 eftersom editorn redan producerar rent state innan spar — Claude tillförde bara latens, kostnad och icke-determinism. Claude finns kvar på input-/copy-lagret, aldrig på spar. Se `ARKITEKTURPLAN.md` § 1.4.)
-
-Svåra fall transformen hanterar:
-- Polymorfa items (en tab kan vara textimage/faq/compare/...) som ska radas till olika fält
-- Pipe/prefix-baserade text-format som Airtable-fältet kräver
-- Multi-tabell-records med ordning som behöver korreleras
-
----
+**Ingen Claude på spar.** (Tidigare gick spar via en Claude-transform; den togs bort
+i FAS 2 — editorn producerar redan rent state, så Claude tillförde bara latens och
+icke-determinism.) Claude finns kvar enbart på `/api/copy` + `/api/parse` (input/copy).
+Hittar du text som påstår "Claude på spar" → den är inaktuell, rätta den.
 
 ## 6. SSOT-redigerare (`/globals`)
 
-För `core_*`-entiteter (företag, divisioner, partners, ...). Inte sidor — referensdata.
-
-Drivs av `lib/core/`-ramverket:
-- `registry.ts` — listar alla SSOT-entiteter med tableId
-- `forms.ts` — fältkonfiguration per entitet (label, type, link-targets, list-display)
-- `mapper.ts` — bidirektional record↔plain-object-mappning
-- `loader.ts` — list/load-flöden
-
-Att lägga till en SSOT-entitet är *bara* att registrera den i `registry.ts` + skriva en `forms.ts`-entry. Inga editor-komponenter krävs — `CoreEntityForm` renderar generiskt utifrån fältkonfigen.
-
-För riktiga sidor är detta för fattigt — då går vi via page-types-ramverket.
-
----
+För `core_*`-entiteter (företag, divisioner, partners …) — referensdata, inte sidor.
+Drivs av `lib/core/`: registrera i `registry.ts` + skriv en `forms.ts`-entry, så
+renderar `CoreEntityForm` generiskt. Inga bespoke-komponenter behövs.
 
 ## 7. Konventioner
 
-- **snake_case** överallt i state, mappers, scheman och Airtable display-namn. Buildern speglar Core-konventionen. Se `wexoeplugins/UTVECKLINGSGUIDE.md` § Naming.
-- **Inga Airtable-fältnamn i UI-kod.** State är snake_case domänfält; Airtable-namn finns bara i mappers, transform-byggarna och `schema/`.
-- **Per-sidtyp typer i `lib/<type>-types.ts`.** State-typen ska kunna serialiseras (skickas server→client som JSON utan funktioner/Date-objekt).
-- **State-typ-namn matchar Airtable-tabellen — utan undantag.** Regel: `<Tabell>State` där `<Tabell>` = tabellnamnet utan `cms_`-prefix i PascalCase. Så `cms_partner_pages` → `PartnerPageState`, `cms_cases` → `CaseState`, `cms_customer_type_pages` → `CustomerTypePageState`, `cms_pages` → `CmsPageState`, `cms_product_pages` → `ProductPageState`. (Sidtypen `product-page` döptes om i FAS 3 så att id/filer/mapper/bas och state-typen alla matchar tabellen `cms_product_pages` — det tidigare undantaget `ProductAreaState` finns inte längre.)
-- **State-uppdateringar är immutabla.** Editor-komponenter får `state` + `onChange(next)`. Använd spread `{ ...state, foo: bar }`.
-- **Server-pages hydrerar state.** Server-page hämtar från Airtable, kör `fromRecord`, skickar `initialState` som prop till client-builder. Klienten skickar aldrig egna Airtable-anrop.
-- **Cache-invalidering är obligatorisk.** Varje muterande route kör `clearWexoeCache(cacheEntities)` efter lyckad skrivning. Annars stale page-plugins.
-
----
+- **snake_case** i state, mappers, scheman, Airtable display-namn.
+- **Inga Airtable-fältnamn i UI-kod** — bara i mappers, transform-byggarna och `packages/schema`.
+- **State-typer heter `<Tabell>State`** — tabellnamnet utan `cms_`-prefix i PascalCase:
+  `cms_partner_pages`→`PartnerPageState`, `cms_cases`→`CaseState`,
+  `cms_customer_type_pages`→`CustomerTypeState`, `cms_pages`→`CmsPageState`,
+  `cms_product_pages`→`ProductPageState`. **Utan undantag.**
+- **State är immutabelt** — editor-komponenter får `state` + `onChange(next)`, använd spread.
+- **Cache-invalidering obligatorisk** — varje muterande route kör `invalidateWexoeCoreCache(cacheEntities)`.
 
 ## 8. Miljövariabler
 
-| Variabel | Källa | Användning |
-|---|---|---|
-| `AIRTABLE_API_KEY` | Personal access token (`pat...`) | Läs/skriv mot Airtable REST |
-| `AIRTABLE_BASE_ID` | Wexoe NY: `appokKSTaBdCa8YiW` | Default-base för läsning |
-| `ANTHROPIC_API_KEY` | Claude API-nyckel | `/api/copy` (textgenerering) + `/api/parse` (valfri input-tolkning, FAS 7). **Inte** spar-vägen. |
-| `AUTH_USERNAME` / `AUTH_PASSWORD` | Basic auth | `/login`-gate (single-tenant) |
-| `WEXOE_CORE_WEBHOOK_URL` / `WEXOE_CORE_WEBHOOK_SECRET` | WP-endpoint + delad secret | Cache-invalidering via webhook (`lib/wexoe-cache.ts`). Utan dem skippas invalidering tyst. |
-
----
+| Variabel | Användning |
+|---|---|
+| `AIRTABLE_API_KEY` · `AIRTABLE_BASE_ID` | Läs/skriv mot Airtable (Wexoe NY: `appokKSTaBdCa8YiW`) |
+| `ANTHROPIC_API_KEY` | `/api/copy` + `/api/parse` — **inte** spar-vägen |
+| `AUTH_USERNAME` / `AUTH_PASSWORD` | `/login`-gate |
+| `WEXOE_CORE_WEBHOOK_URL` / `_SECRET` | cache-invalidering mot WP (`lib/wexoe-cache.ts`); utan dem skippas tyst |
 
 ## 9. Vart pekar resten?
 
-- `ARKITEKTURPLAN.md` (denna mapp) — den kanoniska, framåtblickande arkitektur-refaktorn (modularisering: single-source-schema, deterministisk save, delade block). Spegelidentisk i `wexoeplugins/`. Arbeta mot den och bocka av progress.
-- `NEW_PAGE_TYPE.md` (denna mapp) — recept för att lägga till en ny sidtyp i buildern. Pair-läs med samma fil i `wexoeplugins/`.
-- `wexoeplugins/UTVECKLINGSGUIDE.md` — fullständig referens för Core-API, schemaformat, plugin-konventioner.
-- `wexoeplugins/NEW_PAGE_TYPE.md` — plugin-sidans recept för samma flöde.
-- `lib/page-types/types.ts` — den definitiva specifikationen på ramverket. Läs kommentarerna; de är inte boilerplate.
-- `lib/page-types/registry.ts` — toppkommentar har en kortare checklista för "lägg till sidtyp".
+| Du vill… | Gå till |
+|---|---|
+| Ramverket i detalj | `lib/page-types/types.ts` (kommentarerna ÄR spec) + `lib/page-types/registry.ts` |
+| Skapa ny sidtyp (bygg-sidan) | `/add-page-type` · `../../docs/NEW_PAGE_TYPE-builder.md` |
+| Skapa ny sidtyp (plugin-sidan, pair-läs) | `../../docs/NEW_PAGE_TYPE-plugin.md` |
+| Marknadsförar-flödet | `../../docs/SKAPA-SIDA.md` |
+| WP-sidan / Core-API | `../wordpress/CLAUDE.md` · `../wordpress/UTVECKLINGSGUIDE.md` |
+| Verktyg, sanningskällor, verify | `/CLAUDE.md` (monorepo-roten) |

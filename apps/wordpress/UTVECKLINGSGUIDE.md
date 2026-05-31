@@ -1,10 +1,10 @@
 # Wexoe Plugins — utvecklingsguide
 
-> **Vill du skapa en ny sidtyp?** Läs `SKAPA-SIDA.md` (i denna repo) — den guidar dig genom hela flowet steg för steg. Du behöver inte läsa filen du nu har öppen. Den är teknisk referens.
+> **Vill du skapa en ny sidtyp?** Läs `../../docs/SKAPA-SIDA.md` — den guidar dig genom hela flowet steg för steg. Du behöver inte läsa filen du nu har öppen. Den är teknisk referens.
 
 Hela referensen för att jobba med wexoe-core och dess page-plugins. Hur systemet är designat, vilket publikt API som finns, vilka konventioner som gäller och hur en typisk feature-plugin är byggd.
 
-Pair-läs med `wexoebuilder/CLAUDE.md` för bygg-sidan av samma system. För att skapa en *ny* sidtyp, se `SKAPA-SIDA.md`.
+Pair-läs med `../builder/CLAUDE.md` för bygg-sidan av samma system. För att skapa en *ny* sidtyp, se `../../docs/SKAPA-SIDA.md`.
 
 ---
 
@@ -430,7 +430,7 @@ Stale-field-clearing vid typbyten hanteras av buildern (deterministisk transform
 
 ---
 
-## 7. Mappstruktur (wexoeplugins-repot)
+## 7. Mappstruktur (apps/wordpress/)
 
 ```
 wexoe-core/
@@ -540,8 +540,8 @@ Core cachar varje entitet i en WP-transient med default-TTL 24h (konfigurerbar p
 
 ## 10. Vart pekar resten?
 
-- `NEW_PAGE_TYPE.md` (denna mapp) — receptet för att skapa en helt ny sidtyp (plugin + schema + builder-editor). Pair-läs med samma fil i `wexoebuilder/`.
-- `wexoebuilder/CLAUDE.md` — bygg-sidan av samma system. Page-type-ramverket, Claude-transform-mellanlaget, SSOT-redigerare.
-- `ARKITEKTURPLAN.md` — kanonisk, framåtblickande arkitekturplan (modularisering: single-source-schema, deterministisk save, delade block). Spegelidentisk i båda repona. (Ersätter den slutförda `MIGRATION-PLAN.md`; migrationshistoriken finns i `IMPLEMENTATION_LOG.md`.)
-- `IMPLEMENTATION_LOG.md` — löpande logg av migrationsåtgärder. Historik, inte API.
+- `../../docs/NEW_PAGE_TYPE-plugin.md` — receptet för att skapa plugin-sidan av en helt ny sidtyp (Airtable-tabell + Core-schema + PHP-plugin). Pair-läs med builder-versionen `../../docs/NEW_PAGE_TYPE-builder.md`.
+- `../builder/CLAUDE.md` — bygg-sidan av samma system. Page-type-ramverket, deterministisk save (rena funktioner, ingen Claude på spar), SSOT-redigerare.
+- `../../docs/archive/ARKITEKTURPLAN.md` — historisk arkitekturplan (modularisering: single-source-schema, deterministisk save, delade block). Arkiverad och ej underhållen — läs för motiven, men verifiera nuläget mot koden. (Migrationshistoriken finns i `../../docs/IMPLEMENTATION_LOG.md` + git.)
+- `../../docs/IMPLEMENTATION_LOG.md` — löpande logg av migrationsåtgärder. Historik, inte API.
 - `wexoe-core/src/Core.php` — koden själv. Doc-kommentarerna är auktoritativa när dokumentation och kod skiljer sig åt.
