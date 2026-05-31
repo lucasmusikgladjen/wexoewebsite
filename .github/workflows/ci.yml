@@ -27,7 +27,7 @@ jobs:
         run: npm run check
 
   builder:
-    name: Builder (tsc + lint)
+    name: Builder (tsc + lint + vitest)
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -44,17 +44,27 @@ jobs:
         run: npx tsc --noEmit
       - name: Lint
         run: npm run lint
+      - name: Test (Vitest)
+        run: npm test
 
   wordpress:
-    name: WordPress (php -l)
+    name: WordPress (php -l + PHPCS + Pest)
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/wordpress
     steps:
       - uses: actions/checkout@v4
       - uses: shivammathur/setup-php@v2
         with:
           php-version: '8.2'
+          tools: composer
       - name: PHP-lint alla .php
         run: |
-          find apps/wordpress -name '*.php' -print0 \
+          find . -name '*.php' -not -path './vendor/*' -print0 \
             | xargs -0 -n1 -P4 php -l > /dev/null
           echo "php -l: inga syntaxfel"
+      - name: Composer install
+        run: composer install --no-interaction --no-progress
+      - name: Test (Pest)
+        run: ./vendor/bin/pest

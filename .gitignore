@@ -16,9 +16,8 @@ node_modules/
 npm-debug.log*
 *.log
 
-# php
+# php — vendor ignoreras, men committa composer.lock för reproducerbar CI
 apps/wordpress/**/vendor/
-composer.lock
 
 # vercel
 .vercel

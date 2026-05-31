@@ -10,7 +10,10 @@
     "check": "node tools/schema-sync.mjs --check && node tools/guardian/guardian.mjs --check",
     "builder:dev": "npm --prefix apps/builder run dev",
     "builder:build": "npm --prefix apps/builder run build",
-    "builder:lint": "npm --prefix apps/builder run lint"
+    "builder:lint": "npm --prefix apps/builder run lint",
+    "test:builder": "npm --prefix apps/builder test",
+    "test:wordpress": "cd apps/wordpress && ./vendor/bin/pest",
+    "test": "npm run test:builder && npm run test:wordpress"
   },
   "engines": {
     "node": ">=20"
