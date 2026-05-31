@@ -754,24 +754,14 @@ class Wexoe_Case {
         $class = \Wexoe\Core\Core::renderer('contact-form');
         if ($class === '') return '';
 
-        $html = $class::render([
-            'eyebrow'        => $data['contact_form_eyebrow'] ?? '',
-            'title'          => $data['contact_form_title'] ?? '',
-            'subtitle'       => $data['contact_form_subtitle'] ?? '',
-            'layout'         => $data['contact_form_layout'] ?? 'split',
-            'theme'          => $data['contact_form_theme'] ?? 'dark',
-            'show_company'   => $data['contact_form_show_company'] ?? true,
-            'show_phone'     => $data['contact_form_show_phone'] ?? true,
-            'show_dropdown'  => $data['contact_form_show_dropdown'] ?? true,
-            'dropdown_label' => $data['contact_form_dropdown_label'] ?? '',
-            'options'        => $data['contact_form_options'] ?? null,
-            'cta_text'       => $data['contact_form_cta_text'] ?? '',
-            'message_label'  => $data['contact_form_message_label'] ?? '',
-            'trust_signals'  => $data['contact_form_trust_signals'] ?? null,
-            'source_plugin'  => 'wexoe-case',
-            'page_slug'      => $data['slug'] ?? '',
-            'contact_person' => null,
-        ]);
+        $html = $class::render(array_merge(
+            \Wexoe\Core\Renderers\ContactForm::from_record($data),
+            [
+                'source_plugin'  => 'wexoe-case',
+                'page_slug'      => $data['slug'] ?? '',
+                'contact_person' => null,
+            ]
+        ));
 
         return '<section id="kontakt" class="case-fullwidth">' . $html . '</section>';
     }

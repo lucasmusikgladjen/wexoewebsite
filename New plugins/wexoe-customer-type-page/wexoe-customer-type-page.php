@@ -595,8 +595,10 @@ class Wexoe_Customer_Type_Page {
         if (empty($data['show_contact_form'])) return '';
         if (!class_exists('\\Wexoe\\Core\\Renderers\\ContactForm')) return '';
 
+        $cf = \Wexoe\Core\Renderers\ContactForm::from_record($data);
+
         $contact_person = null;
-        if (!empty($data['contact_form_show_contact_person']) && class_exists('\\Wexoe\\Core\\Helpers\\Collections')) {
+        if (!empty($cf['show_contact_person']) && class_exists('\\Wexoe\\Core\\Helpers\\Collections')) {
             $matches = \Wexoe\Core\Helpers\Collections::coworkers_for_scope(['limit' => 1]);
             if (!empty($matches)) {
                 $c = $matches[0];
@@ -610,24 +612,11 @@ class Wexoe_Customer_Type_Page {
             }
         }
 
-        $html = \Wexoe\Core\Renderers\ContactForm::render([
-            'eyebrow'        => $data['contact_form_eyebrow'] ?? '',
-            'title'          => $data['contact_form_title'] ?? '',
-            'subtitle'       => $data['contact_form_subtitle'] ?? '',
-            'layout'         => $data['contact_form_layout'] ?? 'split',
-            'theme'          => $data['contact_form_theme'] ?? 'dark',
-            'show_company'   => $data['contact_form_show_company'] ?? true,
-            'show_phone'     => $data['contact_form_show_phone'] ?? true,
-            'show_dropdown'  => $data['contact_form_show_dropdown'] ?? true,
-            'dropdown_label' => $data['contact_form_dropdown_label'] ?? '',
-            'options'        => $data['contact_form_options'] ?? null,
-            'cta_text'       => $data['contact_form_cta_text'] ?? '',
-            'message_label'  => $data['contact_form_message_label'] ?? '',
-            'trust_signals'  => $data['contact_form_trust_signals'] ?? null,
+        $html = \Wexoe\Core\Renderers\ContactForm::render(array_merge($cf, [
             'source_plugin'  => 'wexoe-customer-type-page',
             'page_slug'      => $data['slug'] ?? '',
             'contact_person' => $contact_person,
-        ]);
+        ]));
 
         return '<section id="kontakt" class="wctp-contact-form-wrap" style="width:100%;">' . $html . '</section>';
     }

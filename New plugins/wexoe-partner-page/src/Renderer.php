@@ -758,8 +758,10 @@ class Renderer {
         $class = \Wexoe\Core\Core::renderer('contact-form');
         if ($class === '' || !class_exists($class)) return '';
 
+        $cf = \Wexoe\Core\Renderers\ContactForm::from_record($this->data);
+
         $contact_person = null;
-        if (!empty($this->data['contact_form_show_contact_person'])) {
+        if (!empty($cf['show_contact_person'])) {
             $name  = trim((string) ($this->data['contact_name']  ?? ''));
             $title = trim((string) ($this->data['contact_title'] ?? ''));
             $email = trim((string) ($this->data['contact_email'] ?? ''));
@@ -778,24 +780,11 @@ class Renderer {
             }
         }
 
-        $html = $class::render([
-            'eyebrow'        => $this->data['contact_form_eyebrow'] ?? '',
-            'title'          => $this->data['contact_form_title'] ?? '',
-            'subtitle'       => $this->data['contact_form_subtitle'] ?? '',
-            'layout'         => $this->data['contact_form_layout'] ?? 'split',
-            'theme'          => $this->data['contact_form_theme'] ?? 'dark',
-            'show_company'   => $this->data['contact_form_show_company'] ?? true,
-            'show_phone'     => $this->data['contact_form_show_phone'] ?? true,
-            'show_dropdown'  => $this->data['contact_form_show_dropdown'] ?? true,
-            'dropdown_label' => $this->data['contact_form_dropdown_label'] ?? '',
-            'options'        => $this->data['contact_form_options'] ?? null,
-            'cta_text'       => $this->data['contact_form_cta_text'] ?? '',
-            'message_label'  => $this->data['contact_form_message_label'] ?? '',
-            'trust_signals'  => $this->data['contact_form_trust_signals'] ?? null,
+        $html = $class::render(array_merge($cf, [
             'source_plugin'  => 'wexoe-partner-page',
             'page_slug'      => $this->slug,
             'contact_person' => $contact_person,
-        ]);
+        ]));
 
         return '<section id="kontakt">' . $html . '</section>';
     }
