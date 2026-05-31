@@ -88,20 +88,9 @@ return [
 
         // Contact Form (delad med ContactForm-renderer)
         'show_contact_form' => ['source' => 'show_contact_form', 'type' => 'bool'],
-        'contact_form_eyebrow' => 'contact_form_eyebrow',
-        'contact_form_title' => 'contact_form_title',
-        'contact_form_subtitle' => 'contact_form_subtitle',
-        'contact_form_layout' => 'contact_form_layout',
-        'contact_form_theme' => 'contact_form_theme',
-        'contact_form_show_company' => ['source' => 'contact_form_show_company', 'type' => 'bool'],
-        'contact_form_show_phone' => ['source' => 'contact_form_show_phone', 'type' => 'bool'],
-        'contact_form_show_dropdown' => ['source' => 'contact_form_show_dropdown', 'type' => 'bool'],
-        'contact_form_dropdown_label' => 'contact_form_dropdown_label',
-        'contact_form_options' => ['source' => 'contact_form_options', 'type' => 'lines'],
-        'contact_form_cta_text' => 'contact_form_cta_text',
-        'contact_form_message_label' => 'contact_form_message_label',
-        'contact_form_trust_signals' => ['source' => 'contact_form_trust_signals', 'type' => 'lines'],
-        'contact_form_show_contact_person' => ['source' => 'contact_form_show_contact_person', 'type' => 'bool'],
+        // Delat contact_form-block: hela blocket bor i contact_form_json
+        // (snake_case-nycklar). ContactForm::from_record() avkodar det.
+        'contact_form_json' => 'contact_form_json',
 
         // Linked records
         'section_ids' => [

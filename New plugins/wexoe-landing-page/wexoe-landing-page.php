@@ -998,8 +998,10 @@ function wexoe_lp_render_contact_form_section($data) {
     if (empty($data['show_contact_form'])) return '';
     if (!class_exists('\\Wexoe\\Core\\Renderers\\ContactForm')) return '';
 
+    $cf = \Wexoe\Core\Renderers\ContactForm::from_record($data);
+
     $contact_person = null;
-    if (!empty($data['contact_form_show_contact_person'])) {
+    if (!empty($cf['show_contact_person'])) {
         $contact_person = [
             'name'  => $data['contact_name'] ?? '',
             'title' => $data['contact_title'] ?? '',
@@ -1010,20 +1012,7 @@ function wexoe_lp_render_contact_form_section($data) {
         ];
     }
 
-    $html = \Wexoe\Core\Renderers\ContactForm::render([
-        'eyebrow'        => $data['contact_form_eyebrow'] ?? '',
-        'title'          => $data['contact_form_title'] ?? '',
-        'subtitle'       => $data['contact_form_subtitle'] ?? '',
-        'layout'         => $data['contact_form_layout'] ?? 'split',
-        'theme'          => $data['contact_form_theme'] ?? 'dark',
-        'show_company'   => $data['contact_form_show_company'] ?? true,
-        'show_phone'     => $data['contact_form_show_phone'] ?? true,
-        'show_dropdown'  => $data['contact_form_show_dropdown'] ?? true,
-        'dropdown_label' => $data['contact_form_dropdown_label'] ?? '',
-        'options'        => $data['contact_form_options'] ?? null,
-        'cta_text'       => $data['contact_form_cta_text'] ?? '',
-        'message_label'  => $data['contact_form_message_label'] ?? '',
-        'trust_signals'  => $data['contact_form_trust_signals'] ?? null,
+    $html = \Wexoe\Core\Renderers\ContactForm::render(array_merge($cf, [
         'colors'         => [
             'main'   => $data['color_main'] ?? '',
             'accent' => $data['color_secondary'] ?? '',
@@ -1031,7 +1020,7 @@ function wexoe_lp_render_contact_form_section($data) {
         'source_plugin'  => 'wexoe-landing-page',
         'page_slug'      => $data['slug'] ?? '',
         'contact_person' => $contact_person,
-    ]);
+    ]));
 
     // Wrappa i <section id="kontakt"> så befintliga href="#kontakt"-länkar fortsätter scrolla rätt.
     return '<section id="kontakt">' . $html . '</section>';

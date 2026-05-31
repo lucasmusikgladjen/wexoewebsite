@@ -45,6 +45,30 @@ class ContactForm {
         return ob_get_clean();
     }
 
+    /**
+     * Bygg render-config från en records `contact_form_json`-fält (delat block).
+     *
+     * JSON lagras i snake_case med oprefixade nycklar (eyebrow, title,
+     * show_company, cta_text, …) — exakt samma form som `render()` förväntar
+     * sig, så det här är i princip bara en `json_decode` + per-sida-tillägg
+     * (colors/source_plugin/page_slug/contact_person).
+     *
+     * `$extra` mergas ovanpå det avkodade blocket (per-sida-fält som inte bor
+     * i det delade blocket). Saknas/ogiltig JSON → tomt block (render() faller
+     * tillbaka på sina defaults).
+     */
+    public static function from_record(array $data, array $extra = []): array {
+        $decoded = [];
+        $raw = $data['contact_form_json'] ?? null;
+        if (is_string($raw) && trim($raw) !== '') {
+            $parsed = json_decode($raw, true);
+            if (is_array($parsed)) {
+                $decoded = $parsed;
+            }
+        }
+        return array_merge($decoded, $extra);
+    }
+
     /* --------------------------------------------------------
        NORMALIZATION
        -------------------------------------------------------- */
