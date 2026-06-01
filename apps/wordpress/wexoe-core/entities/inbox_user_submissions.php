@@ -1,9 +1,9 @@
 <?php
 /**
- * Entity schema: automation_product_navigation (shim)
+ * Entity schema: inbox_user_submissions (shim)
  *
- * Faltlistan bor pa EXAKT ett stalle: schema/automation_product_navigation.json (committad synk-kopia av
- * packages/schema/entities/automation_product_navigation.json). Den har filen ar en tunn shim som later
+ * Faltlistan bor pa EXAKT ett stalle: schema/inbox_user_submissions.json (committad synk-kopia av
+ * packages/schema/entities/inbox_user_submissions.json). Den har filen ar en tunn shim som later
  * Schema::from_json() oversatta JSON-schemat till den array-form
  * SchemaRegistry/Normalizer forvantar sig — read-beteendet ar oforandrat och
  * bevisat byte-identiskt (Normalizer doman-output ===). Samma JSON last av
@@ -14,4 +14,4 @@
 
 if (!defined('ABSPATH')) exit;
 
-return \Wexoe\Core\Schema::from_json('automation_product_navigation');
+return \Wexoe\Core\Schema::from_json('inbox_user_submissions');

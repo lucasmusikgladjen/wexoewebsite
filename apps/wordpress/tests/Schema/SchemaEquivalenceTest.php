@@ -115,8 +115,8 @@ function se_synth_record(array $schema): array
     return ['id' => 'recSYNTH', 'fields' => $fields];
 }
 
-it('har minst de 26 migrerade entiteterna i packages/schema/entities', function () {
-    expect(count(se_entities()))->toBeGreaterThanOrEqual(26);
+it('har minst de 24 migrerade entiteterna i packages/schema/entities', function () {
+    expect(count(se_entities()))->toBeGreaterThanOrEqual(24);
 });
 
 it('(a) varje JSON-original bygger ett giltigt schema via from_array', function (string $entity) {
@@ -135,9 +135,8 @@ it('(b) from_json (synkad kopia) === from_array (original) per entitet', functio
     expect($fromJson)->toBe($fromArray); // strikt === (samma nycklar, ordning, värden)
 })->with(se_entities());
 
-it('(c) pseudo_array- och type-strukturen bevaras genom byggaren', function () {
-    // cms_cases har tre pseudo_array-fält; automation_product_navigation har en
-    // 'type'-diskriminator. Bygg dem och verifiera strukturen.
+it('(c) pseudo_array-strukturen bevaras genom byggaren', function () {
+    // cms_cases har tre pseudo_array-fält.
     $cases = Schema::from_array(se_load_json('cms_cases'));
     foreach (['quick_stats', 'results', 'gallery_images'] as $pa) {
         expect($cases['fields'])->toHaveKey($pa);
@@ -147,10 +146,6 @@ it('(c) pseudo_array- och type-strukturen bevaras genom byggaren', function () {
         expect($spec['count'])->toBeInt();
         expect($spec['fields'])->toBeArray()->not->toBeEmpty();
     }
-    $nav = Schema::from_array(se_load_json('automation_product_navigation'));
-    expect($nav['fields'])->toHaveKey('type');
-    expect($nav['fields']['type']['type'])->toBe('type');
-    expect($nav['fields']['type']['source'])->toBe('type');
 });
 
 it('(d) varje entitet normaliserar ett syntetiskt record utan fel', function (string $entity) {
@@ -163,11 +158,10 @@ it('(d) varje entitet normaliserar ett syntetiskt record utan fel', function (st
     expect(count($out))->toBe(count($schema['fields']) + 1);
 })->with(se_entities());
 
-it('(e) table_id => null bevaras för legacy/pending-migration-entiteter', function () {
-    // automation_offerings, automation_product_navigation, inbox_form_submissions
-    // har table_id: null i JSON och MÅSTE byggas med table_id-nyckel = null
-    // (samma som den handskrivna arrayen — annars driftar SchemaRegistry-utfallet).
-    foreach (['automation_offerings', 'automation_product_navigation', 'inbox_form_submissions'] as $e) {
+it('(e) table_id => null bevaras för pending-migration-entiteter', function () {
+    // inbox_user_submissions har table_id: null i JSON och MÅSTE byggas med
+    // table_id-nyckel = null (annars driftar SchemaRegistry-utfallet).
+    foreach (['inbox_user_submissions'] as $e) {
         $schema = Schema::from_array(se_load_json($e));
         expect($schema)->toHaveKey('table_id');
         expect($schema['table_id'])->toBeNull();
