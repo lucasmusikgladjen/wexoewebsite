@@ -225,14 +225,15 @@ async function main() {
 
   const findings = [];
   try {
-    // Hämta varje unik bas en gång.
-    const neededBases = [...new Set(schemas.map((s) => BASE_IDS[s.base] || BASE_IDS.ssot))];
+    // Hämta varje unik bas en gång (bara schemas med table_id).
+    const auditableSchemas = schemas.filter((s) => s.table_id);
+    const neededBases = [...new Set(auditableSchemas.map((s) => BASE_IDS[s.base] || BASE_IDS.ssot))];
     const tablesByBase = {};
     for (const baseId of neededBases) {
       tablesByBase[baseId] = await fetchBaseTables(baseId, apiKey);
     }
 
-    for (const schema of schemas) {
+    for (const schema of auditableSchemas) {
       const baseId = BASE_IDS[schema.base] || BASE_IDS.ssot;
       const tables = tablesByBase[baseId];
       const table = tables.find((t) => t.id === schema.table_id);
@@ -247,7 +248,7 @@ async function main() {
     findings.push(...auditSectionTypeEnum(tablesByBase[BASE_IDS.ssot] || [], enumSlugs));
 
     const hasErrors = findings.some((f) => f.level === 'error');
-    report(hasErrors ? 'failed' : 'passed', findings, { entities: schemas.length });
+    report(hasErrors ? 'failed' : 'passed', findings, { entities: auditableSchemas.length });
   } catch (e) {
     // Nätverks-/auth-fel är inte en schema-avvikelse → rapportera men exit 1 så
     // en trasig nyckel inte tyst maskeras.
