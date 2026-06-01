@@ -107,6 +107,9 @@ async function fetchBaseTables(baseId, apiKey) {
     throw new Error(`Metadata-API ${res.status} för bas ${baseId}: ${body.slice(0, 200)}`);
   }
   const data = await res.json();
+  if (!Array.isArray(data.tables)) {
+    throw new Error(`Metadata-API returnerade ogiltigt svar för bas ${baseId} (saknar tables-array)`);
+  }
   return data.tables; // [{ id, name, fields: [{ id, name, type, options }], ... }]
 }
 
@@ -118,7 +121,7 @@ export function auditEntity(schema, table) {
   // A-fields + A-types — varje schema-fält ska finnas med kompatibel typ.
   // Airtable-kolumnnamnet är `def.source` om satt (dokumenterad alias-override
   // i packages/schema/README.md), annars JSON-nyckeln själv.
-  const airtableFields = new Map(table.fields.map((f) => [f.name, f]));
+  const airtableFields = new Map((table.fields ?? []).map((f) => [f.name, f]));
   const expectedAirtableNames = new Set(); // det vi faktiskt slår upp i Airtable
   for (const [fieldName, def] of Object.entries(schema.fields || {})) {
     // pseudo_array expanderar till numrerade slot-fält i Airtable (t.ex.
@@ -149,7 +152,7 @@ export function auditEntity(schema, table) {
   // namnen) — varning, inte fel: kan vara legacy-kolumner eller fält bara
   // WP/automation läser. Jämför mot de RESOLVADE namnen (inkl. source-alias),
   // annars flaggas en aliasad kolumn felaktigt som föräldralös.
-  for (const af of table.fields) {
+  for (const af of (table.fields ?? [])) {
     if (!expectedAirtableNames.has(af.name)) {
       warn('A-fields', `${tableLabel}: Airtable-fält '${af.name}' (${af.type}) finns inte i schemat (legacy? eller saknas i packages/schema)`);
     }
@@ -209,7 +212,11 @@ function report(status, findings, extra = {}) {
     // hamnar EFTER varningarna i CI-loggen — stderr är unbuffrat och skulle annars
     // dyka upp högt upp i loggen (scrollat utom bild) pga stdout-buffring.
     console.log(`\n✗ Airtable-audit: ${errors.length} avvikelse(r) mot basen:`);
-    for (const e of errors) console.log(`  ✗ ${e.rule}: ${e.message}`);
+    for (const e of errors) {
+      console.log(`  ✗ ${e.rule}: ${e.message}`);
+      // GitHub Actions annotation — syns i steg-sammanfattningen och PR-diff-vyn.
+      if (process.env.GITHUB_ACTIONS) console.log(`::error::${e.rule}: ${e.message}`);
+    }
     process.exit(1);
   }
   console.log(`\n✓ Airtable-audit OK — schema matchar basen (${extra.entities} entiteter, ${warnings.length} varningar).`);
@@ -239,31 +246,47 @@ async function main() {
     // strängar eller utelämnad table_id-nyckel (oavsiktligt) ska GÅ IGENOM och
     // ge A-table-fel — annars maskeras felaktiga schemas tyst.
     const auditableSchemas = schemas.filter((s) => s.table_id !== null);
+    console.log(`Auditerar ${auditableSchemas.length} schema(n) (hoppar ${schemas.length - auditableSchemas.length} med table_id=null)...`);
     const neededBases = [...new Set(auditableSchemas.map((s) => BASE_IDS[s.base] || BASE_IDS.ssot))];
     const tablesByBase = {};
     const inaccessibleBases = new Set();
     for (const baseId of neededBases) {
       try {
+        console.log(`  Hämtar tabeller för bas ${baseId}...`);
         tablesByBase[baseId] = await fetchBaseTables(baseId, apiKey);
+        console.log(`  → ${tablesByBase[baseId].length} tabeller laddade`);
       } catch (e) {
         // API-nyckeln saknar åtkomst till denna bas (t.ex. legacy-bas som inte
         // ingår i nyckelns scope). Varna men krascha inte — ssot-basen är
         // primär och auditeras alltid; legacy är valfri.
         inaccessibleBases.add(baseId);
+        console.log(`  → FEL: ${e.message}`);
         findings.push({ level: 'warning', rule: 'A-access', message: `Bas ${baseId} kunde inte hämtas (${e.message}) — hoppar scheman i denna bas` });
       }
     }
 
     for (const schema of auditableSchemas) {
       const baseId = BASE_IDS[schema.base] || BASE_IDS.ssot;
-      if (inaccessibleBases.has(baseId)) continue;
+      if (inaccessibleBases.has(baseId)) {
+        console.log(`  – ${schema.table}: hoppar (bas ${baseId} ej tillgänglig)`);
+        continue;
+      }
       const tables = tablesByBase[baseId];
       const table = tables.find((t) => t.id === schema.table_id);
       if (!table) {
+        console.log(`  ✗ ${schema.table}: table_id '${schema.table_id}' saknas i bas ${baseId}`);
         findings.push({ level: 'error', rule: 'A-table', message: `${schema.table}: table_id '${schema.table_id}' finns inte i bas ${baseId}` });
         continue;
       }
-      findings.push(...auditEntity(schema, table));
+      const entityFindings = auditEntity(schema, table);
+      const entityErrors = entityFindings.filter((f) => f.level === 'error');
+      if (entityErrors.length) {
+        console.log(`  ✗ ${schema.table}: ${entityErrors.length} fel`);
+        for (const e of entityErrors) console.log(`    ✗ ${e.rule}: ${e.message}`);
+      } else {
+        console.log(`  ✓ ${schema.table}`);
+      }
+      findings.push(...entityFindings);
     }
 
     // Enum-jämförelsen lever i ssot-basen (där cms_page_sections bor).
