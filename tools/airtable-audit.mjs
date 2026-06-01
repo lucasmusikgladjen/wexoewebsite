@@ -241,12 +241,22 @@ async function main() {
     const auditableSchemas = schemas.filter((s) => s.table_id !== null);
     const neededBases = [...new Set(auditableSchemas.map((s) => BASE_IDS[s.base] || BASE_IDS.ssot))];
     const tablesByBase = {};
+    const inaccessibleBases = new Set();
     for (const baseId of neededBases) {
-      tablesByBase[baseId] = await fetchBaseTables(baseId, apiKey);
+      try {
+        tablesByBase[baseId] = await fetchBaseTables(baseId, apiKey);
+      } catch (e) {
+        // API-nyckeln saknar åtkomst till denna bas (t.ex. legacy-bas som inte
+        // ingår i nyckelns scope). Varna men krascha inte — ssot-basen är
+        // primär och auditeras alltid; legacy är valfri.
+        inaccessibleBases.add(baseId);
+        findings.push({ level: 'warning', rule: 'A-access', message: `Bas ${baseId} kunde inte hämtas (${e.message}) — hoppar scheman i denna bas` });
+      }
     }
 
     for (const schema of auditableSchemas) {
       const baseId = BASE_IDS[schema.base] || BASE_IDS.ssot;
+      if (inaccessibleBases.has(baseId)) continue;
       const tables = tablesByBase[baseId];
       const table = tables.find((t) => t.id === schema.table_id);
       if (!table) {
