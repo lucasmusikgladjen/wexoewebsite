@@ -199,8 +199,11 @@ function report(status, findings, extra = {}) {
   const warnings = findings.filter((f) => f.level === 'warning');
   for (const w of warnings) console.log(`  ⚠ ${w.rule}: ${w.message}`);
   if (errors.length) {
-    console.error(`\n✗ Airtable-audit: ${errors.length} avvikelse(r) mot basen:`);
-    for (const e of errors) console.error(`  ✗ ${e.rule}: ${e.message}`);
+    // console.log (stdout) istället för console.error (stderr) så att felmeddelandena
+    // hamnar EFTER varningarna i CI-loggen — stderr är unbuffrat och skulle annars
+    // dyka upp högt upp i loggen (scrollat utom bild) pga stdout-buffring.
+    console.log(`\n✗ Airtable-audit: ${errors.length} avvikelse(r) mot basen:`);
+    for (const e of errors) console.log(`  ✗ ${e.rule}: ${e.message}`);
     process.exit(1);
   }
   console.log(`\n✓ Airtable-audit OK — schema matchar basen (${extra.entities} entiteter, ${warnings.length} varningar).`);
@@ -226,7 +229,10 @@ async function main() {
   const findings = [];
   try {
     // Hämta varje unik bas en gång (bara schemas med table_id).
-    const auditableSchemas = schemas.filter((s) => s.table_id);
+    // Explicit null-check: null = avsiktlig pending-migration (hoppa). Tomma
+    // strängar eller utelämnad table_id-nyckel (oavsiktligt) ska GÅ IGENOM och
+    // ge A-table-fel — annars maskeras felaktiga schemas tyst.
+    const auditableSchemas = schemas.filter((s) => s.table_id !== null);
     const neededBases = [...new Set(auditableSchemas.map((s) => BASE_IDS[s.base] || BASE_IDS.ssot))];
     const tablesByBase = {};
     for (const baseId of neededBases) {
