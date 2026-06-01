@@ -121,6 +121,11 @@ export function auditEntity(schema, table) {
   const airtableFields = new Map(table.fields.map((f) => [f.name, f]));
   const expectedAirtableNames = new Set(); // det vi faktiskt slår upp i Airtable
   for (const [fieldName, def] of Object.entries(schema.fields || {})) {
+    // pseudo_array expanderar till numrerade slot-fält i Airtable (t.ex.
+    // quick_stat_1_value, quick_stat_2_value). Det finns ingen enskild Airtable-
+    // kolumn med nyckeln som namn — hoppa A-fields/A-types för dessa.
+    if (def.type === 'pseudo_array') continue;
+
     const airtableName = def.source || fieldName;
     expectedAirtableNames.add(airtableName);
     const label = airtableName === fieldName ? `'${fieldName}'` : `'${fieldName}' (source '${airtableName}')`;
