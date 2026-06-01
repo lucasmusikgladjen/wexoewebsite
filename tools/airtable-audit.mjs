@@ -43,10 +43,11 @@ const jsonOut = process.argv.includes('--json');
 const SCHEMA_DIR = join(ROOT, 'packages/schema/entities');
 const ENUM_FILE = join(ROOT, 'packages/schema/enums/section-types.json');
 
-// Base-alias → Airtable base-id. Speglar apps/builder/lib/airtable.ts.
-// (Override via env om en entitet pekar på en annan bas.)
+// Base-alias → Airtable base-id. Hårdkodat — auditskriptet har sitt eget
+// syfte (schema-verifiering) och ska inte bero på miljövariabler som sätts
+// för buildern (AIRTABLE_BASE_ID kan råka peka på fel bas).
 const BASE_IDS = {
-  ssot: process.env.AIRTABLE_BASE_ID || 'appokKSTaBdCa8YiW',
+  ssot: 'appokKSTaBdCa8YiW',
   legacy: 'appXoUcK68dQwASjF',
 };
 

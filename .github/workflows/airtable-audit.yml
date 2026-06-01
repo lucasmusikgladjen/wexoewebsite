@@ -46,5 +46,4 @@ jobs:
       - name: Audit schema mot Airtable
         env:
           AIRTABLE_API_KEY: ${{ secrets.AIRTABLE_API_KEY }}
-          AIRTABLE_BASE_ID: ${{ secrets.AIRTABLE_BASE_ID }}
         run: npm run audit:airtable
