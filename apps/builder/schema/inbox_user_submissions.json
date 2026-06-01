@@ -1,5 +1,5 @@
 {
-    "table": "inbox_form_submissions",
+    "table": "inbox_user_submissions",
     "base": "ssot",
     "table_id": null,
     "primary_key": "submission_id",
