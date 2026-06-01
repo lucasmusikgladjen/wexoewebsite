@@ -1,5 +1,6 @@
 {
     "table": "automation_team_members",
+    "base": "legacy",
     "table_id": "tblldarIcIpxlZ9GV",
     "cache_ttl": 86400,
     "required": [
