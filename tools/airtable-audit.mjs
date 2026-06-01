@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+// CI-test: verifierar att auditskriptet körs korrekt mot live Airtable-bas.
 /**
  * AIRTABLE-AUDIT — jämför sanningskällan (packages/schema) mot den FAKTISKA
  * Airtable-basen. Den check väktaren inte kan göra: guardian validerar att
