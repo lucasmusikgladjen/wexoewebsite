@@ -48,6 +48,12 @@ export default function ContactFormEditor({ state, onChange }: Props) {
         </Row>
       </div>
 
+      {state.layout === 'centered' && (
+        <p className="rounded-md border border-gray-100 bg-gray-50 px-2 py-1.5 text-[11px] text-gray-500">
+          Centrerad layout visar bara titeln ovanför formuläret — subtitel, trust-signaler och kontaktperson döljs i renderingen.
+        </p>
+      )}
+
       <fieldset className="border border-gray-100 rounded-md p-3 space-y-2">
         <legend className="text-[10px] uppercase tracking-wider text-gray-400 px-1">Visa fält</legend>
         <Check label="Företag" checked={state.showCompany} onChange={(v) => set('showCompany', v)} />
