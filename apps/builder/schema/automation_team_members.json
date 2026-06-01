@@ -20,7 +20,7 @@
             "source": "Description"
         },
         "image": {
-            "type": "attachment",
+            "type": "image",
             "source": "Image"
         },
         "email": {
@@ -42,14 +42,6 @@
         "module_name": {
             "type": "text",
             "source": "Module name"
-        },
-        "module_color": {
-            "type": "text",
-            "source": "ModuleColor"
-        },
-        "module_id": {
-            "type": "text",
-            "source": "ModuleId"
         },
         "visa": {
             "type": "bool",
