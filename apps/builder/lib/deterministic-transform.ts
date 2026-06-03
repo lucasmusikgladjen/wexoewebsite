@@ -12,8 +12,9 @@
  *            alltid; pseudo-array-positioner utan data skickas som '' så att
  *            borttagna items rensas.
  *
- * Det delade kontaktformuläret skrivs via `contactFormToFields` (samma 14 fält
- * som tidigare); `show_contact_form` skrivs som vanlig boolean.
+ * Det delade kontaktformuläret skrivs via `contactFormToFields` som en enda
+ * JSON-kolumn (`contact_form_json`, FAS 3); `show_contact_form` skrivs som
+ * vanlig boolean.
  */
 
 import { PartnerPageState, QUICK_FACT_ICON_KEYS } from './partner-types';
@@ -173,7 +174,7 @@ export function buildPartnerFields(state: PartnerPageState, mode: WriteMode): Ou
   putBool(out, 'show_contact_form', state.showContactForm);
   Object.assign(
     out,
-    contactFormToFields(state.contactForm, { schema: 'snake_case', nullForEmpty: mode === 'update', emitJson: true }),
+    contactFormToFields(state.contactForm, { schema: 'snake_case' }),
   );
 
   return out;
@@ -295,7 +296,7 @@ export function buildCaseFields(state: CaseState, mode: WriteMode): Out {
   putBool(out, 'show_contact_form', state.showContactForm);
   Object.assign(
     out,
-    contactFormToFields(state.contactForm, { schema: 'snake_case', nullForEmpty: mode === 'update', emitJson: true }),
+    contactFormToFields(state.contactForm, { schema: 'snake_case' }),
   );
 
   return out;
@@ -355,7 +356,7 @@ function buildPaParentFields(state: ProductPageState, mode: WriteMode): Out {
   putBool(o, 'show_contact_form', state.showContactForm);
   Object.assign(
     o,
-    contactFormToFields(state.contactForm, { schema: 'snake_case', nullForEmpty: mode === 'update', emitJson: true }),
+    contactFormToFields(state.contactForm, { schema: 'snake_case' }),
   );
   return o;
 }
@@ -503,7 +504,7 @@ function buildLpParentFields(state: PageState, mode: WriteMode): Out {
   putBool(o, 'show_contact_form', state.showContactForm);
   Object.assign(
     o,
-    contactFormToFields(state.contactForm, { schema: 'snake_case', nullForEmpty: mode === 'update', emitJson: true }),
+    contactFormToFields(state.contactForm, { schema: 'snake_case' }),
   );
   return o;
 }

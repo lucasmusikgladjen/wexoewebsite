@@ -232,7 +232,7 @@ export function contactFormFromRecord(record: AirtableRecord): ContactFormState 
 
 /**
  * Konvertera ContactFormState till Airtable-fält-map för legacy-callers.
- * Tomma textfält skrivs inte i create-payloaden, precis som tidigare.
+ * Blocket skrivs som JSON-kolumnen `contact_form_json` (FAS 3).
  */
 export function contactFormToFields(
   showContactForm: boolean,
@@ -240,7 +240,7 @@ export function contactFormToFields(
 ): Record<string, unknown> {
   const fields = {
     show_contact_form: showContactForm,
-    ...sharedContactFormToFields(state, { schema: 'snake_case', nullForEmpty: true }),
+    ...sharedContactFormToFields(state, { schema: 'snake_case' }),
   };
   const out: Record<string, unknown> = {};
   for (const [k, v] of Object.entries(fields)) {
