@@ -81,9 +81,7 @@ export function customerTypeToFields(
     { omit: ['case_ids'] }, // länkas i Airtable, read-only i buildern
   );
   const contact = contactFormToFields(state.contactForm, {
-    schema: 'snake_case',
-    nullForEmpty: mode === 'update',
-    emitJson: true, // FAS 3: dual-write JSON-spegeln (flata fält kvar som SoT)
+    schema: 'snake_case', // FAS 3: blocket skrivs som JSON-kolumnen contact_form_json
   });
   return { ...scalar, ...contact };
 }

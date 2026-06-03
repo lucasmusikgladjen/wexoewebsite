@@ -21,16 +21,16 @@
  * Write-sidan returnerar råa värden. Callers ansvarar själva för
  * empty→null-konvertering om sidtypen vill den semantiken.
  *
- * FAS 3 — delat block via JSON-kolumn: utöver de flata `contact_form_*`-fälten
- * speglas hela blocket till en enda JSON-kolumn (`contact_form_json`). Detta är
- * expand-contract:
- *   1. (NU) Lägg JSON-kolumnen + dual-write (`emitJson: true`). Flata fält är
- *      fortfarande källa-till-sanning; PHP läser oförändrat.
+ * FAS 3 — delat block via JSON-kolumn (KLAR): hela blocket lagras i EN enda
+ * JSON-kolumn (`contact_form_json`). Expand-contract genomförd:
+ *   1. Lade JSON-kolumnen + dual-write. Flata fält var källa-till-sanning.
  *   2. Read-prefer: `contactFormFromFields` föredrar JSON-spegeln när den finns,
  *      annars de flata fälten (bakåtkompat för records skrivna innan kolumnen).
- *   3. (SENARE, gateat) Byt PHP-läsning till JSON, radera de 15 flata fälten,
- *      replikera till övriga tabeller.
- * JSON-payloaden är ContactFormState serialiserad (camelCase) — oberoende av
+ *   3. (NU) PHP läser uteslutande JSON (`ContactForm::from_record`); de 15 flata
+ *      `contact_form_*`-fälten är borttagna ur Airtable. Skriv-vägen
+ *      (`contactFormToFields`) emittar därför bara JSON-kolumnen — att skriva
+ *      ett borttaget fält ger "Unknown field name" och failar hela sparet.
+ * JSON-payloaden är ContactFormState serialiserad (snake_case) — oberoende av
  * varje tabells flat-fält-naming, så samma blob kan delas av alla sidtyper.
  */
 
@@ -237,41 +237,24 @@ export function contactFormFromFields(
 
 export interface ContactFormToFieldsOptions {
   schema?: ContactFormSchema;
-  /** Konvertera tomma textfält till `null` (Airtable-konvention för att
-   *  rensa fält på UPDATE). Booleans påverkas inte. */
-  nullForEmpty?: boolean;
-  /** FAS 3: skriv även JSON-spegeln (`contact_form_json`) som delat-block-källa.
-   *  Dual-write — de flata fälten skrivs fortfarande och är källa-till-sanning
-   *  tills PHP byter till JSON-läsning. */
-  emitJson?: boolean;
 }
 
+/**
+ * Skriv-vägen för det delade kontaktformuläret. Efter FAS 3 (delat block via
+ * JSON-kolumn) skrivs hela blocket som EN serialiserad JSON-kolumn
+ * (`contact_form_json`) — de 15 flata `contact_form_*`-fälten är borttagna ur
+ * Airtable och PHP läser uteslutande JSON-spegeln (`ContactForm::from_record`).
+ * Att skriva ett borttaget fält ger Airtable-felet "Unknown field name", så
+ * skriv-vägen får aldrig emitta de flata fälten igen.
+ *
+ * `schema` väljer bara kolumnNAMNET (snake_case → `contact_form_json`,
+ * title_case → `Contact Form JSON`). Själva JSON-innehållet är alltid samma
+ * schemaoberoende snake_case-blob, så samma blob kan delas av alla sidtyper.
+ */
 export function contactFormToFields(
   state: ContactFormState,
   options: ContactFormToFieldsOptions = {},
 ): Record<string, unknown> {
-  const { prefix, keys, jsonField } = SCHEMAS[options.schema ?? 'title_case'];
-  const text = (v: string): string | null =>
-    options.nullForEmpty && v === '' ? null : v;
-  const k = (key: keyof SchemaSpec['keys']) => `${prefix}${keys[key]}`;
-  const out: Record<string, unknown> = {
-    [k('eyebrow')]: text(state.eyebrow),
-    [k('title')]: text(state.title),
-    [k('subtitle')]: text(state.subtitle),
-    [k('layout')]: state.layout,
-    [k('theme')]: state.theme,
-    [k('showCompany')]: state.showCompany,
-    [k('showPhone')]: state.showPhone,
-    [k('showDropdown')]: state.showDropdown,
-    [k('dropdownLabel')]: text(state.dropdownLabel),
-    [k('options')]: text(state.options),
-    [k('ctaText')]: text(state.ctaText),
-    [k('messageLabel')]: text(state.messageLabel),
-    [k('trustSignals')]: text(state.trustSignals),
-    [k('showContactPerson')]: state.showContactPerson,
-  };
-  if (options.emitJson) {
-    out[jsonField] = contactFormToJson(state);
-  }
-  return out;
+  const { jsonField } = SCHEMAS[options.schema ?? 'title_case'];
+  return { [jsonField]: contactFormToJson(state) };
 }
