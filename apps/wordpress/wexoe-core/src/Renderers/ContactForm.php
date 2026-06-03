@@ -23,8 +23,9 @@ if (!defined('ABSPATH')) {
  *              formulärkort. Subtitel, trust-signaler och kontaktperson visas
  *              INTE i denna layout (medvetet — minimal variant).
  *
- * För edge-to-edge navy: sätt sektionens layout till `full_bleed` (renderern
- * målar bara sin bakgrund, sektion-ramverket styr bredden — samma mönster som hero).
+ * Sektionen bryter ALLTID ut till full bredd (100vw, centrerad via transform —
+ * samma teknik som legacy-pluginet). Sektionens generella layout-fält
+ * (contained/narrow/full_bleed) påverkar alltså inte kontaktformulärets bredd.
  *
  * Config (alla optional):
  *   eyebrow           — string
@@ -333,7 +334,7 @@ class ContactForm {
 
         return <<<CSS
         <style>
-        {$p}.wxcf { --wxcf-main: {$main}; --wxcf-accent: {$accent}; position: relative !important; padding: 60px 20px !important; overflow: hidden !important; font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important; }
+        {$p}.wxcf { --wxcf-main: {$main}; --wxcf-accent: {$accent}; box-sizing: border-box !important; position: relative !important; width: 100vw !important; max-width: 100vw !important; margin-left: 50% !important; transform: translateX(-50%) !important; padding: 60px 20px !important; overflow: hidden !important; font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important; }
         {$p}.wxcf * { box-sizing: border-box !important; }
         {$p}.wxcf [hidden] { display: none !important; }
         {$p}.wxcf--dark { background: var(--wxcf-main) !important; color: #fff !important; }
