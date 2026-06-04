@@ -155,9 +155,14 @@ body #top #<?= esc_attr($wid) ?> .wxp-section--on-dark .wxp-tabs__pill:hover:not
     #<?= esc_attr($wid) ?> .wxp-tabs__panel-grid { grid-template-columns: 1fr !important; gap: 32px !important; }
     #<?= esc_attr($wid) ?> .wxp-tabs__panel-image-wrap { aspect-ratio: 16 / 10 !important; }
 }
-@media (max-width: 600px) {
-    #<?= esc_attr($wid) ?> .wxp-tabs__bar { display: flex !important; overflow-x: auto !important; flex-wrap: nowrap !important; -webkit-overflow-scrolling: touch !important; scrollbar-width: none !important; }
-    #<?= esc_attr($wid) ?> .wxp-tabs__bar::-webkit-scrollbar { display: none !important; }
+@media (max-width: 480px) {
+    #<?= esc_attr($wid) ?> .wxp-tabs__bar { flex-wrap: wrap !important; gap: 8px !important; overflow-x: visible !important; }
+    #<?= esc_attr($wid) ?> .wxp-tabs__pill,
+    #<?= esc_attr($wid) ?> button.wxp-tabs__pill,
+    body #top #<?= esc_attr($wid) ?> .wxp-tabs__pill,
+    body #top #<?= esc_attr($wid) ?> button.wxp-tabs__pill,
+    html body #top #<?= esc_attr($wid) ?> button.wxp-tabs__pill,
+    .avia_codeblock #<?= esc_attr($wid) ?> button.wxp-tabs__pill { padding: 7px 14px !important; font-size: 13px !important; }
 }
     </style>
     <script>

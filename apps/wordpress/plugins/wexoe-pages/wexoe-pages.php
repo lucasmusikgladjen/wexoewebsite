@@ -632,6 +632,9 @@ function wexoe_pages_scoped_base_styles($id) {
 @media (max-width: 600px) {
     <?= $w ?> .wxp-btn { padding: 13px 22px !important; font-size: 14px !important; }
 }
+@media (max-width: 480px) {
+    <?= $w ?> .wxp-section__inner { padding-left: 16px !important; padding-right: 16px !important; }
+}
 </style>
     <?php
     return ob_get_clean();
