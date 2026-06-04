@@ -158,7 +158,9 @@ body #top #<?= esc_attr($wid) ?> .wxp-section--on-dark .wxp-tabs__pill:hover:not
 @media (max-width: 480px) {
     #<?= esc_attr($wid) ?> .wxp-tabs__bar { flex-wrap: wrap !important; gap: 8px !important; overflow-x: visible !important; }
     #<?= esc_attr($wid) ?> .wxp-tabs__pill,
+    #<?= esc_attr($wid) ?> button.wxp-tabs__pill,
     body #top #<?= esc_attr($wid) ?> .wxp-tabs__pill,
+    body #top #<?= esc_attr($wid) ?> button.wxp-tabs__pill,
     html body #top #<?= esc_attr($wid) ?> button.wxp-tabs__pill,
     .avia_codeblock #<?= esc_attr($wid) ?> button.wxp-tabs__pill { padding: 7px 14px !important; font-size: 13px !important; }
 }

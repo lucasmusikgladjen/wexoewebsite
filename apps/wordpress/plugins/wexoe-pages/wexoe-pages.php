@@ -599,9 +599,6 @@ function wexoe_pages_scoped_base_styles($id) {
 <?= $w ?> .wxp-section--bot-sm { padding-bottom: 32px !important; }
 <?= $w ?> .wxp-section--bot-md { padding-bottom: 72px !important; }
 <?= $w ?> .wxp-section--bot-lg { padding-bottom: 112px !important; }
-@media (max-width: 480px) {
-    <?= $w ?> .wxp-section__inner { padding-left: 16px !important; padding-right: 16px !important; }
-}
 
 /* Bakåtkompatibel klass — alla sektioner är full-bleed by default sedan ovan,
    så .wxp-fullbleed är no-op men kvarstår för existerande markup (hero). */
@@ -634,6 +631,9 @@ function wexoe_pages_scoped_base_styles($id) {
 }
 @media (max-width: 600px) {
     <?= $w ?> .wxp-btn { padding: 13px 22px !important; font-size: 14px !important; }
+}
+@media (max-width: 480px) {
+    <?= $w ?> .wxp-section__inner { padding-left: 16px !important; padding-right: 16px !important; }
 }
 </style>
     <?php
