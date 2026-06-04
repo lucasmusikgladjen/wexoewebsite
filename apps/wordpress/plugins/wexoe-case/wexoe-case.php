@@ -81,8 +81,8 @@ class Wexoe_Case {
         ?>
         <div id="<?php echo esc_attr($wrapper_id); ?>" class="wexoe-case-wrap">
             <?php echo $this->render_css($wrapper_id); ?>
+            <?php echo $this->render_header($data); ?>
             <div class="case-wrap">
-                <?php echo $this->render_header($data); ?>
                 <div class="case-container">
                     <div class="case-grid">
                         <main class="case-article">
@@ -103,8 +103,8 @@ class Wexoe_Case {
                         <?php echo $this->render_glance_sidebar($data); ?>
                     </div>
                 </div>
-                <?php echo $this->render_contact_form($data); ?>
             </div>
+            <?php echo $this->render_contact_form($data); ?>
         </div>
         <?php
         return ob_get_clean();
@@ -799,7 +799,8 @@ class Wexoe_Case {
 <?php echo $w; ?> img { max-width: 100%; height: auto; display: block; }
 <?php echo $w; ?> a { color: var(--case-main); }
 
-<?php echo $w; ?> .case-wrap { overflow-x: hidden; }
+<?php echo $w; ?> { overflow-x: clip; }
+<?php echo $w; ?> .case-wrap { }
 <?php echo $w; ?> .case-container { max-width: 1100px; margin: 0 auto; padding: 0 32px; }
 <?php echo $w; ?> .case-fullwidth { width: 100vw; max-width: none; margin-left: calc(-50vw + 50%); margin-right: calc(-50vw + 50%); }
 <?php echo $w; ?> .case-wrap > .case-header.case-fullwidth {
@@ -845,16 +846,16 @@ class Wexoe_Case {
     font-weight: 700;
     letter-spacing: 1.6px;
     text-transform: uppercase;
-    color: var(--case-secondary);
+    color: rgba(255,255,255,0.85);
     margin-bottom: 28px;
 }
 <?php echo $w; ?> .case-eyebrow .case-eyebrow-divider {
     width: 24px; height: 1px;
-    background: rgba(255,255,255,0.3);
+    background: rgba(255,255,255,0.4);
 }
 <?php echo $w; ?> .case-eyebrow-tag {
-    color: rgba(255,255,255,0.7);
-    font-weight: 500;
+    color: #fff;
+    font-weight: 600;
     letter-spacing: 1.2px;
 }
 
@@ -1040,40 +1041,46 @@ class Wexoe_Case {
 <?php echo $w; ?> .case-section-body ol.case-bullet-list,
 <?php echo $w; ?> .case-section-body + ul.case-bullet-list,
 <?php echo $w; ?> .case-section-body + ol.case-bullet-list {
-    list-style: none;
-    padding: 0;
-    margin: 24px 0 0;
+    list-style: none !important;
+    padding: 0 !important;
+    margin: 24px 0 0 !important;
 }
 <?php echo $w; ?> .case-bullet-list li,
 <?php echo $w; ?> .case-section-body ul.case-bullet-list li,
 <?php echo $w; ?> .case-section-body ol.case-bullet-list li,
 <?php echo $w; ?> .case-section-body + ul.case-bullet-list li,
 <?php echo $w; ?> .case-section-body + ol.case-bullet-list li {
-    position: relative;
-    padding-left: 30px;
-    margin-bottom: 12px;
-    line-height: 1.65;
-    font-size: 1rem;
-    list-style: none;
+    position: relative !important;
+    padding-left: 36px !important;
+    margin-bottom: 14px !important;
+    line-height: 1.65 !important;
+    font-size: 1rem !important;
+    list-style: none !important;
 }
 <?php echo $w; ?> .case-bullet-list li::before,
 <?php echo $w; ?> .case-section-body ul.case-bullet-list li::before,
 <?php echo $w; ?> .case-section-body ol.case-bullet-list li::before,
 <?php echo $w; ?> .case-section-body + ul.case-bullet-list li::before,
 <?php echo $w; ?> .case-section-body + ol.case-bullet-list li::before {
-    content: "✓";
-    position: absolute;
-    left: 0;
-    top: 2px;
-    color: var(--case-green);
-    font-weight: 700;
+    content: "" !important;
+    position: absolute !important;
+    left: 0 !important;
+    top: 0.15em !important;
+    width: 20px !important;
+    height: 20px !important;
+    border-radius: 50% !important;
+    background-color: var(--case-green) !important;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20'%3E%3Cpath d='M5 10.5l3.5 3.5 6.5-7' stroke='white' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round' fill='none'/%3E%3C/svg%3E") !important;
+    background-size: contain !important;
+    background-repeat: no-repeat !important;
+    display: block !important;
 }
 <?php echo $w; ?> .case-bullet-list li::after,
 <?php echo $w; ?> .case-section-body ul.case-bullet-list li::after,
 <?php echo $w; ?> .case-section-body ol.case-bullet-list li::after,
 <?php echo $w; ?> .case-section-body + ul.case-bullet-list li::after,
 <?php echo $w; ?> .case-section-body + ol.case-bullet-list li::after {
-    content: none;
+    content: none !important;
 }
 
 <?php echo $w; ?> .case-inline-image { margin: 32px 0 0; }
@@ -1358,18 +1365,24 @@ class Wexoe_Case {
     padding-top: 32px;
     border-top: 1px solid var(--case-rule);
     display: grid;
-    grid-template-columns: 130px 1fr;
+    grid-template-columns: 1fr 130px;
+    grid-template-areas: "text logo";
     gap: 28px;
     align-items: start;
 }
 <?php echo $w; ?> .case-about-customer-inline--no-logo {
     grid-template-columns: 1fr;
+    grid-template-areas: "text";
 }
-<?php echo $w; ?> .case-about-customer-inline img {
+<?php echo $w; ?> .case-about-customer-inline > img {
+    grid-area: logo;
     max-height: 60px;
     max-width: 130px;
     object-fit: contain;
-    object-position: left center;
+    object-position: left top;
+}
+<?php echo $w; ?> .case-about-customer-inline > div {
+    grid-area: text;
 }
 <?php echo $w; ?> .case-about-customer-inline h3 {
     font-size: 1.1rem;
@@ -1425,7 +1438,7 @@ class Wexoe_Case {
         border-top: none;
         padding-top: 0;
     }
-    <?php echo $w; ?> .case-about-customer-inline { grid-template-columns: 1fr; gap: 18px; }
+    <?php echo $w; ?> .case-about-customer-inline { grid-template-columns: 1fr; grid-template-areas: "text" "logo"; gap: 18px; }
     <?php echo $w; ?> .case-byline-strip { gap: 20px; }
     <?php echo $w; ?> .case-byline-logos { margin-left: 0; width: 100%; padding-top: 8px; }
 }
