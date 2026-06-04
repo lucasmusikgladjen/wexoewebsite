@@ -755,11 +755,10 @@ function wexoe_lp_test_render_css($id, $main_color, $secondary_color) {
         #'.$id.' .wexoe-lp-hero-h1 { font-size: 1.55rem !important; }
         #'.$id.' .wexoe-lp-hero-buttons { flex-direction: column !important; }
         #'.$id.' .wexoe-lp-btn-primary, #'.$id.' .wexoe-lp-btn-secondary { width: 100% !important; justify-content: center !important; padding: 14px 20px !important; }
-        #'.$id.' .wexoe-lp-container { padding: 0 20px !important; }
-        #'.$id.' .wexoe-lp-tabs-bar { margin-bottom: -20px !important; padding: 0 20px !important; justify-content: center !important; overflow-x: auto !important; -webkit-overflow-scrolling: touch !important; scrollbar-width: none !important; }
-        #'.$id.' .wexoe-lp-tabs-bar::-webkit-scrollbar { display: none !important; }
-        #'.$id.' .wexoe-lp-tabs-nav { padding: 3px !important; gap: 2px !important; }
-        #'.$id.' .wexoe-lp-tab-btn { padding: 9px 16px !important; font-size: 13px !important; }
+        #'.$id.' .wexoe-lp-container { padding: 0 16px !important; }
+        #'.$id.' .wexoe-lp-tabs-bar { margin-bottom: -20px !important; padding: 0 16px !important; justify-content: center !important; overflow-x: visible !important; }
+        #'.$id.' .wexoe-lp-tabs-nav { padding: 3px !important; gap: 2px !important; flex-wrap: wrap !important; max-width: 100% !important; width: 100% !important; border-radius: 16px !important; }
+        #'.$id.' .wexoe-lp-tab-btn { padding: 8px 14px !important; font-size: 13px !important; flex: 1 1 auto !important; text-align: center !important; }
         #'.$id.' .wexoe-lp-tabs-content { padding: 52px 0 40px !important; }
         #'.$id.' .wexoe-lp-dl-grid { grid-template-columns: 1fr !important; }
         #'.$id.' .wexoe-lp-cmp-table thead th, #'.$id.' .wexoe-lp-cmp-table tbody td { padding: 10px 12px !important; font-size: 0.82rem !important; }
