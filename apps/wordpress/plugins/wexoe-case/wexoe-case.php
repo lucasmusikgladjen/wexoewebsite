@@ -81,6 +81,8 @@ class Wexoe_Case {
         ?>
         <div id="<?php echo esc_attr($wrapper_id); ?>" class="wexoe-case-wrap">
             <?php echo $this->render_css($wrapper_id); ?>
+            <style>.template-page.content { padding-top: 0 !important; }</style>
+            <script>(function(){var h=document.querySelector("header.header,#header,.av-header-area");var m=document.getElementById("main");if(!h||!m)return;var fix=function(){var pos=getComputedStyle(h).position;if(pos==="fixed"||pos==="sticky"){var b=h.getBoundingClientRect().bottom;m.style.setProperty("padding-top",b+"px","important");m.style.setProperty("margin-top","0","important");}};fix();window.addEventListener("resize",fix);window.addEventListener("scroll",function(){setTimeout(fix,100);},{once:true});})();</script>
             <?php echo $this->render_header($data); ?>
             <div class="case-wrap">
                 <div class="case-container">
@@ -799,7 +801,6 @@ class Wexoe_Case {
 <?php echo $w; ?> img { max-width: 100%; height: auto; display: block; }
 <?php echo $w; ?> a { color: var(--case-main); }
 
-<?php echo $w; ?> { overflow-x: clip; }
 <?php echo $w; ?> .case-wrap { }
 <?php echo $w; ?> .case-container { max-width: 1100px; margin: 0 auto; padding: 0 32px; }
 <?php echo $w; ?> .case-fullwidth { width: 100vw; max-width: none; margin-left: calc(-50vw + 50%); margin-right: calc(-50vw + 50%); }
